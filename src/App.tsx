@@ -13,10 +13,12 @@ import NetWorthPage from './pages/NetWorthPage'
 import RecurringPaymentsPage from './pages/RecurringPaymentsPage'
 import StatsPage from './pages/StatsPage'
 import TransactionsPage from './pages/TransactionsPage'
+import ModalAutoClose from './components/layout/ModalAutoClose'
 
 export default function App() {
   return (
     <>
+      <ModalAutoClose />
       <ScrollToTop />
 
       <AppLayout>
