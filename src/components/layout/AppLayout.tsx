@@ -113,27 +113,35 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-stone-50 text-slate-950">
-      <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col overflow-y-auto border-r border-stone-200 bg-white/90 p-5 backdrop-blur xl:flex">
+      <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col overflow-hidden border-r border-stone-200 bg-white/95 p-4 backdrop-blur xl:flex">
         <Link
           to="/"
-          className="block rounded-[2rem] bg-emerald-950 p-5 text-white"
+          className="flex items-center gap-3 rounded-[1.5rem] border border-stone-200 bg-white p-3 shadow-sm transition hover:bg-stone-50"
         >
-          <p className="text-sm font-semibold text-emerald-200">
-            Écosystème Carnet
-          </p>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-950 text-sm font-black text-white">
+            CB
+          </div>
 
-          <h1 className="mt-2 text-2xl font-bold">Carnet de budget</h1>
+          <div className="min-w-0">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-600">
+              Carnet
+            </p>
 
-          <p className="mt-2 text-sm text-emerald-100">
-            Ton cockpit financier personnel.
-          </p>
+            <h1 className="truncate text-lg font-black text-slate-950">
+              Budget
+            </h1>
+
+            <p className="truncate text-xs font-medium text-slate-500">
+              Cockpit financier
+            </p>
+          </div>
         </Link>
 
-        <div className="mt-5 rounded-[1.5rem] bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">
+        <div className="mt-4 rounded-[1.25rem] bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">
           Données synchronisées
         </div>
 
-        <nav className="mt-6 flex-1 space-y-2">
+        <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto pr-1">
           {navItems.map((item) => {
             const Icon = item.icon
 
@@ -144,32 +152,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 end={item.path === '/'}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold transition',
+                    'flex items-center gap-3 rounded-2xl px-4 py-2.5 text-sm font-bold transition',
                     isActive
                       ? 'bg-emerald-50 text-emerald-800'
                       : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
                   ].join(' ')
                 }
               >
-                <Icon className="h-5 w-5" />
-                {item.label}
+                <Icon className="h-5 w-5 shrink-0" />
+                <span className="truncate">{item.label}</span>
               </NavLink>
             )
           })}
         </nav>
 
-        <div className="mt-6 rounded-[2rem] border border-stone-200 bg-stone-50 p-4">
+        <div className="mt-4 rounded-[1.5rem] border border-stone-200 bg-stone-50 p-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
-              <UserCircle className="h-6 w-6" />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
+              <UserCircle className="h-5 w-5" />
             </div>
 
             <div className="min-w-0">
-              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+              <p className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">
                 Connecté
               </p>
 
-              <p className="truncate text-sm font-black text-slate-950">
+              <p className="truncate text-xs font-black text-slate-950">
                 {user?.email ?? 'Utilisateur'}
               </p>
             </div>
@@ -178,7 +186,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <button
             type="button"
             onClick={() => void handleSignOut()}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-600 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-black text-slate-600 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
           >
             <LogOut className="h-4 w-4" />
             Déconnexion
