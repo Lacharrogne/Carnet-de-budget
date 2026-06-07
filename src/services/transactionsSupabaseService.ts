@@ -9,6 +9,7 @@ type TransactionRow = {
   id: string
   user_id: string
   account_id: string
+  to_account_id: string | null
   title: string
   amount: number | string
   type: TransactionType
@@ -26,6 +27,7 @@ function mapTransactionFromRow(row: TransactionRow): Transaction {
     type: row.type,
     category: row.category,
     accountId: row.account_id,
+    toAccountId: row.to_account_id ?? undefined,
     date: row.date,
     note: row.note ?? undefined,
     isRecurring: row.is_recurring,
@@ -53,18 +55,21 @@ export async function createTransaction(
   userId: string,
   transaction: Transaction,
 ) {
+  const isTransfer = transaction.type === 'transfer'
+
   const { data, error } = await supabase
     .from('transactions')
     .insert({
       user_id: userId,
       account_id: transaction.accountId,
+      to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
       category: transaction.category,
       date: transaction.date,
       note: transaction.note ?? null,
-      is_recurring: transaction.isRecurring ?? false,
+      is_recurring: isTransfer ? false : transaction.isRecurring ?? false,
     })
     .select('*')
     .single()
@@ -77,17 +82,20 @@ export async function createTransaction(
 }
 
 export async function editTransaction(transaction: Transaction) {
+  const isTransfer = transaction.type === 'transfer'
+
   const { data, error } = await supabase
     .from('transactions')
     .update({
       account_id: transaction.accountId,
+      to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
       category: transaction.category,
       date: transaction.date,
       note: transaction.note ?? null,
-      is_recurring: transaction.isRecurring ?? false,
+      is_recurring: isTransfer ? false : transaction.isRecurring ?? false,
     })
     .eq('id', transaction.id)
     .select('*')

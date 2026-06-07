@@ -65,6 +65,11 @@ import {
 } from './BudgetContextDefinition'
 import { useAuth } from './useAuth'
 
+type BalanceUpdate = {
+  accountId: string
+  amount: number
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message
@@ -73,23 +78,94 @@ function getErrorMessage(error: unknown) {
   return 'Une erreur inconnue est survenue.'
 }
 
-function getTransactionBalanceVariation(transaction: Transaction) {
-  return transaction.type === 'income' ? transaction.amount : -transaction.amount
+function hydrateTransactionForBalance(
+  transaction: Transaction,
+  fallbackTransaction: Transaction,
+) {
+  return {
+    ...transaction,
+    toAccountId: transaction.toAccountId ?? fallbackTransaction.toAccountId,
+  }
 }
 
-function updateAccountBalanceInList(
+function mergeBalanceUpdates(balanceUpdates: BalanceUpdate[]) {
+  const updatesByAccount = new Map<string, number>()
+
+  balanceUpdates.forEach((update) => {
+    const previousAmount = updatesByAccount.get(update.accountId) ?? 0
+    updatesByAccount.set(update.accountId, previousAmount + update.amount)
+  })
+
+  return Array.from(updatesByAccount.entries())
+    .map(([accountId, amount]) => ({
+      accountId,
+      amount,
+    }))
+    .filter((update) => update.amount !== 0)
+}
+
+function reverseBalanceUpdates(balanceUpdates: BalanceUpdate[]) {
+  return balanceUpdates.map((update) => ({
+    accountId: update.accountId,
+    amount: -update.amount,
+  }))
+}
+
+function getTransactionBalanceUpdates(transaction: Transaction): BalanceUpdate[] {
+  if (transaction.amount <= 0) {
+    return []
+  }
+
+  if (transaction.type === 'income') {
+    return [
+      {
+        accountId: transaction.accountId,
+        amount: transaction.amount,
+      },
+    ]
+  }
+
+  if (transaction.type === 'expense') {
+    return [
+      {
+        accountId: transaction.accountId,
+        amount: -transaction.amount,
+      },
+    ]
+  }
+
+  if (!transaction.toAccountId || transaction.toAccountId === transaction.accountId) {
+    return []
+  }
+
+  return [
+    {
+      accountId: transaction.accountId,
+      amount: -transaction.amount,
+    },
+    {
+      accountId: transaction.toAccountId,
+      amount: transaction.amount,
+    },
+  ]
+}
+
+function updateAccountBalancesInList(
   accounts: Account[],
-  accountId: string,
-  amount: number,
+  balanceUpdates: BalanceUpdate[],
 ) {
+  const mergedUpdates = mergeBalanceUpdates(balanceUpdates)
+
   return accounts.map((account) => {
-    if (account.id !== accountId) {
+    const update = mergedUpdates.find((item) => item.accountId === account.id)
+
+    if (!update) {
       return account
     }
 
     return {
       ...account,
-      balance: account.balance + amount,
+      balance: account.balance + update.amount,
     }
   })
 }
@@ -155,6 +231,27 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
   function clearBudgetError() {
     setBudgetError('')
+  }
+
+  async function saveAccountBalanceUpdates(balanceUpdates: BalanceUpdate[]) {
+    const mergedUpdates = mergeBalanceUpdates(balanceUpdates)
+
+    await Promise.all(
+      mergedUpdates.map(async (update) => {
+        const accountToUpdate = accounts.find((account) => {
+          return account.id === update.accountId
+        })
+
+        if (!accountToUpdate) {
+          return
+        }
+
+        await editAccountBalance(
+          accountToUpdate.id,
+          accountToUpdate.balance + update.amount,
+        )
+      }),
+    )
   }
 
   useEffect(() => {
@@ -331,31 +428,23 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
 
     try {
       const createdTransaction = await createTransaction(user.id, transaction)
-      const balanceVariation =
-        getTransactionBalanceVariation(createdTransaction)
 
-      const accountToUpdate = accounts.find((account) => {
-        return account.id === createdTransaction.accountId
-      })
+      const transactionToStore = hydrateTransactionForBalance(
+        createdTransaction,
+        transaction,
+      )
 
-      if (accountToUpdate) {
-        await editAccountBalance(
-          accountToUpdate.id,
-          accountToUpdate.balance + balanceVariation,
-        )
-      }
+      const balanceUpdates = getTransactionBalanceUpdates(transactionToStore)
+
+      await saveAccountBalanceUpdates(balanceUpdates)
 
       setTransactions((currentTransactions) => [
-        createdTransaction,
+        transactionToStore,
         ...currentTransactions,
       ])
 
       setAccounts((currentAccounts) =>
-        updateAccountBalanceInList(
-          currentAccounts,
-          createdTransaction.accountId,
-          balanceVariation,
-        ),
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
       )
     } catch (error) {
       console.error(
@@ -382,68 +471,35 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     try {
       const savedTransaction = await editTransaction(updatedTransaction)
 
-      const previousVariation =
-        getTransactionBalanceVariation(previousTransaction)
-      const nextVariation = getTransactionBalanceVariation(savedTransaction)
+      const transactionToStore = hydrateTransactionForBalance(
+        savedTransaction,
+        updatedTransaction,
+      )
 
-      const previousAccount = accounts.find((account) => {
-        return account.id === previousTransaction.accountId
-      })
+      const previousBalanceUpdates =
+        getTransactionBalanceUpdates(previousTransaction)
 
-      const nextAccount = accounts.find((account) => {
-        return account.id === savedTransaction.accountId
-      })
+      const nextBalanceUpdates = getTransactionBalanceUpdates(transactionToStore)
 
-      if (previousTransaction.accountId === savedTransaction.accountId) {
-        if (nextAccount) {
-          await editAccountBalance(
-            nextAccount.id,
-            nextAccount.balance - previousVariation + nextVariation,
-          )
-        }
-      } else {
-        if (previousAccount) {
-          await editAccountBalance(
-            previousAccount.id,
-            previousAccount.balance - previousVariation,
-          )
-        }
+      const balanceUpdates = mergeBalanceUpdates([
+        ...reverseBalanceUpdates(previousBalanceUpdates),
+        ...nextBalanceUpdates,
+      ])
 
-        if (nextAccount) {
-          await editAccountBalance(
-            nextAccount.id,
-            nextAccount.balance + nextVariation,
-          )
-        }
-      }
+      await saveAccountBalanceUpdates(balanceUpdates)
 
       setTransactions((currentTransactions) =>
         currentTransactions.map((transaction) => {
-          if (transaction.id !== savedTransaction.id) {
+          if (transaction.id !== transactionToStore.id) {
             return transaction
           }
 
-          return savedTransaction
+          return transactionToStore
         }),
       )
 
       setAccounts((currentAccounts) =>
-        currentAccounts.map((account) => {
-          let nextBalance = account.balance
-
-          if (account.id === previousTransaction.accountId) {
-            nextBalance -= previousVariation
-          }
-
-          if (account.id === savedTransaction.accountId) {
-            nextBalance += nextVariation
-          }
-
-          return {
-            ...account,
-            balance: nextBalance,
-          }
-        }),
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
       )
     } catch (error) {
       console.error(
@@ -470,19 +526,11 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     try {
       await removeTransaction(transactionId)
 
-      const balanceVariation =
-        getTransactionBalanceVariation(transactionToDelete)
+      const balanceUpdates = reverseBalanceUpdates(
+        getTransactionBalanceUpdates(transactionToDelete),
+      )
 
-      const accountToUpdate = accounts.find((account) => {
-        return account.id === transactionToDelete.accountId
-      })
-
-      if (accountToUpdate) {
-        await editAccountBalance(
-          accountToUpdate.id,
-          accountToUpdate.balance - balanceVariation,
-        )
-      }
+      await saveAccountBalanceUpdates(balanceUpdates)
 
       setTransactions((currentTransactions) =>
         currentTransactions.filter((transaction) => {
@@ -491,11 +539,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       )
 
       setAccounts((currentAccounts) =>
-        updateAccountBalanceInList(
-          currentAccounts,
-          transactionToDelete.accountId,
-          -balanceVariation,
-        ),
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
       )
     } catch (error) {
       console.error(

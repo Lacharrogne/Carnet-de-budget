@@ -1,4 +1,4 @@
-export type TransactionType = 'income' | 'expense'
+export type TransactionType = 'income' | 'expense' | 'transfer'
 
 export type BudgetCategoryId =
   | 'salary'
@@ -13,6 +13,7 @@ export type BudgetCategoryId =
   | 'savings'
   | 'debt'
   | 'investment'
+  | 'transfer'
   | 'other'
 
 export type AccountType = 'current' | 'savings' | 'cash' | 'investment'
@@ -39,11 +40,36 @@ export type Transaction = {
   title: string
   amount: number
   type: TransactionType
-  category: BudgetCategoryId
+
+  /**
+   * Pour income / expense :
+   * compte concerné par la transaction.
+   *
+   * Pour transfer :
+   * compte source, celui d’où l’argent sort.
+   */
   accountId: string
+
+  /**
+   * Utilisé uniquement pour les virements.
+   * C’est le compte destination, celui où l’argent arrive.
+   */
+  toAccountId?: string
+
+  category: BudgetCategoryId
   date: string
   note?: string
   isRecurring?: boolean
+
+  /**
+   * Liens futurs pour rendre les mouvements intelligents :
+   * - remboursement de dette depuis un compte réel
+   * - alimentation d’objectif depuis un compte réel
+   * - alimentation de fonds d’amortissement
+   */
+  linkedDebtId?: string
+  linkedSavingGoalId?: string
+  linkedSinkingFundId?: string
 }
 
 export type MonthlyBudget = {
