@@ -20,6 +20,7 @@ import type {
   BudgetCategoryId,
   RecurringPayment,
   Transaction,
+  TransactionType,
 } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -37,9 +38,9 @@ type CalendarItem = {
   id: string
   title: string
   amount: number
+  type: TransactionType
   dateKey: string
   category: BudgetCategoryId
-  type: 'income' | 'expense'
   label: string
   isRecurring: boolean
 }
@@ -89,7 +90,11 @@ function getShortDateLabel(dateKey: string) {
 }
 
 function getDaysInMonth(monthDate: Date) {
-  return new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate()
+  return new Date(
+    monthDate.getFullYear(),
+    monthDate.getMonth() + 1,
+    0,
+  ).getDate()
 }
 
 function getRecurringPaymentDateKey(
@@ -155,14 +160,45 @@ function getCategoryById(categoryId: BudgetCategoryId) {
       name: 'Autre',
       description: 'Mouvement non classé',
       emoji: '📌',
+      colorClass: 'border-stone-100 bg-stone-50 text-slate-700',
     }
   )
 }
 
-function getAmountLabel(item: CalendarItem) {
-  const prefix = item.type === 'income' ? '+' : '-'
+function getCalendarItemLabel(type: TransactionType) {
+  if (type === 'income') {
+    return 'Revenu'
+  }
 
-  return `${prefix}${formatCurrency(item.amount)}`
+  if (type === 'expense') {
+    return 'Dépense'
+  }
+
+  return 'Virement'
+}
+
+function getAmountLabel(item: CalendarItem) {
+  if (item.type === 'income') {
+    return `+${formatCurrency(item.amount)}`
+  }
+
+  if (item.type === 'expense') {
+    return `-${formatCurrency(item.amount)}`
+  }
+
+  return `↔ ${formatCurrency(item.amount)}`
+}
+
+function getAmountColorClass(type: TransactionType) {
+  if (type === 'income') {
+    return 'text-emerald-700'
+  }
+
+  if (type === 'expense') {
+    return 'text-rose-700'
+  }
+
+  return 'text-blue-700'
 }
 
 function createTransactionCalendarItem(transaction: Transaction): CalendarItem {
@@ -173,7 +209,7 @@ function createTransactionCalendarItem(transaction: Transaction): CalendarItem {
     dateKey: transaction.date,
     category: transaction.category,
     type: transaction.type,
-    label: transaction.type === 'income' ? 'Revenu' : 'Dépense',
+    label: getCalendarItemLabel(transaction.type),
     isRecurring: transaction.isRecurring ?? false,
   }
 }
@@ -305,6 +341,7 @@ function CalendarItemCard({
 }) {
   const category = getCategoryById(item.category)
   const isIncome = item.type === 'income'
+  const isTransfer = item.type === 'transfer'
 
   return (
     <article
@@ -318,13 +355,15 @@ function CalendarItemCard({
             className={`flex shrink-0 items-center justify-center rounded-2xl border ${
               isIncome
                 ? 'border-emerald-100 bg-emerald-50'
-                : item.isRecurring
-                  ? 'border-amber-100 bg-amber-50'
-                  : 'border-rose-100 bg-rose-50'
+                : isTransfer
+                  ? 'border-blue-100 bg-blue-50'
+                  : item.isRecurring
+                    ? 'border-amber-100 bg-amber-50'
+                    : 'border-rose-100 bg-rose-50'
             } ${compact ? 'h-12 w-12' : 'h-16 w-16'}`}
           >
             <span className={compact ? 'text-xl' : 'text-2xl'}>
-              {item.isRecurring ? '🔁' : category.emoji}
+              {isTransfer ? '↔️' : item.isRecurring ? '🔁' : category.emoji}
             </span>
           </div>
 
@@ -339,6 +378,12 @@ function CalendarItemCard({
                   Récurrent
                 </span>
               )}
+
+              {isTransfer && (
+                <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-black text-blue-700">
+                  Virement
+                </span>
+              )}
             </div>
 
             <p className="mt-1 text-sm text-slate-500">
@@ -349,11 +394,7 @@ function CalendarItemCard({
         </div>
 
         <div className="text-right">
-          <p
-            className={`font-black ${
-              isIncome ? 'text-emerald-700' : 'text-rose-700'
-            }`}
-          >
+          <p className={`font-black ${getAmountColorClass(item.type)}`}>
             {getAmountLabel(item)}
           </p>
 
@@ -383,6 +424,10 @@ function CalendarDayButton({
 
   const expenseCount = day.transactions.filter((transaction) => {
     return transaction.type === 'expense'
+  }).length
+
+  const transferCount = day.transactions.filter((transaction) => {
+    return transaction.type === 'transfer'
   }).length
 
   const recurringCount = day.recurringPayments.length
@@ -435,6 +480,10 @@ function CalendarDayButton({
 
             {expenseCount > 0 && (
               <span className="h-3 w-3 rounded-full bg-rose-500" />
+            )}
+
+            {transferCount > 0 && (
+              <span className="h-3 w-3 rounded-full bg-blue-500" />
             )}
 
             {recurringCount > 0 && (
@@ -565,9 +614,9 @@ export default function CalendarPage() {
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Retrouve tes revenus, tes dépenses et tes charges fixes par
-                jour. Le calendrier est synchronisé avec les transactions et les
-                abonnements enregistrés dans Supabase.
+                Retrouve tes revenus, tes dépenses, tes virements et tes charges
+                fixes par jour. Le calendrier est synchronisé avec les
+                transactions et les abonnements enregistrés dans Supabase.
               </p>
             </div>
 
@@ -693,6 +742,11 @@ export default function CalendarPage() {
             <span className="flex items-center gap-2">
               <span className="h-3 w-3 rounded-full bg-rose-500" />
               Dépense
+            </span>
+
+            <span className="flex items-center gap-2">
+              <span className="h-3 w-3 rounded-full bg-blue-500" />
+              Virement
             </span>
 
             <span className="flex items-center gap-2">

@@ -61,6 +61,11 @@ export type BudgetContextValue = {
   addDebt: (debt: Debt) => void
   updateDebt: (debt: Debt) => void
   updateDebtRemainingAmount: (debtId: string, amount: number) => void
+  repayDebtFromAccount: (
+    debtId: string,
+    accountId: string,
+    amount: number,
+  ) => void
   deleteDebt: (debtId: string) => void
 
   addInvestment: (investment: Investment) => void

@@ -70,12 +70,29 @@ type BalanceUpdate = {
   amount: number
 }
 
+type DebtRemainingUpdate = {
+  debtId: string
+  amount: number
+}
+
+function getTodayDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function createTransactionId() {
+  return `transaction-${Date.now()}`
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error) {
     return error.message
   }
 
   return 'Une erreur inconnue est survenue.'
+}
+
+function clampAmount(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max)
 }
 
 function hydrateTransactionForBalance(
@@ -85,6 +102,14 @@ function hydrateTransactionForBalance(
   return {
     ...transaction,
     toAccountId: transaction.toAccountId ?? fallbackTransaction.toAccountId,
+    linkedDebtId:
+      transaction.linkedDebtId ?? fallbackTransaction.linkedDebtId,
+    linkedSavingGoalId:
+      transaction.linkedSavingGoalId ??
+      fallbackTransaction.linkedSavingGoalId,
+    linkedSinkingFundId:
+      transaction.linkedSinkingFundId ??
+      fallbackTransaction.linkedSinkingFundId,
   }
 }
 
@@ -170,6 +195,43 @@ function updateAccountBalancesInList(
   })
 }
 
+function mergeDebtRemainingUpdates(debtUpdates: DebtRemainingUpdate[]) {
+  const updatesByDebt = new Map<string, number>()
+
+  debtUpdates.forEach((update) => {
+    const previousAmount = updatesByDebt.get(update.debtId) ?? 0
+    updatesByDebt.set(update.debtId, previousAmount + update.amount)
+  })
+
+  return Array.from(updatesByDebt.entries())
+    .map(([debtId, amount]) => ({
+      debtId,
+      amount,
+    }))
+    .filter((update) => update.amount !== 0)
+}
+
+function getDebtRemainingUpdatesForTransaction(
+  transaction: Transaction,
+  mode: 'apply' | 'reverse',
+): DebtRemainingUpdate[] {
+  if (
+    !transaction.linkedDebtId ||
+    transaction.type !== 'expense' ||
+    transaction.category !== 'debt' ||
+    transaction.amount <= 0
+  ) {
+    return []
+  }
+
+  return [
+    {
+      debtId: transaction.linkedDebtId,
+      amount: mode === 'apply' ? -transaction.amount : transaction.amount,
+    },
+  ]
+}
+
 function upsertMonthlyBudgetInList(
   monthlyBudgets: MonthlyBudget[],
   savedBudget: MonthlyBudget,
@@ -250,6 +312,57 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
           accountToUpdate.id,
           accountToUpdate.balance + update.amount,
         )
+      }),
+    )
+  }
+
+  async function saveDebtRemainingUpdates(debtUpdates: DebtRemainingUpdate[]) {
+    const mergedUpdates = mergeDebtRemainingUpdates(debtUpdates)
+
+    if (mergedUpdates.length === 0) {
+      return
+    }
+
+    const savedDebts = await Promise.all(
+      mergedUpdates.map(async (update) => {
+        const debtToUpdate = debts.find((debt) => {
+          return debt.id === update.debtId
+        })
+
+        if (!debtToUpdate) {
+          return null
+        }
+
+        const nextRemainingAmount = clampAmount(
+          debtToUpdate.remainingAmount + update.amount,
+          0,
+          debtToUpdate.totalAmount,
+        )
+
+        return editDebt({
+          ...debtToUpdate,
+          remainingAmount: nextRemainingAmount,
+        })
+      }),
+    )
+
+    const validSavedDebts = savedDebts.filter((debt): debt is Debt => {
+      return Boolean(debt)
+    })
+
+    if (validSavedDebts.length === 0) {
+      return
+    }
+
+    setDebts((currentDebts) =>
+      currentDebts.map((debt) => {
+        const savedDebt = validSavedDebts.find((item) => item.id === debt.id)
+
+        if (!savedDebt) {
+          return debt
+        }
+
+        return savedDebt
       }),
     )
   }
@@ -435,8 +548,15 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       )
 
       const balanceUpdates = getTransactionBalanceUpdates(transactionToStore)
+      const debtUpdates = getDebtRemainingUpdatesForTransaction(
+        transactionToStore,
+        'apply',
+      )
 
-      await saveAccountBalanceUpdates(balanceUpdates)
+      await Promise.all([
+        saveAccountBalanceUpdates(balanceUpdates),
+        saveDebtRemainingUpdates(debtUpdates),
+      ])
 
       setTransactions((currentTransactions) => [
         transactionToStore,
@@ -486,7 +606,18 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         ...nextBalanceUpdates,
       ])
 
-      await saveAccountBalanceUpdates(balanceUpdates)
+      const debtUpdates = mergeDebtRemainingUpdates([
+        ...getDebtRemainingUpdatesForTransaction(
+          previousTransaction,
+          'reverse',
+        ),
+        ...getDebtRemainingUpdatesForTransaction(transactionToStore, 'apply'),
+      ])
+
+      await Promise.all([
+        saveAccountBalanceUpdates(balanceUpdates),
+        saveDebtRemainingUpdates(debtUpdates),
+      ])
 
       setTransactions((currentTransactions) =>
         currentTransactions.map((transaction) => {
@@ -530,7 +661,15 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         getTransactionBalanceUpdates(transactionToDelete),
       )
 
-      await saveAccountBalanceUpdates(balanceUpdates)
+      const debtUpdates = getDebtRemainingUpdatesForTransaction(
+        transactionToDelete,
+        'reverse',
+      )
+
+      await Promise.all([
+        saveAccountBalanceUpdates(balanceUpdates),
+        saveDebtRemainingUpdates(debtUpdates),
+      ])
 
       setTransactions((currentTransactions) =>
         currentTransactions.filter((transaction) => {
@@ -1052,6 +1191,107 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function repayDebtFromAccount(
+    debtId: string,
+    accountId: string,
+    amount: number,
+  ) {
+    if (!user) {
+      return
+    }
+
+    const debtToUpdate = debts.find((debt) => debt.id === debtId)
+
+    if (!debtToUpdate) {
+      setBudgetError('Impossible de trouver cette dette.')
+      return
+    }
+
+    const accountToUpdate = accounts.find((account) => account.id === accountId)
+
+    if (!accountToUpdate) {
+      setBudgetError('Choisis un compte valide pour ce remboursement.')
+      return
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setBudgetError('Le montant du remboursement doit être supérieur à 0 €.')
+      return
+    }
+
+    if (debtToUpdate.remainingAmount <= 0) {
+      setBudgetError('Cette dette est déjà remboursée.')
+      return
+    }
+
+    const repaymentAmount = Math.min(amount, debtToUpdate.remainingAmount)
+    const nextRemainingAmount = debtToUpdate.remainingAmount - repaymentAmount
+
+    const repaymentTransaction: Transaction = {
+      id: createTransactionId(),
+      title: `Remboursement ${debtToUpdate.title}`,
+      amount: repaymentAmount,
+      type: 'expense',
+      category: 'debt',
+      accountId,
+      date: getTodayDate(),
+      note: `Remboursement lié à la dette "${debtToUpdate.title}".`,
+      isRecurring: false,
+      linkedDebtId: debtToUpdate.id,
+    }
+
+    setBudgetError('')
+
+    try {
+      const createdTransaction = await createTransaction(
+        user.id,
+        repaymentTransaction,
+      )
+
+      const transactionToStore = hydrateTransactionForBalance(
+        createdTransaction,
+        repaymentTransaction,
+      )
+
+      const balanceUpdates = getTransactionBalanceUpdates(transactionToStore)
+
+      const [savedDebt] = await Promise.all([
+        editDebt({
+          ...debtToUpdate,
+          remainingAmount: nextRemainingAmount,
+        }),
+        saveAccountBalanceUpdates(balanceUpdates),
+      ])
+
+      setTransactions((currentTransactions) => [
+        transactionToStore,
+        ...currentTransactions,
+      ])
+
+      setAccounts((currentAccounts) =>
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
+      )
+
+      setDebts((currentDebts) =>
+        currentDebts.map((debt) => {
+          if (debt.id !== savedDebt.id) {
+            return debt
+          }
+
+          return savedDebt
+        }),
+      )
+    } catch (error) {
+      console.error(
+        'Erreur lors du remboursement de la dette Supabase :',
+        error,
+      )
+      setBudgetError(
+        `Impossible d’enregistrer ce remboursement : ${getErrorMessage(error)}`,
+      )
+    }
+  }
+
   async function deleteDebt(debtId: string) {
     setBudgetError('')
 
@@ -1273,6 +1513,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     addDebt,
     updateDebt,
     updateDebtRemainingAmount,
+    repayDebtFromAccount,
     deleteDebt,
 
     addInvestment,

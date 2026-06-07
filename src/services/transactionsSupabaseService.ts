@@ -10,6 +10,7 @@ type TransactionRow = {
   user_id: string
   account_id: string
   to_account_id: string | null
+  linked_debt_id: string | null
   title: string
   amount: number | string
   type: TransactionType
@@ -28,6 +29,7 @@ function mapTransactionFromRow(row: TransactionRow): Transaction {
     category: row.category,
     accountId: row.account_id,
     toAccountId: row.to_account_id ?? undefined,
+    linkedDebtId: row.linked_debt_id ?? undefined,
     date: row.date,
     note: row.note ?? undefined,
     isRecurring: row.is_recurring,
@@ -63,6 +65,7 @@ export async function createTransaction(
       user_id: userId,
       account_id: transaction.accountId,
       to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
+      linked_debt_id: transaction.linkedDebtId ?? null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
@@ -89,6 +92,7 @@ export async function editTransaction(transaction: Transaction) {
     .update({
       account_id: transaction.accountId,
       to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
+      linked_debt_id: transaction.linkedDebtId ?? null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
