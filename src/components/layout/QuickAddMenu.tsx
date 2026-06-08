@@ -100,8 +100,8 @@ const quickActions: QuickAction[] = [
     },
   },
   {
-    label: 'Analyser les stats',
-    description: 'Comprendre les dépenses, revenus et alertes.',
+    label: 'Voir l’analyse',
+    description: 'Comprendre les dépenses, revenus, alertes et tendances.',
     href: '/statistiques',
     icon: <BarChart3 className="h-5 w-5" />,
     classes: {

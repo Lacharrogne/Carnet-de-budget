@@ -51,11 +51,21 @@ export type BudgetContextValue = {
   addSavingGoal: (goal: SavingGoal) => void
   updateSavingGoal: (goal: SavingGoal) => void
   updateSavingGoalAmount: (goalId: string, amount: number) => void
+  saveMoneyToGoalFromAccount: (
+  goalId: string,
+  accountId: string,
+  amount: number,
+) => void
   deleteSavingGoal: (goalId: string) => void
 
   addSinkingFund: (fund: SinkingFund) => void
   updateSinkingFund: (fund: SinkingFund) => void
   updateSinkingFundAmount: (fundId: string, amount: number) => void
+  saveMoneyToSinkingFundFromAccount: (
+  fundId: string,
+  accountId: string,
+  amount: number,
+) => void
   deleteSinkingFund: (fundId: string) => void
 
   addDebt: (debt: Debt) => void

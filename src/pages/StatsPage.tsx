@@ -572,21 +572,20 @@ export default function StatsPage() {
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Statistiques
-              </p>
+             <p className="text-sm font-semibold text-emerald-600">
+  Analyse financière
+</p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Comprendre ton argent
-              </h1>
+<h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+  Comprendre ton argent
+</h1>
 
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Analyse ton mois de{' '}
-                <span className="font-black text-slate-950">{monthLabel}</span>{' '}
-                avec les revenus, dépenses, budgets, abonnements, dettes,
-                objectifs, patrimoine et investissements synchronisés avec
-                Supabase.
-              </p>
+<p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+  Analyse ton mois de{' '}
+  <span className="font-black text-slate-950">{monthLabel}</span>{' '}
+  avec les revenus, dépenses, budgets, abonnements, dettes, objectifs,
+  patrimoine et investissements.
+</p>
             </div>
 
             <div className="flex flex-wrap gap-3">

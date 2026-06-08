@@ -18,7 +18,7 @@ import {
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
-import type { SavingGoal, SinkingFund } from '../types/budget'
+import type { Account, SavingGoal, SinkingFund } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
 type GoalFormValues = {
@@ -37,6 +37,21 @@ type SinkingFundFormValues = {
   monthlyContribution: string
 }
 
+type SaveMoneyFormValues = {
+  accountId: string
+  amount: string
+}
+
+type SaveMoneyTarget =
+  | {
+      type: 'goal'
+      goal: SavingGoal
+    }
+  | {
+      type: 'fund'
+      fund: SinkingFund
+    }
+
 const defaultGoalFormValues: GoalFormValues = {
   title: '',
   emoji: '🎯',
@@ -51,6 +66,11 @@ const defaultSinkingFundFormValues: SinkingFundFormValues = {
   targetAmount: '',
   currentAmount: '0',
   monthlyContribution: '',
+}
+
+const defaultSaveMoneyFormValues: SaveMoneyFormValues = {
+  accountId: '',
+  amount: '',
 }
 
 function createGoalId() {
@@ -89,6 +109,38 @@ function parseAmount(value: string) {
   }
 
   return Number(normalizedValue)
+}
+
+function getProgress(currentAmount: number, targetAmount: number) {
+  if (targetAmount <= 0) {
+    return 0
+  }
+
+  return Math.min(Math.round((currentAmount / targetAmount) * 100), 100)
+}
+
+function getRemainingAmount(currentAmount: number, targetAmount: number) {
+  return Math.max(targetAmount - currentAmount, 0)
+}
+
+function getSaveMoneyTargetTitle(target: SaveMoneyTarget) {
+  return target.type === 'goal' ? target.goal.title : target.fund.title
+}
+
+function getSaveMoneyTargetEmoji(target: SaveMoneyTarget) {
+  return target.type === 'goal' ? target.goal.emoji : target.fund.emoji
+}
+
+function getSaveMoneyTargetCurrentAmount(target: SaveMoneyTarget) {
+  return target.type === 'goal'
+    ? target.goal.currentAmount
+    : target.fund.currentAmount
+}
+
+function getSaveMoneyTargetTargetAmount(target: SaveMoneyTarget) {
+  return target.type === 'goal'
+    ? target.goal.targetAmount
+    : target.fund.targetAmount
 }
 
 function PageStatCard({
@@ -137,16 +189,196 @@ function PageStatCard({
   )
 }
 
-function getProgress(currentAmount: number, targetAmount: number) {
-  if (targetAmount <= 0) {
-    return 0
+function SaveMoneyModal({
+  target,
+  accounts,
+  formValues,
+  formError,
+  onClose,
+  onChange,
+  onSubmit,
+}: {
+  target: SaveMoneyTarget
+  accounts: Account[]
+  formValues: SaveMoneyFormValues
+  formError: string
+  onClose: () => void
+  onChange: (values: SaveMoneyFormValues) => void
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void
+}) {
+  const currentAmount = getSaveMoneyTargetCurrentAmount(target)
+  const targetAmount = getSaveMoneyTargetTargetAmount(target)
+  const remainingAmount = getRemainingAmount(currentAmount, targetAmount)
+  const progress = getProgress(currentAmount, targetAmount)
+
+  function updateField<Field extends keyof SaveMoneyFormValues>(
+    field: Field,
+    value: SaveMoneyFormValues[Field],
+  ) {
+    onChange({
+      ...formValues,
+      [field]: value,
+    })
   }
 
-  return Math.min(Math.round((currentAmount / targetAmount) * 100), 100)
-}
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
+      <button
+        type="button"
+        aria-label="Fermer la fenêtre"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
 
-function getRemainingAmount(currentAmount: number, targetAmount: number) {
-  return Math.max(targetAmount - currentAmount, 0)
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-emerald-600">
+                Mise de côté
+              </p>
+
+              <h2 className="mt-1 text-2xl font-black text-slate-950">
+                Mettre de côté depuis un compte
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                L’argent sera retiré du compte choisi, ajouté à ton objectif, et
+                une transaction d’épargne sera créée.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full bg-stone-100 p-3 text-slate-500 transition hover:bg-stone-200 hover:text-slate-950"
+              aria-label="Fermer le formulaire"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={onSubmit} className="space-y-5 p-5">
+          <div className="rounded-[1.75rem] border border-stone-200 bg-stone-50 p-4">
+            <div className="flex items-center gap-4">
+              <div className="rounded-2xl bg-white p-4 text-3xl shadow-sm">
+                {getSaveMoneyTargetEmoji(target)}
+              </div>
+
+              <div>
+                <p className="font-black text-slate-950">
+                  {getSaveMoneyTargetTitle(target)}
+                </p>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)} ·{' '}
+                  {progress} %
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 h-4 overflow-hidden rounded-full bg-white">
+              <div
+                className="h-full rounded-full bg-emerald-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <p className="mt-3 text-sm font-bold text-emerald-700">
+              Il reste {formatCurrency(remainingAmount)} à mettre de côté.
+            </p>
+          </div>
+
+          <label>
+            <span className="text-sm font-bold text-slate-700">
+              Compte source
+            </span>
+
+            <select
+              value={formValues.accountId}
+              onChange={(event) => updateField('accountId', event.target.value)}
+              className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            >
+              <option value="">Choisir un compte</option>
+
+              {accounts.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.emoji} {account.name} ·{' '}
+                  {formatCurrency(account.balance)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span className="text-sm font-bold text-slate-700">
+              Montant à mettre de côté
+            </span>
+
+            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+              <input
+                value={formValues.amount}
+                onChange={(event) => updateField('amount', event.target.value)}
+                placeholder="Ex : 50"
+                inputMode="decimal"
+                className="h-12 w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
+              />
+
+              <span className="font-black text-slate-500">€</span>
+            </div>
+          </label>
+
+          <div className="flex flex-wrap gap-2">
+            {[25, 50, 100].map((amount) => (
+              <button
+                key={amount}
+                type="button"
+                onClick={() => updateField('amount', String(amount))}
+                className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
+              >
+                {formatCurrency(amount)}
+              </button>
+            ))}
+
+            {remainingAmount > 0 && (
+              <button
+                type="button"
+                onClick={() => updateField('amount', String(remainingAmount))}
+                className="rounded-full bg-stone-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-stone-200"
+              >
+                Tout compléter
+              </button>
+            )}
+          </div>
+
+          {formError && (
+            <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
+              {formError}
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-3 border-t border-stone-100 pt-5 md:flex-row md:justify-end">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-stone-200"
+            >
+              Annuler
+            </button>
+
+            <button
+              type="submit"
+              disabled={accounts.length === 0 || remainingAmount <= 0}
+              className="rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Mettre de côté
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }
 
 function GoalFormModal({
@@ -176,7 +408,14 @@ function GoalFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <button
+        type="button"
+        aria-label="Fermer la fenêtre"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -300,7 +539,9 @@ function GoalFormModal({
               type="submit"
               className="rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
             >
-              {isEditing ? 'Enregistrer les modifications' : 'Ajouter l’objectif'}
+              {isEditing
+                ? 'Enregistrer les modifications'
+                : 'Ajouter l’objectif'}
             </button>
           </div>
         </form>
@@ -336,7 +577,14 @@ function SinkingFundFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <button
+        type="button"
+        aria-label="Fermer la fenêtre"
+        onClick={onClose}
+        className="absolute inset-0 cursor-default"
+      />
+
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -473,12 +721,12 @@ function SinkingFundFormModal({
 
 function GoalCard({
   goal,
-  onAmountChange,
+  onSaveRequest,
   onEditRequest,
   onDeleteRequest,
 }: {
   goal: SavingGoal
-  onAmountChange: (goalId: string, amount: number) => void
+  onSaveRequest: (goal: SavingGoal) => void
   onEditRequest: (goal: SavingGoal) => void
   onDeleteRequest: (goal: SavingGoal) => void
 }) {
@@ -571,43 +819,21 @@ function GoalCard({
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           type="button"
+          onClick={() => onSaveRequest(goal)}
+          disabled={isCompleted}
+          className="flex items-center gap-2 rounded-full bg-violet-50 px-4 py-2 text-sm font-black text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <PiggyBank className="h-4 w-4" />
+          Mettre de côté
+        </button>
+
+        <button
+          type="button"
           onClick={() => onEditRequest(goal)}
           className="flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-stone-200 hover:text-slate-950"
         >
           <Pencil className="h-4 w-4" />
           Modifier
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(goal.id, 25)}
-          className="rounded-full bg-violet-50 px-4 py-2 text-sm font-black text-violet-700 transition hover:bg-violet-100"
-        >
-          + 25 €
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(goal.id, 50)}
-          className="rounded-full bg-violet-50 px-4 py-2 text-sm font-black text-violet-700 transition hover:bg-violet-100"
-        >
-          + 50 €
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(goal.id, 100)}
-          className="rounded-full bg-violet-50 px-4 py-2 text-sm font-black text-violet-700 transition hover:bg-violet-100"
-        >
-          + 100 €
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(goal.id, -25)}
-          className="rounded-full bg-stone-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-stone-200"
-        >
-          - 25 €
         </button>
 
         <button
@@ -625,17 +851,18 @@ function GoalCard({
 
 function SinkingFundCard({
   fund,
-  onAmountChange,
+  onSaveRequest,
   onEditRequest,
   onDeleteRequest,
 }: {
   fund: SinkingFund
-  onAmountChange: (fundId: string, amount: number) => void
+  onSaveRequest: (fund: SinkingFund) => void
   onEditRequest: (fund: SinkingFund) => void
   onDeleteRequest: (fund: SinkingFund) => void
 }) {
   const progress = getProgress(fund.currentAmount, fund.targetAmount)
   const remainingAmount = getRemainingAmount(fund.currentAmount, fund.targetAmount)
+  const isCompleted = progress >= 100
 
   const remainingMonths =
     fund.monthlyContribution > 0
@@ -662,8 +889,14 @@ function SinkingFundCard({
           </div>
         </div>
 
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700">
-          {progress} %
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-black ${
+            isCompleted
+              ? 'bg-emerald-50 text-emerald-700'
+              : 'bg-emerald-50 text-emerald-700'
+          }`}
+        >
+          {isCompleted ? 'Complet' : `${progress} %`}
         </span>
       </div>
 
@@ -719,35 +952,21 @@ function SinkingFundCard({
       <div className="mt-5 flex flex-wrap gap-2">
         <button
           type="button"
+          onClick={() => onSaveRequest(fund)}
+          disabled={isCompleted}
+          className="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <PiggyBank className="h-4 w-4" />
+          Mettre de côté
+        </button>
+
+        <button
+          type="button"
           onClick={() => onEditRequest(fund)}
           className="flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-stone-200 hover:text-slate-950"
         >
           <Pencil className="h-4 w-4" />
           Modifier
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(fund.id, fund.monthlyContribution)}
-          className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
-        >
-          + mensualité
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(fund.id, 50)}
-          className="rounded-full bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition hover:bg-emerald-100"
-        >
-          + 50 €
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onAmountChange(fund.id, -25)}
-          className="rounded-full bg-stone-100 px-4 py-2 text-sm font-black text-slate-600 transition hover:bg-stone-200"
-        >
-          - 25 €
         </button>
 
         <button
@@ -765,15 +984,16 @@ function SinkingFundCard({
 
 export default function GoalsPage() {
   const {
+    accounts,
     savingGoals,
     sinkingFunds,
     addSavingGoal,
     updateSavingGoal,
-    updateSavingGoalAmount,
+    saveMoneyToGoalFromAccount,
     deleteSavingGoal,
     addSinkingFund,
     updateSinkingFund,
-    updateSinkingFundAmount,
+    saveMoneyToSinkingFundFromAccount,
     deleteSinkingFund,
     resetGoals,
   } = useBudgetData()
@@ -791,6 +1011,12 @@ export default function GoalsPage() {
   const [fundFormError, setFundFormError] = useState('')
   const [fundToEdit, setFundToEdit] = useState<SinkingFund | null>(null)
   const [fundToDelete, setFundToDelete] = useState<SinkingFund | null>(null)
+
+  const [saveMoneyTarget, setSaveMoneyTarget] =
+    useState<SaveMoneyTarget | null>(null)
+  const [saveMoneyFormValues, setSaveMoneyFormValues] =
+    useState<SaveMoneyFormValues>(defaultSaveMoneyFormValues)
+  const [saveMoneyFormError, setSaveMoneyFormError] = useState('')
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
@@ -833,6 +1059,10 @@ export default function GoalsPage() {
     const nextSearchParams = new URLSearchParams(searchParams)
     nextSearchParams.delete('action')
     setSearchParams(nextSearchParams, { replace: true })
+  }
+
+  function getDefaultAccountId() {
+    return accounts[0]?.id ?? ''
   }
 
   function openGoalForm() {
@@ -891,6 +1121,92 @@ export default function GoalsPage() {
     setFundToEdit(null)
     setFundFormValues(defaultSinkingFundFormValues)
     setFundFormError('')
+  }
+
+  function openSaveMoneyForGoal(goal: SavingGoal) {
+    setSaveMoneyTarget({
+      type: 'goal',
+      goal,
+    })
+
+    setSaveMoneyFormValues({
+      accountId: getDefaultAccountId(),
+      amount: '',
+    })
+
+    setSaveMoneyFormError('')
+  }
+
+  function openSaveMoneyForFund(fund: SinkingFund) {
+    setSaveMoneyTarget({
+      type: 'fund',
+      fund,
+    })
+
+    setSaveMoneyFormValues({
+      accountId: getDefaultAccountId(),
+      amount:
+        fund.monthlyContribution > 0 ? String(fund.monthlyContribution) : '',
+    })
+
+    setSaveMoneyFormError('')
+  }
+
+  function closeSaveMoneyModal() {
+    setSaveMoneyTarget(null)
+    setSaveMoneyFormValues(defaultSaveMoneyFormValues)
+    setSaveMoneyFormError('')
+  }
+
+  function handleSaveMoneySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!saveMoneyTarget) {
+      return
+    }
+
+    const amount = parseAmount(saveMoneyFormValues.amount)
+    const currentAmount = getSaveMoneyTargetCurrentAmount(saveMoneyTarget)
+    const targetAmount = getSaveMoneyTargetTargetAmount(saveMoneyTarget)
+    const remainingAmount = getRemainingAmount(currentAmount, targetAmount)
+
+    if (accounts.length === 0) {
+      setSaveMoneyFormError(
+        'Crée d’abord un compte pour pouvoir mettre de côté.',
+      )
+      return
+    }
+
+    if (!saveMoneyFormValues.accountId) {
+      setSaveMoneyFormError('Choisis le compte source.')
+      return
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setSaveMoneyFormError('Ajoute un montant supérieur à 0 €.')
+      return
+    }
+
+    if (remainingAmount <= 0) {
+      setSaveMoneyFormError('Cet objectif est déjà complété.')
+      return
+    }
+
+    if (saveMoneyTarget.type === 'goal') {
+      saveMoneyToGoalFromAccount(
+        saveMoneyTarget.goal.id,
+        saveMoneyFormValues.accountId,
+        amount,
+      )
+    } else {
+      saveMoneyToSinkingFundFromAccount(
+        saveMoneyTarget.fund.id,
+        saveMoneyFormValues.accountId,
+        amount,
+      )
+    }
+
+    closeSaveMoneyModal()
   }
 
   function handleGoalSubmit(event: FormEvent<HTMLFormElement>) {
@@ -1005,6 +1321,7 @@ export default function GoalsPage() {
     setFundFormError('')
     setFundToEdit(null)
     setIsFundFormOpen(false)
+    closeSaveMoneyModal()
 
     if (action === 'new') {
       clearActionParam()
@@ -1048,8 +1365,8 @@ export default function GoalsPage() {
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                 Suis tes projets, tes fonds d’amortissement et ta progression.
-                Tu peux maintenant ajouter, modifier, ajuster ou supprimer tes
-                objectifs.
+                Quand tu mets de côté, l’argent sort maintenant d’un vrai compte
+                et crée une transaction d’épargne.
               </p>
             </div>
 
@@ -1207,7 +1524,7 @@ export default function GoalsPage() {
               <GoalCard
                 key={`${goal.id}-${goal.title}-${goal.currentAmount}-${goal.targetAmount}-${goal.deadline}`}
                 goal={goal}
-                onAmountChange={updateSavingGoalAmount}
+                onSaveRequest={openSaveMoneyForGoal}
                 onEditRequest={openEditGoalForm}
                 onDeleteRequest={setGoalToDelete}
               />
@@ -1256,7 +1573,7 @@ export default function GoalsPage() {
               <SinkingFundCard
                 key={`${fund.id}-${fund.title}-${fund.currentAmount}-${fund.targetAmount}-${fund.monthlyContribution}`}
                 fund={fund}
-                onAmountChange={updateSinkingFundAmount}
+                onSaveRequest={openSaveMoneyForFund}
                 onEditRequest={openEditFundForm}
                 onDeleteRequest={setFundToDelete}
               />
@@ -1299,11 +1616,23 @@ export default function GoalsPage() {
         />
       )}
 
+      {saveMoneyTarget && (
+        <SaveMoneyModal
+          target={saveMoneyTarget}
+          accounts={accounts}
+          formValues={saveMoneyFormValues}
+          formError={saveMoneyFormError}
+          onClose={closeSaveMoneyModal}
+          onChange={setSaveMoneyFormValues}
+          onSubmit={handleSaveMoneySubmit}
+        />
+      )}
+
       {goalToDelete && (
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cet objectif ?"
-          description={`Tu es sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi temporaire actuel.`}
+          description={`Tu es sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi actuel.`}
           confirmLabel="Supprimer l’objectif"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}
@@ -1317,7 +1646,7 @@ export default function GoalsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer ce fonds ?"
-          description={`Tu es sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi temporaire actuel.`}
+          description={`Tu es sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi actuel.`}
           confirmLabel="Supprimer le fonds"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

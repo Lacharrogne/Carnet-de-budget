@@ -75,6 +75,16 @@ type DebtRemainingUpdate = {
   amount: number
 }
 
+type SavingGoalAmountUpdate = {
+  goalId: string
+  amount: number
+}
+
+type SinkingFundAmountUpdate = {
+  fundId: string
+  amount: number
+}
+
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -102,11 +112,9 @@ function hydrateTransactionForBalance(
   return {
     ...transaction,
     toAccountId: transaction.toAccountId ?? fallbackTransaction.toAccountId,
-    linkedDebtId:
-      transaction.linkedDebtId ?? fallbackTransaction.linkedDebtId,
+    linkedDebtId: transaction.linkedDebtId ?? fallbackTransaction.linkedDebtId,
     linkedSavingGoalId:
-      transaction.linkedSavingGoalId ??
-      fallbackTransaction.linkedSavingGoalId,
+      transaction.linkedSavingGoalId ?? fallbackTransaction.linkedSavingGoalId,
     linkedSinkingFundId:
       transaction.linkedSinkingFundId ??
       fallbackTransaction.linkedSinkingFundId,
@@ -228,6 +236,80 @@ function getDebtRemainingUpdatesForTransaction(
     {
       debtId: transaction.linkedDebtId,
       amount: mode === 'apply' ? -transaction.amount : transaction.amount,
+    },
+  ]
+}
+
+function mergeSavingGoalAmountUpdates(goalUpdates: SavingGoalAmountUpdate[]) {
+  const updatesByGoal = new Map<string, number>()
+
+  goalUpdates.forEach((update) => {
+    const previousAmount = updatesByGoal.get(update.goalId) ?? 0
+    updatesByGoal.set(update.goalId, previousAmount + update.amount)
+  })
+
+  return Array.from(updatesByGoal.entries())
+    .map(([goalId, amount]) => ({
+      goalId,
+      amount,
+    }))
+    .filter((update) => update.amount !== 0)
+}
+
+function getSavingGoalAmountUpdatesForTransaction(
+  transaction: Transaction,
+  mode: 'apply' | 'reverse',
+): SavingGoalAmountUpdate[] {
+  if (
+    !transaction.linkedSavingGoalId ||
+    transaction.type !== 'expense' ||
+    transaction.category !== 'savings' ||
+    transaction.amount <= 0
+  ) {
+    return []
+  }
+
+  return [
+    {
+      goalId: transaction.linkedSavingGoalId,
+      amount: mode === 'apply' ? transaction.amount : -transaction.amount,
+    },
+  ]
+}
+
+function mergeSinkingFundAmountUpdates(fundUpdates: SinkingFundAmountUpdate[]) {
+  const updatesByFund = new Map<string, number>()
+
+  fundUpdates.forEach((update) => {
+    const previousAmount = updatesByFund.get(update.fundId) ?? 0
+    updatesByFund.set(update.fundId, previousAmount + update.amount)
+  })
+
+  return Array.from(updatesByFund.entries())
+    .map(([fundId, amount]) => ({
+      fundId,
+      amount,
+    }))
+    .filter((update) => update.amount !== 0)
+}
+
+function getSinkingFundAmountUpdatesForTransaction(
+  transaction: Transaction,
+  mode: 'apply' | 'reverse',
+): SinkingFundAmountUpdate[] {
+  if (
+    !transaction.linkedSinkingFundId ||
+    transaction.type !== 'expense' ||
+    transaction.category !== 'savings' ||
+    transaction.amount <= 0
+  ) {
+    return []
+  }
+
+  return [
+    {
+      fundId: transaction.linkedSinkingFundId,
+      amount: mode === 'apply' ? transaction.amount : -transaction.amount,
     },
   ]
 }
@@ -363,6 +445,112 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         }
 
         return savedDebt
+      }),
+    )
+  }
+
+  async function saveSavingGoalAmountUpdates(
+    goalUpdates: SavingGoalAmountUpdate[],
+  ) {
+    const mergedUpdates = mergeSavingGoalAmountUpdates(goalUpdates)
+
+    if (mergedUpdates.length === 0) {
+      return
+    }
+
+    const savedGoals = await Promise.all(
+      mergedUpdates.map(async (update) => {
+        const goalToUpdate = savingGoals.find((goal) => {
+          return goal.id === update.goalId
+        })
+
+        if (!goalToUpdate) {
+          return null
+        }
+
+        const nextCurrentAmount = clampAmount(
+          goalToUpdate.currentAmount + update.amount,
+          0,
+          goalToUpdate.targetAmount,
+        )
+
+        return editSavingGoal({
+          ...goalToUpdate,
+          currentAmount: nextCurrentAmount,
+        })
+      }),
+    )
+
+    const validSavedGoals = savedGoals.filter((goal): goal is SavingGoal => {
+      return Boolean(goal)
+    })
+
+    if (validSavedGoals.length === 0) {
+      return
+    }
+
+    setSavingGoals((currentGoals) =>
+      currentGoals.map((goal) => {
+        const savedGoal = validSavedGoals.find((item) => item.id === goal.id)
+
+        if (!savedGoal) {
+          return goal
+        }
+
+        return savedGoal
+      }),
+    )
+  }
+
+  async function saveSinkingFundAmountUpdates(
+    fundUpdates: SinkingFundAmountUpdate[],
+  ) {
+    const mergedUpdates = mergeSinkingFundAmountUpdates(fundUpdates)
+
+    if (mergedUpdates.length === 0) {
+      return
+    }
+
+    const savedFunds = await Promise.all(
+      mergedUpdates.map(async (update) => {
+        const fundToUpdate = sinkingFunds.find((fund) => {
+          return fund.id === update.fundId
+        })
+
+        if (!fundToUpdate) {
+          return null
+        }
+
+        const nextCurrentAmount = clampAmount(
+          fundToUpdate.currentAmount + update.amount,
+          0,
+          fundToUpdate.targetAmount,
+        )
+
+        return editSinkingFund({
+          ...fundToUpdate,
+          currentAmount: nextCurrentAmount,
+        })
+      }),
+    )
+
+    const validSavedFunds = savedFunds.filter((fund): fund is SinkingFund => {
+      return Boolean(fund)
+    })
+
+    if (validSavedFunds.length === 0) {
+      return
+    }
+
+    setSinkingFunds((currentFunds) =>
+      currentFunds.map((fund) => {
+        const savedFund = validSavedFunds.find((item) => item.id === fund.id)
+
+        if (!savedFund) {
+          return fund
+        }
+
+        return savedFund
       }),
     )
   }
@@ -552,10 +740,20 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         transactionToStore,
         'apply',
       )
+      const goalUpdates = getSavingGoalAmountUpdatesForTransaction(
+        transactionToStore,
+        'apply',
+      )
+      const fundUpdates = getSinkingFundAmountUpdatesForTransaction(
+        transactionToStore,
+        'apply',
+      )
 
       await Promise.all([
         saveAccountBalanceUpdates(balanceUpdates),
         saveDebtRemainingUpdates(debtUpdates),
+        saveSavingGoalAmountUpdates(goalUpdates),
+        saveSinkingFundAmountUpdates(fundUpdates),
       ])
 
       setTransactions((currentTransactions) => [
@@ -614,9 +812,33 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         ...getDebtRemainingUpdatesForTransaction(transactionToStore, 'apply'),
       ])
 
+      const goalUpdates = mergeSavingGoalAmountUpdates([
+        ...getSavingGoalAmountUpdatesForTransaction(
+          previousTransaction,
+          'reverse',
+        ),
+        ...getSavingGoalAmountUpdatesForTransaction(
+          transactionToStore,
+          'apply',
+        ),
+      ])
+
+      const fundUpdates = mergeSinkingFundAmountUpdates([
+        ...getSinkingFundAmountUpdatesForTransaction(
+          previousTransaction,
+          'reverse',
+        ),
+        ...getSinkingFundAmountUpdatesForTransaction(
+          transactionToStore,
+          'apply',
+        ),
+      ])
+
       await Promise.all([
         saveAccountBalanceUpdates(balanceUpdates),
         saveDebtRemainingUpdates(debtUpdates),
+        saveSavingGoalAmountUpdates(goalUpdates),
+        saveSinkingFundAmountUpdates(fundUpdates),
       ])
 
       setTransactions((currentTransactions) =>
@@ -666,9 +888,21 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         'reverse',
       )
 
+      const goalUpdates = getSavingGoalAmountUpdatesForTransaction(
+        transactionToDelete,
+        'reverse',
+      )
+
+      const fundUpdates = getSinkingFundAmountUpdatesForTransaction(
+        transactionToDelete,
+        'reverse',
+      )
+
       await Promise.all([
         saveAccountBalanceUpdates(balanceUpdates),
         saveDebtRemainingUpdates(debtUpdates),
+        saveSavingGoalAmountUpdates(goalUpdates),
+        saveSinkingFundAmountUpdates(fundUpdates),
       ])
 
       setTransactions((currentTransactions) =>
@@ -990,6 +1224,113 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function saveMoneyToGoalFromAccount(
+    goalId: string,
+    accountId: string,
+    amount: number,
+  ) {
+    if (!user) {
+      return
+    }
+
+    const goalToUpdate = savingGoals.find((goal) => goal.id === goalId)
+
+    if (!goalToUpdate) {
+      setBudgetError('Impossible de trouver cet objectif.')
+      return
+    }
+
+    const accountToUpdate = accounts.find((account) => account.id === accountId)
+
+    if (!accountToUpdate) {
+      setBudgetError('Choisis un compte valide pour cette mise de côté.')
+      return
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setBudgetError('Le montant mis de côté doit être supérieur à 0 €.')
+      return
+    }
+
+    if (goalToUpdate.currentAmount >= goalToUpdate.targetAmount) {
+      setBudgetError('Cet objectif est déjà atteint.')
+      return
+    }
+
+    const amountToSave = Math.min(
+      amount,
+      goalToUpdate.targetAmount - goalToUpdate.currentAmount,
+    )
+
+    const nextCurrentAmount = goalToUpdate.currentAmount + amountToSave
+
+    const savingTransaction: Transaction = {
+      id: createTransactionId(),
+      title: `Mise de côté ${goalToUpdate.title}`,
+      amount: amountToSave,
+      type: 'expense',
+      category: 'savings',
+      accountId,
+      date: getTodayDate(),
+      note: `Mise de côté liée à l’objectif "${goalToUpdate.title}".`,
+      isRecurring: false,
+      linkedSavingGoalId: goalToUpdate.id,
+    }
+
+    setBudgetError('')
+
+    try {
+      const createdTransaction = await createTransaction(
+        user.id,
+        savingTransaction,
+      )
+
+      const transactionToStore = hydrateTransactionForBalance(
+        createdTransaction,
+        savingTransaction,
+      )
+
+      const balanceUpdates = getTransactionBalanceUpdates(transactionToStore)
+
+      const [savedGoal] = await Promise.all([
+        editSavingGoal({
+          ...goalToUpdate,
+          currentAmount: nextCurrentAmount,
+        }),
+        saveAccountBalanceUpdates(balanceUpdates),
+      ])
+
+      setTransactions((currentTransactions) => [
+        transactionToStore,
+        ...currentTransactions,
+      ])
+
+      setAccounts((currentAccounts) =>
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
+      )
+
+      setSavingGoals((currentGoals) =>
+        currentGoals.map((goal) => {
+          if (goal.id !== savedGoal.id) {
+            return goal
+          }
+
+          return savedGoal
+        }),
+      )
+    } catch (error) {
+      console.error(
+        'Erreur lors de la mise de côté vers l’objectif Supabase :',
+        error,
+      )
+      setBudgetError(
+        `Impossible d’enregistrer cette mise de côté : ${getErrorMessage(
+          error,
+        )}`,
+      )
+    }
+  }
+
   async function deleteSavingGoal(goalId: string) {
     setBudgetError('')
 
@@ -1085,6 +1426,113 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
       console.error('Erreur lors de la mise à jour du fonds Supabase :', error)
       setBudgetError(
         `Impossible de mettre à jour ce fonds : ${getErrorMessage(error)}`,
+      )
+    }
+  }
+
+  async function saveMoneyToSinkingFundFromAccount(
+    fundId: string,
+    accountId: string,
+    amount: number,
+  ) {
+    if (!user) {
+      return
+    }
+
+    const fundToUpdate = sinkingFunds.find((fund) => fund.id === fundId)
+
+    if (!fundToUpdate) {
+      setBudgetError('Impossible de trouver ce fonds.')
+      return
+    }
+
+    const accountToUpdate = accounts.find((account) => account.id === accountId)
+
+    if (!accountToUpdate) {
+      setBudgetError('Choisis un compte valide pour cette mise de côté.')
+      return
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setBudgetError('Le montant mis de côté doit être supérieur à 0 €.')
+      return
+    }
+
+    if (fundToUpdate.currentAmount >= fundToUpdate.targetAmount) {
+      setBudgetError('Ce fonds est déjà complet.')
+      return
+    }
+
+    const amountToSave = Math.min(
+      amount,
+      fundToUpdate.targetAmount - fundToUpdate.currentAmount,
+    )
+
+    const nextCurrentAmount = fundToUpdate.currentAmount + amountToSave
+
+    const savingTransaction: Transaction = {
+      id: createTransactionId(),
+      title: `Mise de côté ${fundToUpdate.title}`,
+      amount: amountToSave,
+      type: 'expense',
+      category: 'savings',
+      accountId,
+      date: getTodayDate(),
+      note: `Mise de côté liée au fonds "${fundToUpdate.title}".`,
+      isRecurring: false,
+      linkedSinkingFundId: fundToUpdate.id,
+    }
+
+    setBudgetError('')
+
+    try {
+      const createdTransaction = await createTransaction(
+        user.id,
+        savingTransaction,
+      )
+
+      const transactionToStore = hydrateTransactionForBalance(
+        createdTransaction,
+        savingTransaction,
+      )
+
+      const balanceUpdates = getTransactionBalanceUpdates(transactionToStore)
+
+      const [savedFund] = await Promise.all([
+        editSinkingFund({
+          ...fundToUpdate,
+          currentAmount: nextCurrentAmount,
+        }),
+        saveAccountBalanceUpdates(balanceUpdates),
+      ])
+
+      setTransactions((currentTransactions) => [
+        transactionToStore,
+        ...currentTransactions,
+      ])
+
+      setAccounts((currentAccounts) =>
+        updateAccountBalancesInList(currentAccounts, balanceUpdates),
+      )
+
+      setSinkingFunds((currentFunds) =>
+        currentFunds.map((fund) => {
+          if (fund.id !== savedFund.id) {
+            return fund
+          }
+
+          return savedFund
+        }),
+      )
+    } catch (error) {
+      console.error(
+        'Erreur lors de la mise de côté vers le fonds Supabase :',
+        error,
+      )
+      setBudgetError(
+        `Impossible d’enregistrer cette mise de côté : ${getErrorMessage(
+          error,
+        )}`,
       )
     }
   }
@@ -1503,11 +1951,13 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
     addSavingGoal,
     updateSavingGoal,
     updateSavingGoalAmount,
+    saveMoneyToGoalFromAccount,
     deleteSavingGoal,
 
     addSinkingFund,
     updateSinkingFund,
     updateSinkingFundAmount,
+    saveMoneyToSinkingFundFromAccount,
     deleteSinkingFund,
 
     addDebt,

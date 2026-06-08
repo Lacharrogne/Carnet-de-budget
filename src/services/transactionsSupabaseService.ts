@@ -11,6 +11,8 @@ type TransactionRow = {
   account_id: string
   to_account_id: string | null
   linked_debt_id: string | null
+  linked_saving_goal_id: string | null
+  linked_sinking_fund_id: string | null
   title: string
   amount: number | string
   type: TransactionType
@@ -30,6 +32,8 @@ function mapTransactionFromRow(row: TransactionRow): Transaction {
     accountId: row.account_id,
     toAccountId: row.to_account_id ?? undefined,
     linkedDebtId: row.linked_debt_id ?? undefined,
+    linkedSavingGoalId: row.linked_saving_goal_id ?? undefined,
+    linkedSinkingFundId: row.linked_sinking_fund_id ?? undefined,
     date: row.date,
     note: row.note ?? undefined,
     isRecurring: row.is_recurring,
@@ -66,6 +70,8 @@ export async function createTransaction(
       account_id: transaction.accountId,
       to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
       linked_debt_id: transaction.linkedDebtId ?? null,
+      linked_saving_goal_id: transaction.linkedSavingGoalId ?? null,
+      linked_sinking_fund_id: transaction.linkedSinkingFundId ?? null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
@@ -93,6 +99,8 @@ export async function editTransaction(transaction: Transaction) {
       account_id: transaction.accountId,
       to_account_id: isTransfer ? transaction.toAccountId ?? null : null,
       linked_debt_id: transaction.linkedDebtId ?? null,
+      linked_saving_goal_id: transaction.linkedSavingGoalId ?? null,
+      linked_sinking_fund_id: transaction.linkedSinkingFundId ?? null,
       title: transaction.title,
       amount: transaction.amount,
       type: transaction.type,
