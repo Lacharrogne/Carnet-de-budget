@@ -1,10 +1,12 @@
 import { type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
+  AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
   Landmark,
+  Lightbulb,
   Percent,
   PieChart,
   Plus,
@@ -26,6 +28,14 @@ import { formatCurrency } from '../utils/formatCurrency'
 
 type StatVariant = 'emerald' | 'blue' | 'rose' | 'amber' | 'violet'
 
+type Insight = {
+  title: string
+  value: string
+  description: string
+  icon: ReactNode
+  variant: StatVariant
+}
+
 function getPercentage(value: number, total: number) {
   if (total <= 0) {
     return 0
@@ -34,11 +44,50 @@ function getPercentage(value: number, total: number) {
   return Math.round((value / total) * 100)
 }
 
+function getBarWidth(value: number, total: number) {
+  const percentage = getPercentage(value, total)
+
+  if (value <= 0) {
+    return 0
+  }
+
+  return Math.min(Math.max(percentage, 4), 100)
+}
+
+function getPreviousMonthKey(monthKey: string) {
+  const [year, month] = monthKey.split('-').map(Number)
+  const date = new Date(year, month - 2, 1)
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+    2,
+    '0',
+  )}`
+}
+
 function getTransactionDateLabel(date: string) {
   return new Intl.DateTimeFormat('fr-FR', {
     day: '2-digit',
     month: 'long',
   }).format(new Date(`${date}T12:00:00`))
+}
+
+function getEvolutionLabel(currentValue: number, previousValue: number) {
+  if (previousValue <= 0 && currentValue <= 0) {
+    return 'Aucune donnée le mois précédent'
+  }
+
+  if (previousValue <= 0) {
+    return 'Nouvelle donnée ce mois-ci'
+  }
+
+  const difference = currentValue - previousValue
+  const percentage = Math.round((difference / previousValue) * 100)
+
+  if (difference === 0) {
+    return 'Stable par rapport au mois précédent'
+  }
+
+  return `${difference > 0 ? '+' : ''}${percentage} % par rapport au mois précédent`
 }
 
 function PageStatCard({
@@ -131,19 +180,19 @@ function EmptyStatsGuide({ hasAccounts }: { hasAccounts: boolean }) {
 
           <div>
             <p className="text-sm font-semibold text-amber-700">
-              Statistiques en préparation
+              Analyse en préparation
             </p>
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
               {hasAccounts
                 ? 'Ajoute quelques mouvements pour obtenir de vraies analyses'
-                : 'Crée d’abord un compte pour commencer les statistiques'}
+                : 'Crée d’abord un compte pour commencer l’analyse'}
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               {hasAccounts
-                ? 'Les statistiques deviennent utiles quand tu ajoutes des revenus, des dépenses, des budgets, des abonnements ou des objectifs. Plus tu remplis ton carnet, plus les analyses seront pertinentes.'
-                : 'Un compte sert de base à tout le suivi financier. Une fois ton premier compte créé, tu pourras ajouter des transactions et obtenir des statistiques détaillées.'}
+                ? 'L’analyse devient utile quand tu ajoutes des revenus, des dépenses, des budgets, des charges fixes, des objectifs ou des investissements.'
+                : 'Un compte sert de base à tout le suivi financier. Ensuite, tu pourras ajouter tes transactions et obtenir une analyse complète.'}
             </p>
           </div>
         </div>
@@ -199,10 +248,36 @@ function ProgressRow({
       <div className="h-4 overflow-hidden rounded-full bg-stone-100">
         <div
           className={`h-full rounded-full ${colorClass}`}
-          style={{ width: `${Math.max(percentage, value > 0 ? 4 : 0)}%` }}
+          style={{ width: `${getBarWidth(value, total)}%` }}
         />
       </div>
     </div>
+  )
+}
+
+function InsightCard({ insight }: { insight: Insight }) {
+  const variants = {
+    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
+    blue: 'border-blue-100 bg-blue-50 text-blue-900',
+    rose: 'border-rose-100 bg-rose-50 text-rose-900',
+    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+  }
+
+  return (
+    <article className={`rounded-[1.5rem] border p-4 ${variants[insight.variant]}`}>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-black">{insight.title}</p>
+          <p className="mt-2 text-2xl font-black">{insight.value}</p>
+          <p className="mt-2 text-sm leading-5 opacity-75">
+            {insight.description}
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-white/70 p-3">{insight.icon}</div>
+      </div>
+    </article>
   )
 }
 
@@ -232,7 +307,7 @@ function CategoryExpenseRow({
             </p>
 
             <p className="mt-1 text-sm text-slate-500">
-              {percentage} % des dépenses
+              {percentage} % des dépenses du mois
             </p>
           </div>
         </div>
@@ -243,7 +318,7 @@ function CategoryExpenseRow({
       <div className="h-3 overflow-hidden rounded-full bg-white">
         <div
           className="h-full rounded-full bg-rose-500"
-          style={{ width: `${Math.max(percentage, spent > 0 ? 4 : 0)}%` }}
+          style={{ width: `${getBarWidth(spent, totalExpenses)}%` }}
         />
       </div>
     </article>
@@ -313,19 +388,30 @@ function BudgetAlertRow({
 function TransactionLine({ transaction }: { transaction: Transaction }) {
   const category = getCategoryById(transaction.category)
   const isIncome = transaction.type === 'income'
+  const isTransfer = transaction.type === 'transfer'
+
+  const amountLabel = isTransfer
+    ? `↔ ${formatCurrency(transaction.amount)}`
+    : `${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`
+
+  const amountColor = isTransfer
+    ? 'text-blue-700'
+    : isIncome
+      ? 'text-emerald-700'
+      : 'text-rose-700'
+
+  const cardColor = isTransfer
+    ? 'border-blue-100 bg-blue-50'
+    : isIncome
+      ? 'border-emerald-100 bg-emerald-50'
+      : 'border-rose-100 bg-rose-50'
 
   return (
     <article className="rounded-[1.5rem] border border-stone-100 bg-stone-50 p-4">
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <div
-            className={`rounded-2xl border p-3 ${
-              isIncome
-                ? 'border-emerald-100 bg-emerald-50'
-                : 'border-rose-100 bg-rose-50'
-            }`}
-          >
-            <span className="text-xl">{category.emoji}</span>
+          <div className={`rounded-2xl border p-3 ${cardColor}`}>
+            <span className="text-xl">{isTransfer ? '↔️' : category.emoji}</span>
           </div>
 
           <div className="min-w-0">
@@ -334,19 +420,13 @@ function TransactionLine({ transaction }: { transaction: Transaction }) {
             </p>
 
             <p className="mt-1 text-sm text-slate-500">
-              {category.name} · {getTransactionDateLabel(transaction.date)}
+              {isTransfer ? 'Virement' : category.name} ·{' '}
+              {getTransactionDateLabel(transaction.date)}
             </p>
           </div>
         </div>
 
-        <p
-          className={`font-black ${
-            isIncome ? 'text-emerald-700' : 'text-rose-700'
-          }`}
-        >
-          {isIncome ? '+' : '-'}
-          {formatCurrency(transaction.amount)}
-        </p>
+        <p className={`font-black ${amountColor}`}>{amountLabel}</p>
       </div>
     </article>
   )
@@ -365,15 +445,25 @@ export default function StatsPage() {
   } = useBudgetData()
 
   const monthKey = getCurrentMonthKey()
+  const previousMonthKey = getPreviousMonthKey(monthKey)
   const monthLabel = getMonthLabel(monthKey)
 
   const hasAccounts = accounts.length > 0
-  const hasTransactions = transactions.length > 0
   const hasBudgets = monthlyBudgets.length > 0
   const hasRecurringPayments = recurringPayments.length > 0
   const hasDebts = debts.length > 0
   const hasInvestments = investments.length > 0
   const hasGoals = savingGoals.length > 0 || sinkingFunds.length > 0
+
+  const monthlyTransactions = transactions.filter((transaction) => {
+    return transaction.date.startsWith(monthKey)
+  })
+
+  const previousMonthTransactions = transactions.filter((transaction) => {
+    return transaction.date.startsWith(previousMonthKey)
+  })
+
+  const hasTransactions = monthlyTransactions.length > 0
 
   const hasEnoughDataForStats =
     hasTransactions ||
@@ -385,13 +475,25 @@ export default function StatsPage() {
 
   const budgetUsages = getBudgetUsages(transactions, monthlyBudgets, monthKey)
 
-  const incomeTransactions = transactions.filter((transaction) => {
+  const incomeTransactions = monthlyTransactions.filter((transaction) => {
     return transaction.type === 'income'
   })
 
-  const expenseTransactions = transactions.filter((transaction) => {
+  const expenseTransactions = monthlyTransactions.filter((transaction) => {
     return transaction.type === 'expense'
   })
+
+  const previousIncomeTransactions = previousMonthTransactions.filter(
+    (transaction) => {
+      return transaction.type === 'income'
+    },
+  )
+
+  const previousExpenseTransactions = previousMonthTransactions.filter(
+    (transaction) => {
+      return transaction.type === 'expense'
+    },
+  )
 
   const totalIncome = incomeTransactions.reduce((total, transaction) => {
     return total + transaction.amount
@@ -400,6 +502,20 @@ export default function StatsPage() {
   const totalExpenses = expenseTransactions.reduce((total, transaction) => {
     return total + transaction.amount
   }, 0)
+
+  const previousIncome = previousIncomeTransactions.reduce(
+    (total, transaction) => {
+      return total + transaction.amount
+    },
+    0,
+  )
+
+  const previousExpenses = previousExpenseTransactions.reduce(
+    (total, transaction) => {
+      return total + transaction.amount
+    },
+    0,
+  )
 
   const netCashFlow = totalIncome - totalExpenses
 
@@ -523,45 +639,97 @@ export default function StatsPage() {
     })
     .slice(0, 5)
 
-  const bestInvestment = [...investments].sort(
-    (firstInvestment, secondInvestment) => {
-      const firstReturn =
-        firstInvestment.investedAmount > 0
-          ? ((firstInvestment.currentValue - firstInvestment.investedAmount) /
-              firstInvestment.investedAmount) *
-            100
-          : 0
+  function getInvestmentReturn(investedAmount: number, currentValue: number) {
+    if (investedAmount <= 0) {
+      return 0
+    }
 
-      const secondReturn =
-        secondInvestment.investedAmount > 0
-          ? ((secondInvestment.currentValue - secondInvestment.investedAmount) /
-              secondInvestment.investedAmount) *
-            100
-          : 0
+    return Math.round(((currentValue - investedAmount) / investedAmount) * 100)
+  }
 
-      return secondReturn - firstReturn
+  const bestInvestment = [...investments].sort((first, second) => {
+    return (
+      getInvestmentReturn(second.investedAmount, second.currentValue) -
+      getInvestmentReturn(first.investedAmount, first.currentValue)
+    )
+  })[0]
+
+  const worstInvestment = [...investments].sort((first, second) => {
+    return (
+      getInvestmentReturn(first.investedAmount, first.currentValue) -
+      getInvestmentReturn(second.investedAmount, second.currentValue)
+    )
+  })[0]
+
+  const insights: Insight[] = [
+    {
+      title: 'Épargne du mois',
+      value: totalIncome > 0 ? `${savingsRate} %` : 'À calculer',
+      description:
+        totalIncome <= 0
+          ? 'Ajoute des revenus pour calculer ton taux d’épargne.'
+          : savingsRate >= 20
+            ? 'Très bon rythme : tu conserves une belle part de tes revenus.'
+            : savingsRate >= 0
+              ? 'Ton mois reste positif, mais il y a peut-être une marge pour épargner plus.'
+              : 'Ton mois est négatif : les dépenses dépassent les revenus enregistrés.',
+      icon: <Percent className="h-5 w-5" />,
+      variant:
+        totalIncome <= 0
+          ? 'blue'
+          : savingsRate >= 20
+            ? 'emerald'
+            : savingsRate >= 0
+              ? 'amber'
+              : 'rose',
     },
-  )[0]
-
-  const worstInvestment = [...investments].sort(
-    (firstInvestment, secondInvestment) => {
-      const firstReturn =
-        firstInvestment.investedAmount > 0
-          ? ((firstInvestment.currentValue - firstInvestment.investedAmount) /
-              firstInvestment.investedAmount) *
-            100
-          : 0
-
-      const secondReturn =
-        secondInvestment.investedAmount > 0
-          ? ((secondInvestment.currentValue - secondInvestment.investedAmount) /
-              secondInvestment.investedAmount) *
-            100
-          : 0
-
-      return firstReturn - secondReturn
+    {
+      title: 'Charges fixes',
+      value:
+        totalIncome > 0 ? `${recurringWeightOnIncome} %` : formatCurrency(0),
+      description:
+        totalIncome > 0
+          ? `Tes abonnements représentent ${recurringWeightOnIncome} % de tes revenus du mois.`
+          : 'Ajoute tes revenus pour mesurer le poids réel des charges fixes.',
+      icon: <Repeat2 className="h-5 w-5" />,
+      variant:
+        recurringWeightOnIncome >= 30
+          ? 'rose'
+          : recurringWeightOnIncome >= 15
+            ? 'amber'
+            : 'emerald',
     },
-  )[0]
+    {
+      title: 'Budgets',
+      value:
+        budgetAlerts.length > 0
+          ? `${budgetAlerts.length} alerte${budgetAlerts.length > 1 ? 's' : ''}`
+          : 'OK',
+      description:
+        budgetAlerts.length > 0
+          ? 'Certains budgets sont proches de la limite ou déjà dépassés.'
+          : 'Aucun budget critique pour le moment.',
+      icon: <AlertTriangle className="h-5 w-5" />,
+      variant: budgetAlerts.length > 0 ? 'amber' : 'emerald',
+    },
+    {
+      title: 'Endettement',
+      value: totalAssets > 0 ? `${debtWeightOnAssets} %` : 'À suivre',
+      description:
+        totalDebts > 0
+          ? `Tes dettes représentent ${debtWeightOnAssets} % de tes actifs connus.`
+          : 'Aucune dette suivie actuellement.',
+      icon: <WalletCards className="h-5 w-5" />,
+      variant:
+        totalDebts <= 0
+          ? 'emerald'
+          : debtWeightOnAssets >= 50
+            ? 'rose'
+            : debtWeightOnAssets >= 25
+              ? 'amber'
+              : 'blue',
+    },
+  ]
 
   return (
     <div className="space-y-6">
@@ -572,20 +740,20 @@ export default function StatsPage() {
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-             <p className="text-sm font-semibold text-emerald-600">
-  Analyse financière
-</p>
+              <p className="text-sm font-semibold text-emerald-600">
+                Analyse financière
+              </p>
 
-<h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-  Comprendre ton argent
-</h1>
+              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
+                Comprendre ton argent
+              </h1>
 
-<p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-  Analyse ton mois de{' '}
-  <span className="font-black text-slate-950">{monthLabel}</span>{' '}
-  avec les revenus, dépenses, budgets, abonnements, dettes, objectifs,
-  patrimoine et investissements.
-</p>
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                Analyse ton mois de{' '}
+                <span className="font-black text-slate-950">{monthLabel}</span>{' '}
+                avec les revenus, dépenses, budgets, abonnements, dettes,
+                objectifs, patrimoine et investissements.
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
@@ -613,7 +781,7 @@ export default function StatsPage() {
         <PageStatCard
           title="Solde du mois"
           value={formatCurrency(netCashFlow)}
-          description="Revenus moins dépenses"
+          description="Revenus moins dépenses du mois"
           icon={
             netCashFlow >= 0 ? (
               <ArrowUpRight className="h-5 w-5" />
@@ -626,10 +794,18 @@ export default function StatsPage() {
 
         <PageStatCard
           title="Taux d’épargne"
-          value={`${savingsRate} %`}
+          value={totalIncome > 0 ? `${savingsRate} %` : '—'}
           description="Part des revenus conservée"
           icon={<Percent className="h-5 w-5" />}
-          variant={savingsRate >= 20 ? 'emerald' : savingsRate >= 0 ? 'amber' : 'rose'}
+          variant={
+            totalIncome <= 0
+              ? 'blue'
+              : savingsRate >= 20
+                ? 'emerald'
+                : savingsRate >= 0
+                  ? 'amber'
+                  : 'rose'
+          }
         />
 
         <PageStatCard
@@ -647,6 +823,20 @@ export default function StatsPage() {
           icon={<BarChart3 className="h-5 w-5" />}
           variant={budgetAlerts.length > 0 ? 'amber' : 'emerald'}
         />
+      </section>
+
+      <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+        <SectionHeader
+          eyebrow="Lecture automatique"
+          title="Ce que racontent tes chiffres"
+          icon={<Lightbulb className="h-5 w-5" />}
+        />
+
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {insights.map((insight) => (
+            <InsightCard key={insight.title} insight={insight} />
+          ))}
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
@@ -674,6 +864,28 @@ export default function StatsPage() {
                 amountLabel={formatCurrency(totalExpenses)}
                 colorClass="bg-rose-500"
               />
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-[1.5rem] bg-stone-50 p-5">
+                  <p className="text-sm font-semibold text-slate-500">
+                    Évolution revenus
+                  </p>
+
+                  <p className="mt-2 font-black text-slate-950">
+                    {getEvolutionLabel(totalIncome, previousIncome)}
+                  </p>
+                </div>
+
+                <div className="rounded-[1.5rem] bg-stone-50 p-5">
+                  <p className="text-sm font-semibold text-slate-500">
+                    Évolution dépenses
+                  </p>
+
+                  <p className="mt-2 font-black text-slate-950">
+                    {getEvolutionLabel(totalExpenses, previousExpenses)}
+                  </p>
+                </div>
+              </div>
 
               <div className="rounded-[1.5rem] bg-stone-50 p-5">
                 <p className="text-sm font-semibold text-slate-500">
@@ -722,7 +934,9 @@ export default function StatsPage() {
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Budgets"
-            title={hasBudgets ? `Utilisation à ${budgetUsageRate} %` : 'Aucun budget créé'}
+            title={
+              hasBudgets ? `Utilisation à ${budgetUsageRate} %` : 'Aucun budget créé'
+            }
             icon={<BarChart3 className="h-5 w-5" />}
             action={
               <Link
@@ -834,7 +1048,7 @@ export default function StatsPage() {
                 <p className="text-3xl">🧾</p>
 
                 <h3 className="mt-4 text-xl font-black text-slate-950">
-                  Aucune dépense
+                  Aucune dépense ce mois-ci
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
@@ -856,13 +1070,15 @@ export default function StatsPage() {
           <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
             <SectionHeader
               eyebrow="Transactions clés"
-              title="Plus gros mouvements"
+              title="Plus gros mouvements du mois"
               icon={<Landmark className="h-5 w-5" />}
             />
 
             <div className="mt-6 space-y-3">
               {biggestIncome && <TransactionLine transaction={biggestIncome} />}
-              {biggestExpense && <TransactionLine transaction={biggestExpense} />}
+              {biggestExpense && (
+                <TransactionLine transaction={biggestExpense} />
+              )}
 
               {!biggestIncome && !biggestExpense && (
                 <div className="rounded-[1.5rem] bg-stone-50 p-5">
@@ -871,7 +1087,8 @@ export default function StatsPage() {
                   </p>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    Ajoute des transactions pour voir les plus gros mouvements.
+                    Ajoute des transactions pour voir les plus gros mouvements
+                    du mois.
                   </p>
                 </div>
               )}
@@ -896,7 +1113,7 @@ export default function StatsPage() {
 
               <p className="mt-2 text-sm text-rose-800/80">
                 {totalIncome > 0
-                  ? `Cela représente environ ${recurringWeightOnIncome} % des revenus enregistrés.`
+                  ? `Cela représente environ ${recurringWeightOnIncome} % des revenus enregistrés ce mois-ci.`
                   : 'Ajoute des revenus pour calculer le poids des charges fixes.'}
               </p>
             </div>
@@ -940,7 +1157,7 @@ export default function StatsPage() {
               <ProgressRow
                 label="Dettes"
                 value={totalDebts}
-                total={totalAssets}
+                total={Math.max(totalAssets, totalDebts)}
                 amountLabel={`${debtWeightOnAssets} % des actifs`}
                 colorClass="bg-rose-500"
               />
