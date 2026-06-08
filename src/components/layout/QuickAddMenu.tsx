@@ -31,7 +31,7 @@ type QuickAction = {
 const quickActions: QuickAction[] = [
   {
     label: 'Nouvelle transaction',
-    description: 'Ajouter une dépense, un revenu ou un paiement.',
+    description: 'Ajouter une dépense, un revenu ou un virement.',
     href: '/transactions?action=new',
     icon: <ReceiptText className="h-5 w-5" />,
     classes: {
@@ -141,7 +141,7 @@ function getRecommendedAction(pathname: string) {
   }
 
   if (pathname.startsWith('/statistiques') || pathname.startsWith('/stats')) {
-    return 'Analyser les stats'
+    return 'Voir l’analyse'
   }
 
   return 'Nouvelle transaction'
