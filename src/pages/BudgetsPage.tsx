@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 
+import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import {
@@ -30,8 +31,12 @@ type BudgetFormValues = {
   limit: string
 }
 
+const budgetCategoryOptions = budgetCategories.filter((category) => {
+  return category.id !== 'transfer'
+})
+
 const defaultBudgetFormValues: BudgetFormValues = {
-  category: budgetCategories[0].id,
+  category: budgetCategoryOptions[0].id,
   limit: '',
 }
 
@@ -45,17 +50,39 @@ function parseBudgetAmount(value: string) {
   return Number(normalizedValue)
 }
 
+function getAvailableBudgetCategories(
+  monthlyBudgets: MonthlyBudget[],
+  monthKey: string,
+) {
+  return budgetCategoryOptions.filter((category) => {
+    return !monthlyBudgets.some((budget) => {
+      return budget.month === monthKey && budget.category === category.id
+    })
+  })
+}
+
 function getFirstCategoryWithoutBudget(
   monthlyBudgets: MonthlyBudget[],
   monthKey: string,
 ) {
   return (
-    budgetCategories.find((category) => {
-      return !monthlyBudgets.some((budget) => {
-        return budget.month === monthKey && budget.category === category.id
-      })
-    }) ?? budgetCategories[0]
+    getAvailableBudgetCategories(monthlyBudgets, monthKey)[0] ??
+    budgetCategoryOptions[0]
   )
+}
+
+function hasBudgetForCategory({
+  monthlyBudgets,
+  monthKey,
+  categoryId,
+}: {
+  monthlyBudgets: MonthlyBudget[]
+  monthKey: string
+  categoryId: BudgetCategoryId
+}) {
+  return monthlyBudgets.some((budget) => {
+    return budget.month === monthKey && budget.category === categoryId
+  })
 }
 
 function PageStatCard({
@@ -126,8 +153,9 @@ function EmptyBudgetsGuide({
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               Les budgets servent à savoir rapidement si une catégorie est
-              maîtrisée, proche de la limite ou dépassée. Commence par une
-              catégorie simple comme courses, logement, transport ou loisirs.
+              maîtrisée, proche de la limite ou dépassée. Ils se basent
+              uniquement sur les dépenses du mois : les revenus et les virements
+              internes ne consomment pas de budget.
             </p>
           </div>
         </div>
@@ -337,19 +365,21 @@ function BudgetCategoryCard({
 function BudgetFormModal({
   formValues,
   formError,
+  availableCategories,
   onClose,
   onChange,
   onSubmit,
 }: {
   formValues: BudgetFormValues
   formError: string
+  availableCategories: typeof budgetCategoryOptions
   onClose: () => void
   onChange: (values: BudgetFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const selectedCategory =
-    budgetCategories.find((category) => category.id === formValues.category) ??
-    budgetCategories[0]
+    budgetCategoryOptions.find((category) => category.id === formValues.category) ??
+    budgetCategoryOptions[0]
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
@@ -386,69 +416,85 @@ function BudgetFormModal({
         </div>
 
         <div className="space-y-5 p-5">
-          <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50 p-4">
-            <div className="flex items-center gap-4">
-              <div className="rounded-2xl bg-white p-4">
-                <span className="text-3xl">{selectedCategory.emoji}</span>
+          {availableCategories.length > 0 ? (
+            <>
+              <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50 p-4">
+                <div className="flex items-center gap-4">
+                  <div className="rounded-2xl bg-white p-4">
+                    <span className="text-3xl">{selectedCategory.emoji}</span>
+                  </div>
+
+                  <div>
+                    <p className="font-black text-slate-950">
+                      {selectedCategory.name}
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-500">
+                      {selectedCategory.description}
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <p className="font-black text-slate-950">
-                  {selectedCategory.name}
-                </p>
+              <label className="block">
+                <span className="text-sm font-black text-slate-700">
+                  Catégorie
+                </span>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {selectedCategory.description}
-                </p>
-              </div>
+                <select
+                  value={formValues.category}
+                  onChange={(event) =>
+                    onChange({
+                      ...formValues,
+                      category: event.target.value as BudgetCategoryId,
+                    })
+                  }
+                  className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                >
+                  {availableCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.emoji} {category.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-black text-slate-700">
+                  Budget prévu
+                </span>
+
+                <div className="mt-2 flex h-12 items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
+                  <input
+                    value={formValues.limit}
+                    onChange={(event) =>
+                      onChange({
+                        ...formValues,
+                        limit: event.target.value,
+                      })
+                    }
+                    placeholder="Ex : 250"
+                    inputMode="decimal"
+                    className="w-full bg-transparent text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400"
+                  />
+
+                  <span className="font-black text-slate-500">€</span>
+                </div>
+              </label>
+            </>
+          ) : (
+            <div className="rounded-[1.5rem] border border-emerald-100 bg-emerald-50 p-5">
+              <p className="font-black text-emerald-900">
+                Tous les budgets sont déjà créés
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-emerald-800/80">
+                Toutes les catégories disponibles possèdent déjà une limite pour
+                ce mois-ci. Tu peux modifier directement les montants depuis les
+                cartes de budgets.
+              </p>
             </div>
-          </div>
-
-          <label className="block">
-            <span className="text-sm font-black text-slate-700">
-              Catégorie
-            </span>
-
-            <select
-              value={formValues.category}
-              onChange={(event) =>
-                onChange({
-                  ...formValues,
-                  category: event.target.value as BudgetCategoryId,
-                })
-              }
-              className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-            >
-              {budgetCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.emoji} {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className="text-sm font-black text-slate-700">
-              Budget prévu
-            </span>
-
-            <div className="mt-2 flex h-12 items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 transition focus-within:border-emerald-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-emerald-100">
-              <input
-                value={formValues.limit}
-                onChange={(event) =>
-                  onChange({
-                    ...formValues,
-                    limit: event.target.value,
-                  })
-                }
-                placeholder="Ex : 250"
-                inputMode="decimal"
-                className="w-full bg-transparent text-sm font-medium text-slate-950 outline-none placeholder:text-slate-400"
-              />
-
-              <span className="font-black text-slate-500">€</span>
-            </div>
-          </label>
+          )}
 
           {formError && (
             <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
@@ -468,7 +514,8 @@ function BudgetFormModal({
 
           <button
             type="submit"
-            className="rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+            disabled={availableCategories.length === 0}
+            className="rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900 disabled:cursor-not-allowed disabled:bg-stone-300"
           >
             Ajouter le budget
           </button>
@@ -489,6 +536,7 @@ export default function BudgetsPage() {
 
   const [activeFilter, setActiveFilter] = useState<BudgetFilter>('all')
   const [isBudgetFormOpen, setIsBudgetFormOpen] = useState(false)
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false)
   const [budgetFormValues, setBudgetFormValues] = useState<BudgetFormValues>(
     defaultBudgetFormValues,
   )
@@ -500,6 +548,11 @@ export default function BudgetsPage() {
 
   const monthKey = getCurrentMonthKey()
   const monthLabel = getMonthLabel(monthKey)
+
+  const availableCategories = getAvailableBudgetCategories(
+    monthlyBudgets,
+    monthKey,
+  )
 
   const firstCategoryWithoutBudget = getFirstCategoryWithoutBudget(
     monthlyBudgets,
@@ -599,8 +652,26 @@ export default function BudgetsPage() {
 
     const limit = parseBudgetAmount(displayedBudgetFormValues.limit)
 
+    if (availableCategories.length === 0) {
+      setBudgetFormError('Tous les budgets sont déjà créés pour ce mois-ci.')
+      return
+    }
+
     if (!displayedBudgetFormValues.category) {
       setBudgetFormError('Choisis une catégorie.')
+      return
+    }
+
+    if (
+      hasBudgetForCategory({
+        monthlyBudgets,
+        monthKey,
+        categoryId: displayedBudgetFormValues.category,
+      })
+    ) {
+      setBudgetFormError(
+        'Cette catégorie possède déjà un budget pour ce mois-ci.',
+      )
       return
     }
 
@@ -625,6 +696,11 @@ export default function BudgetsPage() {
     }
   }
 
+  function confirmResetBudgets() {
+    resetMonthlyBudgets()
+    setIsResetModalOpen(false)
+  }
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
@@ -647,8 +723,8 @@ export default function BudgetsPage() {
                 <span className="font-semibold text-slate-950">
                   {monthLabel}
                 </span>
-                . Les budgets sont synchronisés avec Supabase et se mettent à
-                jour avec tes transactions.
+                . Les budgets se mettent à jour avec tes dépenses du mois. Les
+                revenus et les virements internes ne consomment pas de budget.
               </p>
             </div>
 
@@ -664,7 +740,7 @@ export default function BudgetsPage() {
 
               <button
                 type="button"
-                onClick={resetMonthlyBudgets}
+                onClick={() => setIsResetModalOpen(true)}
                 className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-stone-200 hover:text-slate-950"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -855,7 +931,7 @@ export default function BudgetsPage() {
           {filteredBudgets.length > 0 ? (
             filteredBudgets.map((budget) => (
               <BudgetCategoryCard
-                key={budget.category.id}
+                key={`${budget.category.id}-${budget.limit}`}
                 categoryId={budget.category.id}
                 emoji={budget.category.emoji}
                 name={budget.category.name}
@@ -904,9 +980,24 @@ export default function BudgetsPage() {
         <BudgetFormModal
           formValues={displayedBudgetFormValues}
           formError={budgetFormError}
+          availableCategories={availableCategories}
           onClose={closeBudgetForm}
           onChange={setBudgetFormValues}
           onSubmit={handleBudgetSubmit}
+        />
+      )}
+
+      {isResetModalOpen && (
+        <ConfirmActionModal
+          eyebrow="Réinitialisation"
+          title="Réinitialiser les budgets ?"
+          description={`Tu es sur le point de réinitialiser les budgets du mois de ${monthLabel}. Les limites mensuelles seront remises à zéro, mais tes transactions ne seront pas supprimées.`}
+          confirmLabel="Réinitialiser"
+          cancelLabel="Annuler"
+          icon={<RotateCcw className="h-5 w-5" />}
+          variant="warning"
+          onCancel={() => setIsResetModalOpen(false)}
+          onConfirm={confirmResetBudgets}
         />
       )}
     </div>

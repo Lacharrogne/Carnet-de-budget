@@ -34,11 +34,15 @@ type RecurringPaymentFormValues = {
   accountId: string
 }
 
+const recurringCategoryOptions = budgetCategories.filter((category) => {
+  return category.id !== 'transfer'
+})
+
 const defaultRecurringPaymentFormValues: RecurringPaymentFormValues = {
   title: '',
   amount: '',
   dayOfMonth: '1',
-  category: budgetCategories[0].id,
+  category: recurringCategoryOptions[0].id,
   accountId: '',
 }
 
@@ -65,6 +69,17 @@ function getDefaultFormValues(accounts: Account[]): RecurringPaymentFormValues {
   }
 }
 
+function normalizeFormValues(
+  values: RecurringPaymentFormValues,
+  accounts: Account[],
+) {
+  if (values.accountId || accounts.length === 0) {
+    return values
+  }
+
+  return getDefaultFormValues(accounts)
+}
+
 function parseAmount(value: string) {
   const normalizedValue = value.trim().replace(',', '.')
 
@@ -75,21 +90,37 @@ function parseAmount(value: string) {
   return Number(normalizedValue)
 }
 
+function getLastDayOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+}
+
+function getSafeDayOfMonth(dayOfMonth: number, date: Date) {
+  return Math.min(dayOfMonth, getLastDayOfMonth(date))
+}
+
 function getDaysBeforePayment(dayOfMonth: number) {
   const today = new Date()
-  const currentDay = today.getDate()
+  today.setHours(0, 0, 0, 0)
 
-  if (dayOfMonth >= currentDay) {
-    return dayOfMonth - currentDay
+  const safeDayThisMonth = getSafeDayOfMonth(dayOfMonth, today)
+  const nextPaymentDate = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    safeDayThisMonth,
+  )
+
+  if (nextPaymentDate < today) {
+    const nextMonthDate = new Date(today.getFullYear(), today.getMonth() + 1, 1)
+    const safeDayNextMonth = getSafeDayOfMonth(dayOfMonth, nextMonthDate)
+
+    nextPaymentDate.setFullYear(nextMonthDate.getFullYear())
+    nextPaymentDate.setMonth(nextMonthDate.getMonth())
+    nextPaymentDate.setDate(safeDayNextMonth)
   }
 
-  const lastDayOfCurrentMonth = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    0,
-  ).getDate()
+  const differenceInMilliseconds = nextPaymentDate.getTime() - today.getTime()
 
-  return lastDayOfCurrentMonth - currentDay + dayOfMonth
+  return Math.round(differenceInMilliseconds / (1000 * 60 * 60 * 24))
 }
 
 function getNextPaymentLabel(dayOfMonth: number) {
@@ -169,10 +200,10 @@ function NoAccountWarning() {
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
-              Un abonnement ou un prélèvement doit être lié à un compte pour
-              savoir d’où sort l’argent chaque mois. Une fois ton premier compte
-              créé, tu pourras ajouter Netflix, loyer, assurance, forfaits et
-              autres paiements récurrents.
+              Une charge fixe doit être liée à un compte pour savoir d’où sort
+              l’argent chaque mois. Une fois ton premier compte créé, tu pourras
+              ajouter Netflix, loyer, assurance, forfaits et autres
+              prélèvements récurrents.
             </p>
           </div>
         </div>
@@ -207,8 +238,9 @@ function RecurringPaymentFormModal({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
   const selectedCategory =
-    budgetCategories.find((category) => category.id === formValues.category) ??
-    budgetCategories[0]
+    recurringCategoryOptions.find(
+      (category) => category.id === formValues.category,
+    ) ?? recurringCategoryOptions[0]
 
   function updateField<Field extends keyof RecurringPaymentFormValues>(
     field: Field,
@@ -227,7 +259,7 @@ function RecurringPaymentFormModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-emerald-600">
-                {isEditing ? 'Modification' : 'Nouveau paiement récurrent'}
+                {isEditing ? 'Modification' : 'Nouvelle charge fixe'}
               </p>
 
               <h2 className="mt-1 text-2xl font-black text-slate-950">
@@ -329,7 +361,7 @@ function RecurringPaymentFormModal({
                 }
                 className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               >
-                {budgetCategories.map((category) => (
+                {recurringCategoryOptions.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.emoji} {category.name}
                   </option>
@@ -379,7 +411,7 @@ function RecurringPaymentFormModal({
             >
               {isEditing
                 ? 'Enregistrer les modifications'
-                : 'Ajouter le paiement'}
+                : 'Ajouter la charge fixe'}
             </button>
           </div>
         </form>
@@ -424,7 +456,7 @@ function RecurringPaymentCard({
                     : 'bg-stone-100 text-slate-500'
                 }`}
               >
-                {payment.isActive ? 'Actif' : 'Désactivé'}
+                {payment.isActive ? 'Active' : 'Désactivée'}
               </span>
             </div>
 
@@ -440,7 +472,9 @@ function RecurringPaymentCard({
           </p>
 
           <p className="mt-1 text-sm font-bold text-slate-500">
-            {getNextPaymentLabel(payment.dayOfMonth)}
+            {payment.isActive
+              ? getNextPaymentLabel(payment.dayOfMonth)
+              : 'Non comptée'}
           </p>
         </div>
       </div>
@@ -458,11 +492,13 @@ function RecurringPaymentCard({
 
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Prochain paiement
+            Prochaine échéance
           </p>
 
           <p className="mt-2 text-xl font-black text-amber-700">
-            {getNextPaymentLabel(payment.dayOfMonth)}
+            {payment.isActive
+              ? getNextPaymentLabel(payment.dayOfMonth)
+              : 'Désactivée'}
           </p>
         </div>
 
@@ -471,7 +507,7 @@ function RecurringPaymentCard({
             Compte
           </p>
 
-          <p className="mt-2 text-xl font-black text-slate-950">
+          <p className="mt-2 truncate text-xl font-black text-slate-950">
             {accountName}
           </p>
         </div>
@@ -541,6 +577,7 @@ export default function RecurringPaymentsPage() {
   const action = searchParams.get('action')
   const hasAccounts = accounts.length > 0
   const shouldShowForm = hasAccounts && (isFormOpen || action === 'new')
+  const displayedFormValues = normalizeFormValues(formValues, accounts)
 
   const activePayments = recurringPayments.filter((payment) => payment.isActive)
   const inactivePayments = recurringPayments.filter(
@@ -564,6 +601,19 @@ export default function RecurringPaymentsPage() {
       getDaysBeforePayment(secondPayment.dayOfMonth)
     )
   })[0]
+
+  const sortedRecurringPayments = [...recurringPayments].sort(
+    (firstPayment, secondPayment) => {
+      if (firstPayment.isActive !== secondPayment.isActive) {
+        return firstPayment.isActive ? -1 : 1
+      }
+
+      return (
+        getDaysBeforePayment(firstPayment.dayOfMonth) -
+        getDaysBeforePayment(secondPayment.dayOfMonth)
+      )
+    },
+  )
 
   function clearActionParam() {
     const nextSearchParams = new URLSearchParams(searchParams)
@@ -618,9 +668,10 @@ export default function RecurringPaymentsPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const title = formValues.title.trim()
-    const amount = parseAmount(formValues.amount)
-    const dayOfMonth = Number(formValues.dayOfMonth)
+    const currentFormValues = normalizeFormValues(formValues, accounts)
+    const title = currentFormValues.title.trim()
+    const amount = parseAmount(currentFormValues.amount)
+    const dayOfMonth = Number(currentFormValues.dayOfMonth)
 
     if (!hasAccounts) {
       setFormError('Crée d’abord un compte avant d’ajouter une charge fixe.')
@@ -628,7 +679,7 @@ export default function RecurringPaymentsPage() {
     }
 
     if (!title) {
-      setFormError('Ajoute un nom pour ce paiement.')
+      setFormError('Ajoute un nom pour cette charge fixe.')
       return
     }
 
@@ -646,8 +697,8 @@ export default function RecurringPaymentsPage() {
       return
     }
 
-    if (!formValues.accountId) {
-      setFormError('Choisis le compte associé à ce paiement.')
+    if (!currentFormValues.accountId) {
+      setFormError('Choisis le compte associé à cette charge fixe.')
       return
     }
 
@@ -656,8 +707,8 @@ export default function RecurringPaymentsPage() {
       title,
       amount,
       dayOfMonth,
-      category: formValues.category,
-      accountId: formValues.accountId,
+      category: currentFormValues.category,
+      accountId: currentFormValues.accountId,
       isActive: paymentToEdit?.isActive ?? true,
     }
 
@@ -700,13 +751,13 @@ export default function RecurringPaymentsPage() {
               </p>
 
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Anticiper les paiements récurrents
+                Anticiper les charges fixes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
                 Suis tes abonnements, loyers, assurances et prélèvements
-                mensuels. Les charges fixes sont synchronisées avec Supabase et
-                restent après rafraîchissement.
+                mensuels. Ces charges fixes ne sont pas encore des transactions
+                réelles : elles servent à anticiper ce qui revient chaque mois.
               </p>
             </div>
 
@@ -717,7 +768,7 @@ export default function RecurringPaymentsPage() {
                 className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
-                Nouveau paiement
+                Nouvelle charge fixe
               </button>
             ) : (
               <Link
@@ -738,7 +789,7 @@ export default function RecurringPaymentsPage() {
         <PageStatCard
           title="Charges actives"
           value={formatCurrency(monthlyTotal)}
-          description="Total mensuel"
+          description="Total mensuel à anticiper"
           icon={<Repeat2 className="h-5 w-5" />}
           variant="rose"
         />
@@ -752,9 +803,9 @@ export default function RecurringPaymentsPage() {
         />
 
         <PageStatCard
-          title="Paiements actifs"
+          title="Charges suivies"
           value={String(activePayments.length)}
-          description={`${inactivePayments.length} désactivé${
+          description={`${inactivePayments.length} désactivée${
             inactivePayments.length > 1 ? 's' : ''
           }`}
           icon={<CheckCircle2 className="h-5 w-5" />}
@@ -764,7 +815,7 @@ export default function RecurringPaymentsPage() {
         <PageStatCard
           title="Moyenne"
           value={formatCurrency(averagePayment)}
-          description="Par paiement actif"
+          description="Par charge active"
           icon={<WalletCards className="h-5 w-5" />}
           variant="blue"
         />
@@ -775,7 +826,7 @@ export default function RecurringPaymentsPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-emerald-600">
-                Prochain paiement
+                Prochaine échéance
               </p>
 
               <h2 className="mt-1 text-2xl font-black text-slate-950">
@@ -799,7 +850,8 @@ export default function RecurringPaymentsPage() {
               </p>
 
               <p className="mt-2 text-sm text-amber-800/80">
-                Montant prévu : {formatCurrency(nextPayment.amount)}.
+                Montant prévu : {formatCurrency(nextPayment.amount)} depuis le
+                compte {getAccountName(nextPayment.accountId)}.
               </p>
             </div>
           ) : (
@@ -811,7 +863,7 @@ export default function RecurringPaymentsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Aucun paiement récurrent actif pour le moment.
+                Aucune charge fixe active pour le moment.
               </p>
             </div>
           )}
@@ -836,9 +888,9 @@ export default function RecurringPaymentsPage() {
 
           <p className="mt-6 text-sm leading-6 text-slate-600">
             Les charges fixes sont les dépenses les plus importantes à prévoir,
-            car elles reviennent automatiquement. Elles sont sauvegardées dans
-            Supabase et pourront plus tard générer automatiquement les paiements
-            du mois.
+            car elles reviennent automatiquement. Pour l’instant, elles servent
+            à anticiper le mois. Plus tard, elles pourront générer
+            automatiquement des transactions.
           </p>
 
           <div className="mt-5 rounded-[1.5rem] bg-rose-50 p-5">
@@ -857,11 +909,12 @@ export default function RecurringPaymentsPage() {
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold text-emerald-600">
-              Liste des paiements
+              Liste des charges fixes
             </p>
 
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              {recurringPayments.length} paiement
+              {recurringPayments.length} charge
+              {recurringPayments.length > 1 ? 's' : ''} fixe
               {recurringPayments.length > 1 ? 's' : ''}
             </h2>
           </div>
@@ -887,8 +940,8 @@ export default function RecurringPaymentsPage() {
         </div>
 
         <div className="mt-6 space-y-4">
-          {recurringPayments.length > 0 ? (
-            recurringPayments.map((payment) => (
+          {sortedRecurringPayments.length > 0 ? (
+            sortedRecurringPayments.map((payment) => (
               <RecurringPaymentCard
                 key={`${payment.id}-${payment.title}-${payment.amount}-${payment.dayOfMonth}-${payment.category}-${payment.accountId}-${payment.isActive}`}
                 payment={payment}
@@ -904,7 +957,7 @@ export default function RecurringPaymentsPage() {
 
               <h3 className="mt-4 text-xl font-black text-slate-950">
                 {hasAccounts
-                  ? 'Aucun paiement récurrent'
+                  ? 'Aucune charge fixe'
                   : 'Aucun compte disponible'}
               </h3>
 
@@ -920,7 +973,7 @@ export default function RecurringPaymentsPage() {
 
       {shouldShowForm && (
         <RecurringPaymentFormModal
-          formValues={formValues}
+          formValues={displayedFormValues}
           formError={formError}
           accounts={accounts}
           isEditing={Boolean(paymentToEdit)}
@@ -933,9 +986,9 @@ export default function RecurringPaymentsPage() {
       {paymentToDelete && (
         <ConfirmActionModal
           eyebrow="Suppression"
-          title="Supprimer ce paiement ?"
+          title="Supprimer cette charge fixe ?"
           description={`Tu es sur le point de supprimer "${paymentToDelete.title}". Cette charge fixe sera supprimée de Supabase.`}
-          confirmLabel="Supprimer le paiement"
+          confirmLabel="Supprimer la charge fixe"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}
           variant="danger"
