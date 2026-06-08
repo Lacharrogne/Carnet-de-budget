@@ -59,7 +59,10 @@ function createTransactionId() {
   return `transaction-${Date.now()}`
 }
 
-function getFirstDestinationAccountId(accounts: Account[], sourceAccountId: string) {
+function getFirstDestinationAccountId(
+  accounts: Account[],
+  sourceAccountId: string,
+) {
   return accounts.find((account) => account.id !== sourceAccountId)?.id ?? ''
 }
 
@@ -77,6 +80,17 @@ function getDefaultFormValues(accounts: Account[]): TransactionFormValues {
     note: '',
     isRecurring: false,
   }
+}
+
+function normalizeFormValues(
+  values: TransactionFormValues,
+  accounts: Account[],
+) {
+  if (values.accountId || accounts.length === 0) {
+    return values
+  }
+
+  return getDefaultFormValues(accounts)
 }
 
 function getTransactionFormValues(
@@ -240,6 +254,14 @@ function TransactionCard({
     ? `${accountName} → ${toAccountName ?? 'Compte inconnu'}`
     : accountName
 
+  const amountLabel = isTransfer
+    ? `↔ ${formatCurrency(transaction.amount)}`
+    : `${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`
+
+  const hasLinkedDebt = Boolean(transaction.linkedDebtId)
+  const hasLinkedSavingGoal = Boolean(transaction.linkedSavingGoalId)
+  const hasLinkedSinkingFund = Boolean(transaction.linkedSinkingFundId)
+
   return (
     <article className="rounded-[1.75rem] border border-stone-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -263,6 +285,24 @@ function TransactionCard({
               {isTransfer && (
                 <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
                   Virement interne
+                </span>
+              )}
+
+              {hasLinkedDebt && (
+                <span className="rounded-full bg-rose-50 px-2.5 py-1 text-xs font-bold text-rose-700">
+                  Dette liée
+                </span>
+              )}
+
+              {hasLinkedSavingGoal && (
+                <span className="rounded-full bg-violet-50 px-2.5 py-1 text-xs font-bold text-violet-700">
+                  Objectif lié
+                </span>
+              )}
+
+              {hasLinkedSinkingFund && (
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-700">
+                  Fonds lié
                 </span>
               )}
             </div>
@@ -289,8 +329,7 @@ function TransactionCard({
                     : 'text-blue-700'
               }`}
             >
-              {isIncome ? '+' : isExpense ? '-' : ''}
-              {formatCurrency(transaction.amount)}
+              {amountLabel}
             </p>
 
             <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -341,12 +380,6 @@ function TransactionFormModal({
   onChange: (values: TransactionFormValues) => void
 }) {
   const canTransfer = accounts.length >= 2
-
-  const transactionCategoryOptions = budgetCategories.some((category) => {
-    return category.id === 'transfer'
-  })
-    ? budgetCategories
-    : [...budgetCategories, transferCategory]
 
   function updateField<Field extends keyof TransactionFormValues>(
     field: Field,
@@ -407,7 +440,7 @@ function TransactionFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie les informations. Le solde du compte sera corrigé automatiquement.'
+                  ? 'Modifie les informations. Les soldes seront corrigés automatiquement.'
                   : 'Ajoute une dépense, un revenu ou un virement entre deux comptes.'}
               </p>
             </div>
@@ -526,7 +559,7 @@ function TransactionFormModal({
                   }
                   className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold text-slate-700 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
                 >
-                  {transactionCategoryOptions
+                  {budgetCategories
                     .filter((category) => category.id !== 'transfer')
                     .map((category) => (
                       <option key={category.id} value={category.id}>
@@ -539,9 +572,7 @@ function TransactionFormModal({
 
             <label>
               <span className="text-sm font-bold text-slate-700">
-                {formValues.type === 'transfer'
-                  ? 'Compte source'
-                  : 'Compte'}
+                {formValues.type === 'transfer' ? 'Compte source' : 'Compte'}
               </span>
 
               <select
@@ -655,7 +686,7 @@ function TransactionFormModal({
             >
               {isEditing
                 ? 'Enregistrer les modifications'
-                : 'Ajouter la transaction'}
+                : 'Ajouter le mouvement'}
             </button>
           </div>
         </form>
@@ -693,6 +724,7 @@ export default function TransactionsPage() {
   const action = searchParams.get('action')
   const hasAccounts = accounts.length > 0
   const shouldShowForm = hasAccounts && (isFormOpen || action === 'new')
+  const displayedFormValues = normalizeFormValues(formValues, accounts)
 
   const totalIncome = localTransactions
     .filter((transaction) => transaction.type === 'income')
@@ -826,20 +858,21 @@ export default function TransactionsPage() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    let title = formValues.title.trim()
-    const amount = parseAmount(formValues.amount)
+    const currentFormValues = normalizeFormValues(formValues, accounts)
+    let title = currentFormValues.title.trim()
+    const amount = parseAmount(currentFormValues.amount)
 
     if (!hasAccounts) {
       setFormError('Crée d’abord un compte avant d’ajouter une transaction.')
       return
     }
 
-    if (formValues.type !== 'transfer' && !title) {
+    if (currentFormValues.type !== 'transfer' && !title) {
       setFormError('Ajoute un titre pour la transaction.')
       return
     }
 
-    if (formValues.type === 'transfer' && !title) {
+    if (currentFormValues.type === 'transfer' && !title) {
       title = 'Virement entre comptes'
     }
 
@@ -848,27 +881,27 @@ export default function TransactionsPage() {
       return
     }
 
-    if (!formValues.accountId) {
+    if (!currentFormValues.accountId) {
       setFormError(
-        formValues.type === 'transfer'
+        currentFormValues.type === 'transfer'
           ? 'Choisis le compte source.'
           : 'Choisis un compte pour cette transaction.',
       )
       return
     }
 
-    if (formValues.type === 'transfer') {
+    if (currentFormValues.type === 'transfer') {
       if (accounts.length < 2) {
         setFormError('Il faut au moins deux comptes pour faire un virement.')
         return
       }
 
-      if (!formValues.toAccountId) {
+      if (!currentFormValues.toAccountId) {
         setFormError('Choisis le compte destination.')
         return
       }
 
-      if (formValues.toAccountId === formValues.accountId) {
+      if (currentFormValues.toAccountId === currentFormValues.accountId) {
         setFormError(
           'Le compte source et le compte destination doivent être différents.',
         )
@@ -876,7 +909,7 @@ export default function TransactionsPage() {
       }
     }
 
-    if (!formValues.date) {
+    if (!currentFormValues.date) {
       setFormError('Choisis une date.')
       return
     }
@@ -885,15 +918,25 @@ export default function TransactionsPage() {
       id: transactionToEdit?.id ?? createTransactionId(),
       title,
       amount,
-      type: formValues.type,
-      category: formValues.type === 'transfer' ? 'transfer' : formValues.category,
-      accountId: formValues.accountId,
+      type: currentFormValues.type,
+      category:
+        currentFormValues.type === 'transfer'
+          ? 'transfer'
+          : currentFormValues.category,
+      accountId: currentFormValues.accountId,
       toAccountId:
-        formValues.type === 'transfer' ? formValues.toAccountId : undefined,
-      date: formValues.date,
-      note: formValues.note.trim() || undefined,
+        currentFormValues.type === 'transfer'
+          ? currentFormValues.toAccountId
+          : undefined,
+      linkedDebtId: transactionToEdit?.linkedDebtId,
+      linkedSavingGoalId: transactionToEdit?.linkedSavingGoalId,
+      linkedSinkingFundId: transactionToEdit?.linkedSinkingFundId,
+      date: currentFormValues.date,
+      note: currentFormValues.note.trim() || undefined,
       isRecurring:
-        formValues.type === 'transfer' ? false : formValues.isRecurring,
+        currentFormValues.type === 'transfer'
+          ? false
+          : currentFormValues.isRecurring,
     }
 
     if (transactionToEdit) {
@@ -1155,7 +1198,7 @@ export default function TransactionsPage() {
 
       {shouldShowForm && (
         <TransactionFormModal
-          formValues={formValues}
+          formValues={displayedFormValues}
           formError={formError}
           accounts={accounts}
           isEditing={Boolean(transactionToEdit)}
