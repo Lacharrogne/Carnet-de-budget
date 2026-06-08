@@ -105,7 +105,9 @@ const navItems = [
   },
 ]
 
-const mobileNavItems = [navItems[0], navItems[2], navItems[3], navItems[10]]
+const mobileNavItems = navItems.filter((item) =>
+  ['/', '/transactions', '/abonnements', '/statistiques'].includes(item.path),
+)
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, signOut } = useAuth()
