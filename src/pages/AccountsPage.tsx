@@ -18,7 +18,13 @@ import {
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { getCategoryById } from '../services/budgetStatsService'
-import type { Account, AccountType, Transaction } from '../types/budget'
+import type {
+  Account,
+  AccountType,
+  BudgetCategory,
+  BudgetCategoryId,
+  Transaction,
+} from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
 type AccountFormValues = {
@@ -33,6 +39,14 @@ const defaultAccountFormValues: AccountFormValues = {
   type: 'current',
   balance: '',
   emoji: '🏦',
+}
+
+const transferCategory: BudgetCategory = {
+  id: 'transfer',
+  name: 'Virement',
+  emoji: '🔁',
+  description: 'Mouvement entre deux comptes personnels.',
+  colorClass: 'border-blue-100 bg-blue-50 text-blue-900',
 }
 
 function createAccountId() {
@@ -122,6 +136,39 @@ function getAccountColorClass(type: AccountType) {
   return 'bg-violet-50 text-violet-800 border-violet-100'
 }
 
+function getTransactionCategory(categoryId: BudgetCategoryId) {
+  if (categoryId === 'transfer') {
+    return transferCategory
+  }
+
+  return getCategoryById(categoryId)
+}
+
+function isTransactionLinkedToAccount(
+  transaction: Transaction,
+  accountId: string,
+) {
+  return (
+    transaction.accountId === accountId || transaction.toAccountId === accountId
+  )
+}
+
+function getTransactionAccountLabel({
+  transaction,
+  sourceAccountName,
+  destinationAccountName,
+}: {
+  transaction: Transaction
+  sourceAccountName: string
+  destinationAccountName?: string
+}) {
+  if (transaction.type === 'transfer') {
+    return `${sourceAccountName} → ${destinationAccountName ?? 'Compte inconnu'}`
+  }
+
+  return sourceAccountName
+}
+
 function PageStatCard({
   title,
   value,
@@ -163,6 +210,33 @@ function PageStatCard({
         </div>
       </div>
     </article>
+  )
+}
+
+function EmptyAccountsCard({ onCreateAccount }: { onCreateAccount: () => void }) {
+  return (
+    <div className="rounded-[1.75rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
+      <p className="text-4xl">🏦</p>
+
+      <h3 className="mt-4 text-xl font-black text-slate-950">
+        Aucun compte pour le moment
+      </h3>
+
+      <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+        Crée ton premier compte pour pouvoir enregistrer tes revenus, dépenses
+        et virements. Chaque transaction viendra ensuite modifier les soldes
+        automatiquement.
+      </p>
+
+      <button
+        type="button"
+        onClick={onCreateAccount}
+        className="mt-5 inline-flex items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+      >
+        <Plus className="h-4 w-4" />
+        Créer mon premier compte
+      </button>
+    </div>
   )
 }
 
@@ -288,6 +362,13 @@ function AccountFormModal({
             </label>
           </div>
 
+          {isEditing && (
+            <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
+              Le solde peut être ajusté manuellement, mais les revenus,
+              dépenses et virements modifient aussi ce solde automatiquement.
+            </div>
+          )}
+
           {formError && (
             <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
               {formError}
@@ -410,7 +491,7 @@ function AccountCard({
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Transactions
+            Mouvements
           </p>
 
           <p className="mt-1 text-xl font-black text-slate-950">
@@ -420,7 +501,7 @@ function AccountCard({
 
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
-            Paiements fixes
+            Charges fixes
           </p>
 
           <p className="mt-1 text-xl font-black text-slate-950">
@@ -464,13 +545,27 @@ function AccountCard({
 
 function RecentAccountTransaction({
   transaction,
-  accountName,
+  sourceAccountName,
+  destinationAccountName,
 }: {
   transaction: Transaction
-  accountName: string
+  sourceAccountName: string
+  destinationAccountName?: string
 }) {
-  const category = getCategoryById(transaction.category)
+  const category = getTransactionCategory(transaction.category)
   const isIncome = transaction.type === 'income'
+  const isExpense = transaction.type === 'expense'
+  const isTransfer = transaction.type === 'transfer'
+
+  const accountLabel = getTransactionAccountLabel({
+    transaction,
+    sourceAccountName,
+    destinationAccountName,
+  })
+
+  const amountLabel = isTransfer
+    ? `↔ ${formatCurrency(transaction.amount)}`
+    : `${isIncome ? '+' : '-'}${formatCurrency(transaction.amount)}`
 
   return (
     <article className="rounded-[1.5rem] border border-stone-100 bg-stone-50 p-4">
@@ -480,7 +575,9 @@ function RecentAccountTransaction({
             className={`rounded-2xl border p-3 ${
               isIncome
                 ? 'border-emerald-100 bg-emerald-50'
-                : 'border-rose-100 bg-rose-50'
+                : isExpense
+                  ? 'border-rose-100 bg-rose-50'
+                  : 'border-blue-100 bg-blue-50'
             }`}
           >
             <span className="text-xl">{category.emoji}</span>
@@ -492,18 +589,21 @@ function RecentAccountTransaction({
             </p>
 
             <p className="mt-1 text-sm text-slate-500">
-              {accountName} · {category.name}
+              {accountLabel} · {category.name}
             </p>
           </div>
         </div>
 
         <p
           className={`font-black ${
-            isIncome ? 'text-emerald-700' : 'text-rose-700'
+            isIncome
+              ? 'text-emerald-700'
+              : isExpense
+                ? 'text-rose-700'
+                : 'text-blue-700'
           }`}
         >
-          {isIncome ? '+' : '-'}
-          {formatCurrency(transaction.amount)}
+          {amountLabel}
         </p>
       </div>
     </article>
@@ -551,8 +651,8 @@ export default function AccountsPage() {
     .slice(0, 5)
 
   const accountToDeleteTransactionCount = accountToDelete
-    ? transactions.filter(
-        (transaction) => transaction.accountId === accountToDelete.id,
+    ? transactions.filter((transaction) =>
+        isTransactionLinkedToAccount(transaction, accountToDelete.id),
       ).length
     : 0
 
@@ -565,6 +665,17 @@ export default function AccountsPage() {
   const accountToDeleteHasLinkedItems =
     accountToDeleteTransactionCount > 0 ||
     accountToDeleteRecurringPaymentCount > 0
+
+  function getAccountName(accountId?: string) {
+    if (!accountId) {
+      return 'Compte inconnu'
+    }
+
+    return (
+      accounts.find((account) => account.id === accountId)?.name ??
+      'Compte inconnu'
+    )
+  }
 
   function openAccountForm() {
     setAccountToEdit(null)
@@ -655,8 +766,8 @@ export default function AccountsPage() {
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
                 Suis ton compte courant, ton épargne, tes espèces et tes comptes
-                d’investissement. Tu peux maintenant ajouter, modifier ou
-                supprimer un compte avec sécurité.
+                d’investissement. Les revenus, dépenses et virements modifient
+                automatiquement les soldes des comptes concernés.
               </p>
             </div>
 
@@ -725,33 +836,38 @@ export default function AccountsPage() {
           </div>
 
           <div className="mt-6 grid gap-4">
-            {accounts.map((account) => {
-              const accountTransactions = transactions.filter(
-                (transaction) => transaction.accountId === account.id,
-              )
+            {accounts.length > 0 ? (
+              accounts.map((account) => {
+                const accountTransactions = transactions.filter(
+                  (transaction) =>
+                    isTransactionLinkedToAccount(transaction, account.id),
+                )
 
-              const accountRecurringPayments = recurringPayments.filter(
-                (payment) => payment.accountId === account.id,
-              )
+                const accountRecurringPayments = recurringPayments.filter(
+                  (payment) => payment.accountId === account.id,
+                )
 
-              const lastTransaction = [...accountTransactions].sort(
-                (firstTransaction, secondTransaction) =>
-                  secondTransaction.date.localeCompare(firstTransaction.date),
-              )[0]
+                const lastTransaction = [...accountTransactions].sort(
+                  (firstTransaction, secondTransaction) =>
+                    secondTransaction.date.localeCompare(firstTransaction.date),
+                )[0]
 
-              return (
-                <AccountCard
-                  key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}`}
-                  account={account}
-                  transactionCount={accountTransactions.length}
-                  recurringPaymentCount={accountRecurringPayments.length}
-                  lastTransactionTitle={lastTransaction?.title}
-                  onBalanceChange={updateAccountBalance}
-                  onEditRequest={openEditAccountForm}
-                  onDeleteRequest={setAccountToDelete}
-                />
-              )
-            })}
+                return (
+                  <AccountCard
+                    key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}`}
+                    account={account}
+                    transactionCount={accountTransactions.length}
+                    recurringPaymentCount={accountRecurringPayments.length}
+                    lastTransactionTitle={lastTransaction?.title}
+                    onBalanceChange={updateAccountBalance}
+                    onEditRequest={openEditAccountForm}
+                    onDeleteRequest={setAccountToDelete}
+                  />
+                )
+              })
+            ) : (
+              <EmptyAccountsCard onCreateAccount={openAccountForm} />
+            )}
           </div>
         </div>
 
@@ -774,33 +890,49 @@ export default function AccountsPage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              {accounts.map((account) => {
-                const percentage =
-                  totalBalance > 0
-                    ? Math.round((account.balance / totalBalance) * 100)
-                    : 0
+              {accounts.length > 0 ? (
+                accounts.map((account) => {
+                  const percentage =
+                    totalBalance > 0
+                      ? Math.round((account.balance / totalBalance) * 100)
+                      : 0
 
-                return (
-                  <div key={`ratio-${account.id}`}>
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-sm font-black text-slate-800">
-                        {account.emoji} {account.name}
-                      </p>
+                  return (
+                    <div key={`ratio-${account.id}`}>
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className="text-sm font-black text-slate-800">
+                          {account.emoji} {account.name}
+                        </p>
 
-                      <p className="text-sm font-black text-slate-500">
-                        {percentage} %
-                      </p>
+                        <p className="text-sm font-black text-slate-500">
+                          {percentage} %
+                        </p>
+                      </div>
+
+                      <div className="h-3 overflow-hidden rounded-full bg-stone-100">
+                        <div
+                          className="h-full rounded-full bg-emerald-500"
+                          style={{
+                            width: `${account.balance > 0 ? Math.max(percentage, 3) : 0}%`,
+                          }}
+                        />
+                      </div>
                     </div>
+                  )
+                })
+              ) : (
+                <div className="rounded-[1.5rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
+                  <p className="text-3xl">📊</p>
 
-                    <div className="h-3 overflow-hidden rounded-full bg-stone-100">
-                      <div
-                        className="h-full rounded-full bg-emerald-500"
-                        style={{ width: `${Math.max(percentage, 3)}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
+                  <h3 className="mt-4 text-xl font-black text-slate-950">
+                    Répartition vide
+                  </h3>
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Ajoute un compte pour voir la répartition de ton argent.
+                  </p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -823,19 +955,16 @@ export default function AccountsPage() {
 
             <div className="mt-6 space-y-3">
               {recentTransactions.length > 0 ? (
-                recentTransactions.map((transaction) => {
-                  const account = accounts.find(
-                    (item) => item.id === transaction.accountId,
-                  )
-
-                  return (
-                    <RecentAccountTransaction
-                      key={transaction.id}
-                      transaction={transaction}
-                      accountName={account?.name ?? 'Compte inconnu'}
-                    />
-                  )
-                })
+                recentTransactions.map((transaction) => (
+                  <RecentAccountTransaction
+                    key={transaction.id}
+                    transaction={transaction}
+                    sourceAccountName={getAccountName(transaction.accountId)}
+                    destinationAccountName={getAccountName(
+                      transaction.toAccountId,
+                    )}
+                  />
+                ))
               ) : (
                 <div className="rounded-[1.5rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
                   <p className="text-3xl">🧾</p>
@@ -845,7 +974,8 @@ export default function AccountsPage() {
                   </h3>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    Les transactions liées aux comptes apparaîtront ici.
+                    Les transactions et virements liés aux comptes apparaîtront
+                    ici.
                   </p>
                 </div>
               )}
@@ -877,14 +1007,14 @@ export default function AccountsPage() {
           }
           description={
             accountToDeleteHasLinkedItems
-              ? `"${accountToDelete.name}" est lié à ${accountToDeleteTransactionCount} transaction${
+              ? `"${accountToDelete.name}" est lié à ${accountToDeleteTransactionCount} mouvement${
                   accountToDeleteTransactionCount > 1 ? 's' : ''
-                } et ${accountToDeleteRecurringPaymentCount} paiement${
+                } et ${accountToDeleteRecurringPaymentCount} charge${
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
-                } récurrent${
+                } fixe${
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
                 }. Pour éviter de casser tes données, supprime ou réattribue d’abord ces éléments.`
-              : `Tu es sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte du suivi temporaire actuel.`
+              : `Tu es sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte de ton suivi.`
           }
           confirmLabel={
             accountToDeleteHasLinkedItems ? 'Compris' : 'Supprimer le compte'
