@@ -1,1 +1,191 @@
 @import "tailwindcss";
+
+/* ==========================================================================
+   Carnet de budget — Design system
+   Ambiance : carnet financier premium, calme et rassurant.
+   Fond crème · cartes blanc cassé · vert sauge profond · bleu pétrole doux.
+   On affine les échelles Tailwind utilisées partout (stone = neutres chauds,
+   emerald = marque/positif) pour réchauffer tout le produit sans toucher
+   à chaque page.
+   ========================================================================== */
+
+@theme {
+  /* Typographies premium */
+  --font-sans:
+    "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-display:
+    "Fraunces", "Plus Jakarta Sans", ui-serif, Georgia, serif;
+
+  /* Blanc cassé chaleureux : toutes les cartes "bg-white" gagnent en chaleur. */
+  --color-white: #fdfbf6;
+
+  /* Neutres chauds — papier crème / sable (remplace le "stone" Tailwind) */
+  --color-stone-50: #faf7f1;
+  --color-stone-100: #f3eee3;
+  --color-stone-200: #e8e0d1;
+  --color-stone-300: #d8ccb6;
+  --color-stone-400: #b9aa8c;
+  --color-stone-500: #99896c;
+  --color-stone-600: #7b6d54;
+  --color-stone-700: #615645;
+  --color-stone-800: #463f33;
+  --color-stone-900: #2f2a22;
+  --color-stone-950: #1d1a14;
+
+  /* Marque & positif — vert sauge profond, calme et premium (remplace emerald) */
+  --color-emerald-50: #eef4ee;
+  --color-emerald-100: #d9e7d9;
+  --color-emerald-200: #b6d2b7;
+  --color-emerald-300: #8bb78e;
+  --color-emerald-400: #5d9665;
+  --color-emerald-500: #3f7a49;
+  --color-emerald-600: #31633a;
+  --color-emerald-700: #294f30;
+  --color-emerald-800: #234028;
+  --color-emerald-900: #1e3623;
+  --color-emerald-950: #102117;
+
+  /* Texte — graphite chaud (remplace le slate froid de Tailwind) */
+  --color-slate-50: #f7f6f3;
+  --color-slate-100: #eeece6;
+  --color-slate-200: #e0ddd4;
+  --color-slate-300: #c8c3b6;
+  --color-slate-400: #9d978a;
+  --color-slate-500: #79736a;
+  --color-slate-600: #5b564e;
+  --color-slate-700: #463f37;
+  --color-slate-800: #322d27;
+  --color-slate-900: #221f1a;
+  --color-slate-950: #161310;
+
+  /* Ombres douces et premium */
+  --shadow-sm: 0 1px 2px 0 rgb(45 42 34 / 0.05);
+  --shadow:
+    0 1px 3px 0 rgb(45 42 34 / 0.07), 0 1px 2px -1px rgb(45 42 34 / 0.05);
+  --shadow-md:
+    0 8px 24px -12px rgb(45 42 34 / 0.18), 0 2px 6px -2px rgb(45 42 34 / 0.08);
+  --shadow-lg:
+    0 22px 48px -24px rgb(45 42 34 / 0.25), 0 6px 14px -8px rgb(45 42 34 / 0.1);
+  --shadow-xl:
+    0 32px 64px -28px rgb(28 30 24 / 0.3), 0 10px 22px -12px rgb(45 42 34 / 0.12);
+  --shadow-2xl: 0 40px 80px -32px rgb(28 30 24 / 0.35);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    /* Fond crème vivant : dégradé chaud + halos vert sauge / doré très discrets */
+    background-color: #f7f3ec;
+    background-image:
+      radial-gradient(
+        62rem 62rem at 12% -8%,
+        rgba(63, 122, 73, 0.07),
+        transparent 60%
+      ),
+      radial-gradient(
+        52rem 52rem at 108% 6%,
+        rgba(193, 154, 84, 0.08),
+        transparent 55%
+      ),
+      linear-gradient(180deg, #faf7f1 0%, #f5f0e7 100%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv05", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Les montants restent parfaitement lisibles et alignés */
+  .tabular,
+  [data-amount] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+
+  ::selection {
+    background-color: rgba(63, 122, 73, 0.18);
+    color: #102117;
+  }
+
+  /* Focus visible cohérent et accessible sur tout le produit */
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-emerald-500);
+    outline-offset: 2px;
+    border-radius: 0.5rem;
+  }
+
+  /* Scrollbars discrètes et chaleureuses */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #d8ccb6 transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: #d8ccb6;
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: #b9aa8c;
+  }
+}
+
+@layer components {
+  /* Police éditoriale pour les grands titres / le wordmark "carnet". */
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
+  }
+
+  /* Carte premium réutilisable : blanc cassé, bord chaud, ombre douce. */
+  .card-premium {
+    border-radius: 1.75rem;
+    border: 1px solid var(--color-stone-200);
+    background-color: #fffdf9;
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Apparition douce et premium des contenus. */
+  .animate-rise {
+    animation: cb-rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes cb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .animate-rise {
+    animation: none;
+  }
+}

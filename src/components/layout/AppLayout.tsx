@@ -118,10 +118,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 text-slate-950">
+    <div className="min-h-screen text-slate-900">
       <aside
         className={[
-          'fixed left-0 top-0 hidden h-screen flex-col overflow-hidden border-r border-stone-200 bg-white/95 p-4 backdrop-blur transition-all duration-300 xl:flex',
+          'fixed left-0 top-0 hidden h-screen flex-col overflow-hidden border-r border-stone-200/80 bg-[#fffdf9]/80 p-4 backdrop-blur-xl transition-all duration-300 xl:flex',
           isSidebarCollapsed ? 'w-24' : 'w-72',
         ].join(' ')}
       >
@@ -133,22 +133,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
               isSidebarCollapsed ? 'justify-center' : 'flex-1',
             ].join(' ')}
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-sm font-black text-white ring-1 ring-white/20">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 font-display text-base font-bold text-amber-200 ring-1 ring-white/20">
               CB
             </div>
 
             {!isSidebarCollapsed && (
               <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-200">
-                  Carnet
+                <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-emerald-200/90">
+                  Carnet de
                 </p>
 
-                <h1 className="truncate text-lg font-black text-white">
+                <h1 className="truncate font-display text-xl font-semibold text-white">
                   Budget
                 </h1>
 
-                <p className="truncate text-xs font-medium text-emerald-100">
-                  Cockpit financier
+                <p className="truncate text-xs font-medium text-emerald-100/80">
+                  Votre argent, au clair
                 </p>
               </div>
             )}

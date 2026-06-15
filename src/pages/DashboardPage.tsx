@@ -96,6 +96,186 @@ function getTransactionDateValue(transaction: Transaction) {
   return new Date(`${transaction.date}T12:00:00`).getTime()
 }
 
+type HealthTier = 'confortable' | 'equilibre' | 'attention' | 'tension'
+
+type FinancialHealth = {
+  score: number
+  tier: HealthTier
+  label: string
+  message: string
+  savingsRate: number
+}
+
+function getFinancialHealth({
+  monthlyIncome,
+  monthlyBalance,
+  alertCount,
+  budgetCount,
+}: {
+  monthlyIncome: number
+  monthlyBalance: number
+  alertCount: number
+  budgetCount: number
+}): FinancialHealth | null {
+  // Sans revenu déclaré ce mois-ci, on ne juge pas : le score n'aurait pas de sens.
+  if (monthlyIncome <= 0) {
+    return null
+  }
+
+  const savingsRate = monthlyBalance / monthlyIncome
+
+  // 0 % d'épargne → 50, +25 % d'épargne → 100, déficit → tend vers 0.
+  let score = 50 + savingsRate * 200
+
+  // Les budgets en alerte pèsent un peu sur la note, sans la faire plonger.
+  if (budgetCount > 0) {
+    score -= (alertCount / budgetCount) * 15
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)))
+
+  let tier: HealthTier = 'tension'
+
+  if (score >= 78) {
+    tier = 'confortable'
+  } else if (score >= 58) {
+    tier = 'equilibre'
+  } else if (score >= 40) {
+    tier = 'attention'
+  }
+
+  const ratePercent = Math.round(savingsRate * 100)
+
+  const tierContent: Record<HealthTier, { label: string; message: string }> = {
+    confortable: {
+      label: 'Mois confortable',
+      message:
+        ratePercent > 0
+          ? `Tu mets de côté environ ${ratePercent} % de tes revenus. Belle marge, tu gardes le contrôle.`
+          : 'Tes finances sont bien tenues ce mois-ci. Tu gardes le contrôle.',
+    },
+    equilibre: {
+      label: 'Budget équilibré',
+      message:
+        'Tes dépenses restent sous tes revenus. Un mois sain, avec encore un peu de marge.',
+    },
+    attention: {
+      label: 'À surveiller',
+      message:
+        'Ton mois est juste. Quelques ajustements suffiraient à retrouver de la marge.',
+    },
+    tension: {
+      label: 'Mois en tension',
+      message:
+        'Tes dépenses dépassent tes revenus ce mois-ci. Pas de panique : on regarde où agir en priorité.',
+    },
+  }
+
+  return {
+    score,
+    tier,
+    savingsRate,
+    label: tierContent[tier].label,
+    message: tierContent[tier].message,
+  }
+}
+
+const healthTierStyles: Record<
+  HealthTier,
+  { ring: string; track: string; bar: string; chip: string; dot: string }
+> = {
+  confortable: {
+    ring: 'text-emerald-500',
+    track: 'text-emerald-100',
+    bar: 'bg-emerald-500',
+    chip: 'bg-emerald-50 text-emerald-800',
+    dot: 'bg-emerald-500',
+  },
+  equilibre: {
+    ring: 'text-teal-500',
+    track: 'text-teal-100',
+    bar: 'bg-teal-500',
+    chip: 'bg-teal-50 text-teal-800',
+    dot: 'bg-teal-500',
+  },
+  attention: {
+    ring: 'text-amber-500',
+    track: 'text-amber-100',
+    bar: 'bg-amber-500',
+    chip: 'bg-amber-50 text-amber-800',
+    dot: 'bg-amber-500',
+  },
+  tension: {
+    ring: 'text-rose-500',
+    track: 'text-rose-100',
+    bar: 'bg-rose-500',
+    chip: 'bg-rose-50 text-rose-800',
+    dot: 'bg-rose-500',
+  },
+}
+
+function HealthScoreCard({ health }: { health: FinancialHealth }) {
+  const styles = healthTierStyles[health.tier]
+  const radius = 32
+  const circumference = 2 * Math.PI * radius
+  const dash = (health.score / 100) * circumference
+
+  return (
+    <div className="flex items-center gap-4 rounded-[1.5rem] border border-stone-200/70 bg-white/70 p-4 backdrop-blur">
+      <div className="relative flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center">
+        <svg className="h-full w-full -rotate-90" viewBox="0 0 80 80">
+          <circle
+            cx="40"
+            cy="40"
+            r={radius}
+            fill="none"
+            strokeWidth="8"
+            className={styles.track}
+            stroke="currentColor"
+          />
+          <circle
+            cx="40"
+            cy="40"
+            r={radius}
+            fill="none"
+            strokeWidth="8"
+            strokeLinecap="round"
+            className={styles.ring}
+            stroke="currentColor"
+            strokeDasharray={`${dash} ${circumference}`}
+          />
+        </svg>
+
+        <div className="absolute flex flex-col items-center">
+          <span className="text-2xl font-black leading-none text-slate-950">
+            {health.score}
+          </span>
+          <span className="text-[0.6rem] font-bold uppercase tracking-wide text-slate-400">
+            / 100
+          </span>
+        </div>
+      </div>
+
+      <div className="min-w-0">
+        <div
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${styles.chip}`}
+        >
+          <span className={`h-2 w-2 rounded-full ${styles.dot}`} />
+          Santé financière
+        </div>
+
+        <p className="mt-2 font-display text-lg font-semibold text-slate-950">
+          {health.label}
+        </p>
+
+        <p className="mt-1 text-xs leading-5 text-slate-500">
+          {health.message}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function PageStatCard({
   title,
   value,
@@ -130,7 +310,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -156,8 +338,12 @@ function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
-        <p className="text-sm font-semibold text-emerald-600">{eyebrow}</p>
-        <h2 className="mt-1 text-2xl font-black text-slate-950">{title}</h2>
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+          {eyebrow}
+        </p>
+        <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
+          {title}
+        </h2>
       </div>
 
       <div className="flex items-center gap-3">
@@ -661,6 +847,13 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
     ? `Ce mois-ci, ton plus gros poste est ${topExpenseCategory.emoji} ${topExpenseCategory.name} avec ${formatCurrency(topExpenseAmount)}.`
     : 'Ajoute quelques transactions ce mois-ci pour obtenir un résumé intelligent.'
 
+  const financialHealth = getFinancialHealth({
+    monthlyIncome,
+    monthlyBalance,
+    alertCount: alertBudgets.length,
+    budgetCount: budgetUsages.length,
+  })
+
   const watchItems: WatchItem[] = [
     {
       title:
@@ -725,46 +918,63 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="relative grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-center">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Cockpit du quotidien
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+                {getMonthLabel(monthKey)}
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Bonjour, voilà où en est ton argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.6rem] md:leading-[1.1]">
+                Voilà où en est votre argent
               </h1>
 
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Une vue rapide pour le mois de{' '}
-                <span className="font-black text-slate-950">{monthLabel}</span>{' '}
-                : argent disponible, reste du mois, prochaines charges, budgets
-                à surveiller et dernières transactions.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Une vue calme et complète pour{' '}
+                <span className="font-bold text-slate-950">{monthLabel}</span> :
+                ce qui rentre, ce qui sort, ce qu’il reste et ce qui mérite votre
+                attention.
               </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  to={hasAccounts ? '/transactions?action=new' : '/comptes'}
+                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
+                >
+                  <Plus className="h-4 w-4" />
+                  {hasAccounts ? 'Ajouter une transaction' : 'Créer un compte'}
+                </Link>
+
+                <Link
+                  to="/calendrier"
+                  className="flex w-fit items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:-translate-y-0.5 hover:border-stone-300"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  Voir le calendrier
+                </Link>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to={hasAccounts ? '/transactions?action=new' : '/comptes'}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                {hasAccounts ? 'Ajouter une transaction' : 'Créer un compte'}
-              </Link>
-
-              <Link
-                to="/calendrier"
-                className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-stone-200"
-              >
-                <CalendarDays className="h-4 w-4" />
-                Voir le calendrier
-              </Link>
-            </div>
+            {financialHealth ? (
+              <HealthScoreCard health={financialHealth} />
+            ) : (
+              <div className="flex items-center gap-4 rounded-[1.5rem] border border-stone-200/70 bg-white/70 p-5 backdrop-blur">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700">
+                  <ShieldCheck className="h-6 w-6" />
+                </div>
+                <p className="text-sm leading-6 text-slate-600">
+                  Ajoutez vos revenus du mois pour activer votre{' '}
+                  <span className="font-bold text-slate-950">
+                    score de santé financière
+                  </span>
+                  .
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
