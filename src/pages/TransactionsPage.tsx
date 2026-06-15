@@ -174,7 +174,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -196,18 +198,18 @@ function NoAccountWarning() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-amber-700">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">
               Compte nécessaire
             </p>
 
-            <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée d’abord un compte pour ajouter des transactions
+            <h2 className="mt-1 font-display text-xl font-semibold text-amber-950">
+              Créez d’abord un compte pour ajouter des transactions
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               Une transaction doit être liée à un compte pour que le solde soit
-              automatiquement corrigé. Une fois ton premier compte créé, tu
-              pourras ajouter revenus, dépenses et virements.
+              automatiquement corrigé. Une fois votre premier compte créé, vous
+              pourrez ajouter revenus, dépenses et virements.
             </p>
           </div>
         </div>
@@ -430,18 +432,18 @@ function TransactionFormModal({
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
                 {isEditing ? 'Modification' : 'Nouvelle transaction'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2 className="mt-1 font-display text-2xl font-semibold text-slate-950">
                 {isEditing ? 'Modifier le mouvement' : 'Ajouter un mouvement'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie les informations. Les soldes seront corrigés automatiquement.'
-                  : 'Ajoute une dépense, un revenu ou un virement entre deux comptes.'}
+                  ? 'Modifiez les informations. Les soldes seront corrigés automatiquement.'
+                  : 'Ajoutez une dépense, un revenu ou un virement entre deux comptes.'}
               </p>
             </div>
 
@@ -818,7 +820,7 @@ export default function TransactionsPage() {
 
   function openForm() {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une transaction.')
+      setFormError('Créez d’abord un compte avant d’ajouter une transaction.')
 
       if (action === 'new') {
         clearActionParam()
@@ -863,12 +865,12 @@ export default function TransactionsPage() {
     const amount = parseAmount(currentFormValues.amount)
 
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une transaction.')
+      setFormError('Créez d’abord un compte avant d’ajouter une transaction.')
       return
     }
 
     if (currentFormValues.type !== 'transfer' && !title) {
-      setFormError('Ajoute un titre pour la transaction.')
+      setFormError('Ajoutez un titre pour la transaction.')
       return
     }
 
@@ -877,15 +879,15 @@ export default function TransactionsPage() {
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('Ajoute un montant valide supérieur à 0.')
+      setFormError('Ajoutez un montant valide supérieur à 0.')
       return
     }
 
     if (!currentFormValues.accountId) {
       setFormError(
         currentFormValues.type === 'transfer'
-          ? 'Choisis le compte source.'
-          : 'Choisis un compte pour cette transaction.',
+          ? 'Choisissez le compte source.'
+          : 'Choisissez un compte pour cette transaction.',
       )
       return
     }
@@ -897,7 +899,7 @@ export default function TransactionsPage() {
       }
 
       if (!currentFormValues.toAccountId) {
-        setFormError('Choisis le compte destination.')
+        setFormError('Choisissez le compte destination.')
         return
       }
 
@@ -910,7 +912,7 @@ export default function TransactionsPage() {
     }
 
     if (!currentFormValues.date) {
-      setFormError('Choisis une date.')
+      setFormError('Choisissez une date.')
       return
     }
 
@@ -959,12 +961,12 @@ export default function TransactionsPage() {
 
   const deleteDescription =
     transactionToDelete?.type === 'transfer'
-      ? `Tu es sur le point de supprimer "${transactionToDelete.title}". Le virement entre "${getAccountName(
+      ? `Vous êtes sur le point de supprimer "${transactionToDelete.title}". Le virement entre "${getAccountName(
           transactionToDelete.accountId,
         )}" et "${getAccountName(
           transactionToDelete.toAccountId,
         )}" sera annulé et les soldes seront corrigés.`
-      : `Tu es sur le point de supprimer "${
+      : `Vous êtes sur le point de supprimer "${
           transactionToDelete?.title ?? ''
         }". Le solde du compte "${getAccountName(
           transactionToDelete?.accountId,
@@ -972,25 +974,25 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Transactions
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Tous tes mouvements d’argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Tous vos mouvements d’argent
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Retrouve tes revenus, tes dépenses, tes abonnements et tes
+                Retrouvez vos revenus, vos dépenses, vos abonnements et vos
                 virements. Les virements déplacent l’argent entre deux comptes
-                sans fausser tes revenus ou tes dépenses.
+                sans fausser vos revenus ni vos dépenses.
               </p>
             </div>
 
@@ -998,7 +1000,7 @@ export default function TransactionsPage() {
               <button
                 type="button"
                 onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 Nouvelle transaction
@@ -1006,7 +1008,7 @@ export default function TransactionsPage() {
             ) : (
               <Link
                 to="/comptes"
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 Créer un compte
@@ -1188,8 +1190,8 @@ export default function TransactionsPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 {hasAccounts
-                  ? 'Essaie de modifier ta recherche ou de réinitialiser les filtres.'
-                  : 'Crée ton premier compte pour pouvoir enregistrer des mouvements.'}
+                  ? 'Essayez de modifier votre recherche ou de réinitialiser les filtres.'
+                  : 'Créez votre premier compte pour pouvoir enregistrer des mouvements.'}
               </p>
             </div>
           )}
