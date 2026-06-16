@@ -5,9 +5,11 @@ import {
   ArrowRightLeft,
   ArrowUpRight,
   CalendarDays,
+  Download,
   Filter,
   Pencil,
   Plus,
+  Printer,
   ReceiptText,
   Search,
   Trash2,
@@ -20,6 +22,11 @@ import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import {
+  buildTransactionRows,
+  exportTransactionsToCsv,
+  exportTransactionsToPdf,
+} from '../services/exportService'
 import type {
   Account,
   BudgetCategory,
@@ -818,6 +825,52 @@ export default function TransactionsPage() {
     categoryFilter !== 'all' ||
     sortOption !== 'newest'
 
+  function buildExportRows() {
+    return buildTransactionRows(filteredTransactions, {
+      getAccountName,
+      getCategoryName: (transaction) =>
+        getTransactionCategory(transaction.category).name,
+    })
+  }
+
+  const exportSubtitle = hasActiveFilters
+    ? 'Sélection filtrée de vos transactions'
+    : 'Toutes vos transactions'
+
+  function handleExportCsv() {
+    if (filteredTransactions.length === 0) {
+      return
+    }
+
+    exportTransactionsToCsv(buildExportRows())
+  }
+
+  function handleExportPdf() {
+    if (filteredTransactions.length === 0) {
+      return
+    }
+
+    const income = filteredTransactions
+      .filter((transaction) => transaction.type === 'income')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    const expenses = filteredTransactions
+      .filter((transaction) => transaction.type === 'expense')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    const opened = exportTransactionsToPdf({
+      rows: buildExportRows(),
+      totals: { income, expenses, net: income - expenses },
+      subtitle: exportSubtitle,
+    })
+
+    if (!opened) {
+      window.alert(
+        'Votre navigateur a bloqué la fenêtre d’impression. Autorisez les pop-ups pour exporter en PDF.',
+      )
+    }
+  }
+
   function openForm() {
     if (!hasAccounts) {
       setFormError('Créez d’abord un compte avant d’ajouter une transaction.')
@@ -1149,7 +1202,7 @@ export default function TransactionsPage() {
       </section>
 
       <section className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold text-emerald-600">
               Liste des transactions
@@ -1159,11 +1212,35 @@ export default function TransactionsPage() {
               {filteredTransactions.length} résultat
               {filteredTransactions.length > 1 ? 's' : ''}
             </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {hasActiveFilters
+                ? 'Export limité à votre sélection filtrée.'
+                : 'Exportez vos données comme dans un tableur.'}
+            </p>
           </div>
 
-          <p className="text-sm text-slate-500">
-            Les transactions sont sauvegardées dans Supabase.
-          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredTransactions.length === 0}
+              className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              <Download className="h-4 w-4" />
+              Exporter CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={filteredTransactions.length === 0}
+              className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              <Printer className="h-4 w-4" />
+              Exporter PDF
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 space-y-3">
