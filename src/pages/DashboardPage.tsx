@@ -9,6 +9,7 @@ import {
   Circle,
   CreditCard,
   Landmark,
+  LineChart,
   PiggyBank,
   Plus,
   ReceiptText,
@@ -24,7 +25,9 @@ import {
   getBudgetUsages,
   getCategoryById,
   getCurrentMonthKey,
+  getEndOfMonthForecast,
   getMonthLabel,
+  type EndOfMonthForecast,
 } from '../services/budgetStatsService'
 import type { BudgetCategoryId, Transaction } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -151,23 +154,23 @@ function getFinancialHealth({
       label: 'Mois confortable',
       message:
         ratePercent > 0
-          ? `Tu mets de côté environ ${ratePercent} % de tes revenus. Belle marge, tu gardes le contrôle.`
-          : 'Tes finances sont bien tenues ce mois-ci. Tu gardes le contrôle.',
+          ? `Vous mettez de côté environ ${ratePercent} % de vos revenus. Belle marge, vous gardez le contrôle.`
+          : 'Vos finances sont bien tenues ce mois-ci. Vous gardez le contrôle.',
     },
     equilibre: {
       label: 'Budget équilibré',
       message:
-        'Tes dépenses restent sous tes revenus. Un mois sain, avec encore un peu de marge.',
+        'Vos dépenses restent sous vos revenus. Un mois sain, avec encore un peu de marge.',
     },
     attention: {
       label: 'À surveiller',
       message:
-        'Ton mois est juste. Quelques ajustements suffiraient à retrouver de la marge.',
+        'Votre mois est juste. Quelques ajustements suffiraient à retrouver de la marge.',
     },
     tension: {
       label: 'Mois en tension',
       message:
-        'Tes dépenses dépassent tes revenus ce mois-ci. Pas de panique : on regarde où agir en priorité.',
+        'Vos dépenses dépassent vos revenus ce mois-ci. Pas de panique : on regarde où agir en priorité.',
     },
   }
 
@@ -273,6 +276,149 @@ function HealthScoreCard({ health }: { health: FinancialHealth }) {
         </p>
       </div>
     </div>
+  )
+}
+
+const forecastToneStyles: Record<
+  EndOfMonthForecast['tone'],
+  { panel: string; chip: string; dot: string; amount: string; bar: string }
+> = {
+  serein: {
+    panel: 'border-emerald-100 bg-emerald-50',
+    chip: 'bg-emerald-100 text-emerald-800',
+    dot: 'bg-emerald-500',
+    amount: 'text-emerald-900',
+    bar: 'bg-emerald-500',
+  },
+  juste: {
+    panel: 'border-amber-100 bg-amber-50',
+    chip: 'bg-amber-100 text-amber-800',
+    dot: 'bg-amber-500',
+    amount: 'text-amber-900',
+    bar: 'bg-amber-500',
+  },
+  risque: {
+    panel: 'border-rose-100 bg-rose-50',
+    chip: 'bg-rose-100 text-rose-800',
+    dot: 'bg-rose-500',
+    amount: 'text-rose-900',
+    bar: 'bg-rose-500',
+  },
+}
+
+function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
+  const styles = forecastToneStyles[forecast.tone]
+  const monthProgress = Math.round(
+    (forecast.daysElapsed / forecast.daysInMonth) * 100,
+  )
+
+  const breakdown = [
+    {
+      label: 'Rythme quotidien',
+      value: formatCurrency(forecast.dailyPace),
+      hint: 'dépenses du quotidien par jour',
+    },
+    {
+      label: 'Charges fixes à venir',
+      value: `-${formatCurrency(forecast.upcomingRecurring)}`,
+      hint: 'd’ici la fin du mois',
+    },
+    {
+      label: 'Dépenses restantes estimées',
+      value: `-${formatCurrency(forecast.projectedRemainingExpenses)}`,
+      hint: 'rythme + charges fixes',
+    },
+    {
+      label: 'Résultat du mois projeté',
+      value: formatCurrency(forecast.projectedMonthResult),
+      hint: 'revenus - dépenses estimées',
+    },
+  ]
+
+  return (
+    <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+      <SectionHeader
+        eyebrow="Prévision"
+        title="Votre fin de mois, anticipée"
+        icon={<LineChart className="h-5 w-5" />}
+        action={
+          <Link
+            to="/calendrier"
+            className="hidden rounded-full bg-stone-100 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-stone-200 md:inline-flex"
+          >
+            Calendrier
+          </Link>
+        }
+      />
+
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <div className={`rounded-[1.75rem] border p-5 ${styles.panel}`}>
+          <div
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${styles.chip}`}
+          >
+            <span className={`h-2 w-2 rounded-full ${styles.dot}`} />
+            {forecast.label}
+          </div>
+
+          <p className="mt-3 text-sm font-semibold text-slate-500">
+            Argent disponible estimé en fin de mois
+          </p>
+
+          <p
+            className={`tabular mt-1 text-4xl font-black tracking-tight ${styles.amount}`}
+          >
+            {formatCurrency(forecast.projectedEndBalance)}
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            {forecast.message}
+          </p>
+
+          <div className="mt-5">
+            <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+              <span>
+                Jour {forecast.daysElapsed} sur {forecast.daysInMonth}
+              </span>
+              <span>
+                {forecast.daysRemaining} jour
+                {forecast.daysRemaining > 1 ? 's' : ''} restant
+                {forecast.daysRemaining > 1 ? 's' : ''}
+              </span>
+            </div>
+
+            <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/70">
+              <div
+                className={`h-full rounded-full ${styles.bar}`}
+                style={{ width: `${Math.max(monthProgress, 3)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {breakdown.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[1.5rem] border border-stone-100 bg-stone-50 p-4"
+            >
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                {item.label}
+              </p>
+              <p className="tabular mt-2 text-xl font-black text-slate-950">
+                {item.value}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">{item.hint}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs leading-5 text-slate-400">
+        Estimation prudente, basée sur votre rythme de dépenses du mois et vos
+        charges fixes à venir — sans nouvelle rentrée d’argent d’ici la fin du
+        mois.
+      </p>
+    </section>
   )
 }
 
@@ -458,8 +604,8 @@ function SetupProgressSection({
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-            Avance étape par étape : crée un compte, ajoute tes mouvements,
-            fixe tes budgets puis commence à prévoir tes projets.
+            Avancez étape par étape : créez un compte, ajoutez vos mouvements,
+            fixez vos budgets puis commencez à prévoir vos projets.
           </p>
         </div>
 
@@ -503,14 +649,14 @@ function NewUserDashboard({ steps }: { steps: SetupStep[] }) {
               Bienvenue dans Carnet de budget
             </p>
 
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Construis ton cockpit financier
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-5xl">
+              Construisez votre cockpit financier
             </h1>
 
             <p className="mt-4 text-sm leading-6 text-slate-600 md:text-base">
-              Commence par créer ton premier compte. Ensuite, ton accueil
-              deviendra une vraie page de pilotage avec tes priorités, tes
-              alertes, tes prochaines charges et tes dernières transactions.
+              Commencez par créer votre premier compte. Ensuite, votre accueil
+              deviendra une vraie page de pilotage avec vos priorités, vos
+              alertes, vos prochaines charges et vos dernières transactions.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -673,7 +819,7 @@ export default function DashboardPage() {
   const setupSteps: SetupStep[] = [
     {
       title: 'Créer un compte',
-      description: 'Base indispensable pour lier tes mouvements.',
+      description: 'Base indispensable pour lier vos mouvements.',
       href: '/comptes',
       cta: 'Commencer',
       isCompleted: hasAccounts,
@@ -844,14 +990,23 @@ const topExpenseCategory = topExpenseCategoryEntry
 const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
 
   const cockpitMessage = topExpenseCategory
-    ? `Ce mois-ci, ton plus gros poste est ${topExpenseCategory.emoji} ${topExpenseCategory.name} avec ${formatCurrency(topExpenseAmount)}.`
-    : 'Ajoute quelques transactions ce mois-ci pour obtenir un résumé intelligent.'
+    ? `Ce mois-ci, votre plus gros poste est ${topExpenseCategory.emoji} ${topExpenseCategory.name} avec ${formatCurrency(topExpenseAmount)}.`
+    : 'Ajoutez quelques transactions ce mois-ci pour obtenir un résumé intelligent.'
 
   const financialHealth = getFinancialHealth({
     monthlyIncome,
     monthlyBalance,
     alertCount: alertBudgets.length,
     budgetCount: budgetUsages.length,
+  })
+
+  const endOfMonthForecast = getEndOfMonthForecast({
+    transactions,
+    recurringPayments,
+    liquidBalance: liquidAccountsTotal,
+    monthIncome: monthlyIncome,
+    monthExpenses: monthlyExpenses,
+    monthKey,
   })
 
   const watchItems: WatchItem[] = [
@@ -880,7 +1035,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
         ? `${nextRecurringPayment.title} · ${getNextPaymentLabel(
             nextRecurringPayment.dayOfMonth,
           )}`
-        : 'Ajoute tes abonnements pour mieux anticiper.',
+        : 'Ajoutez vos abonnements pour mieux anticiper.',
       value: nextRecurringPayment
         ? `-${formatCurrency(nextRecurringPayment.amount)}`
         : formatCurrency(0),
@@ -892,7 +1047,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
       title: hasDebts ? 'Dettes à suivre' : 'Aucune dette suivie',
       description: hasDebts
         ? 'Remboursements prévus et capital restant.'
-        : 'Tu peux ajouter une dette si besoin.',
+        : 'Vous pouvez ajouter une dette si besoin.',
       value: hasDebts
         ? `${formatCurrency(totalMonthlyDebtPayment)} / mois`
         : 'OK',
@@ -905,7 +1060,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
       description:
         goalsPreview.length > 0
           ? 'Projets en cours à alimenter.'
-          : 'Ajoute un projet pour donner un but à ton argent.',
+          : 'Ajoutez un projet pour donner un but à votre argent.',
       value:
         goalsPreview.length > 0
           ? `${goalsPreview.length} à continuer`
@@ -1017,6 +1172,8 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
         />
       </section>
 
+      {endOfMonthForecast && <ForecastCard forecast={endOfMonthForecast} />}
+
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
@@ -1086,7 +1243,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
 
             <p className="mt-3 text-sm leading-6 text-emerald-800/80">
               Pour une analyse plus complète avec tendances, catégories et
-              comparaisons, va dans la page Analyse.
+              comparaisons, rendez-vous dans la page Analyse.
             </p>
           </div>
         </div>
@@ -1140,8 +1297,8 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
 
                 <p className="mt-2 text-sm text-slate-500">
                   {hasAccounts
-                    ? 'Ajoute une transaction pour alimenter ton cockpit.'
-                    : 'Crée un compte avant d’ajouter tes premiers mouvements.'}
+                    ? 'Ajoutez une transaction pour alimenter votre cockpit.'
+                    : 'Créez un compte avant d’ajouter vos premiers mouvements.'}
                 </p>
 
                 <Link
@@ -1219,7 +1376,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute tes charges fixes pour mieux anticiper ton mois.
+                  Ajoutez vos charges fixes pour mieux anticiper votre mois.
                 </p>
               </div>
             )}
@@ -1287,11 +1444,11 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
               <p className="text-3xl">🐷</p>
 
               <h3 className="mt-4 text-xl font-black text-slate-950">
-                Crée ton premier budget
+                Créez votre premier budget
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Fixe une limite par catégorie pour mieux suivre ton mois.
+                Fixez une limite par catégorie pour mieux suivre votre mois.
               </p>
 
               <Link
@@ -1367,7 +1524,7 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute un objectif pour donner un but à ton argent.
+                  Ajoutez un objectif pour donner un but à votre argent.
                 </p>
 
                 <Link
