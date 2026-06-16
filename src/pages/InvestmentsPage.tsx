@@ -190,7 +190,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -243,8 +243,8 @@ function InvestmentFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, le type, la plateforme, les montants ou la note.'
-                  : 'Ajoute un ETF, une action, une crypto ou un autre placement à suivre.'}
+                  ? 'Modifiez le nom, le type, la plateforme, les montants ou la note.'
+                  : 'Ajoutez un ETF, une action, une crypto ou un autre placement à suivre.'}
               </p>
             </div>
 
@@ -479,7 +479,7 @@ function InvestmentCard({
 
         <div className="text-left md:text-right">
           <p
-            className={`text-2xl font-black ${
+            className={`tabular text-2xl font-black ${
               isPositive ? 'text-emerald-700' : 'text-rose-700'
             }`}
           >
@@ -504,7 +504,7 @@ function InvestmentCard({
             Investi
           </p>
 
-          <p className="mt-2 text-xl font-black text-slate-950">
+          <p className="tabular mt-2 text-xl font-black text-slate-950">
             {formatCurrency(investment.investedAmount)}
           </p>
         </div>
@@ -520,7 +520,7 @@ function InvestmentCard({
               onChange={(event) => setCurrentValueInput(event.target.value)}
               onBlur={handleBlur}
               inputMode="decimal"
-              className="w-full bg-transparent text-xl font-black text-slate-950 outline-none"
+              className="tabular w-full bg-transparent text-xl font-black text-slate-950 outline-none"
             />
 
             <span className="font-black text-slate-400">€</span>
@@ -602,7 +602,7 @@ function InvestmentTypeCard({
             {getInvestmentTypeLabel(type)}
           </p>
 
-          <p className="mt-2 text-2xl font-black">{formatCurrency(amount)}</p>
+          <p className="tabular mt-2 text-2xl font-black">{formatCurrency(amount)}</p>
 
           <p className="mt-1 text-sm opacity-75">
             {percentage} % du portefeuille
@@ -720,17 +720,17 @@ export default function InvestmentsPage() {
       : investedAmount
 
     if (!title) {
-      setFormError('Ajoute un nom pour ce placement.')
+      setFormError('Ajoutez un nom pour ce placement.')
       return
     }
 
     if (!Number.isFinite(investedAmount) || investedAmount <= 0) {
-      setFormError('Ajoute un montant investi supérieur à 0 €.')
+      setFormError('Ajoutez un montant investi supérieur à 0 €.')
       return
     }
 
     if (!Number.isFinite(currentValue) || currentValue < 0) {
-      setFormError('Ajoute une valeur actuelle valide.')
+      setFormError('Ajoutez une valeur actuelle valide.')
       return
     }
 
@@ -765,32 +765,32 @@ export default function InvestmentsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-blue-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Investissements
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Suivre ton portefeuille
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Suivez votre portefeuille
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes ETF, actions, cryptos et autres placements. Tu peux
-                maintenant ajouter, modifier, ajuster la valeur actuelle ou
-                supprimer un investissement.
+                Suivez vos ETF, actions, cryptos et autres placements. Vous
+                pouvez maintenant ajouter, modifier, ajuster la valeur actuelle
+                ou supprimer un investissement.
               </p>
             </div>
 
             <button
               type="button"
               onClick={openForm}
-              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
             >
               <Plus className="h-4 w-4" />
               Nouvel investissement
@@ -865,7 +865,7 @@ export default function InvestmentsPage() {
             </p>
 
             <p
-              className={`mt-2 text-4xl font-black ${
+              className={`tabular mt-2 text-4xl font-black ${
                 totalGain >= 0 ? 'text-emerald-700' : 'text-rose-700'
               }`}
             >
@@ -874,7 +874,7 @@ export default function InvestmentsPage() {
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Ton portefeuille vaut actuellement{' '}
+              Votre portefeuille vaut actuellement{' '}
               <span className="font-black text-slate-950">
                 {formatCurrency(totalCurrentValue)}
               </span>{' '}
@@ -920,7 +920,7 @@ export default function InvestmentsPage() {
                 ? `${getInvestmentReturn(
                     bestInvestment,
                   )} % de performance actuelle.`
-                : 'Ajoute un placement pour obtenir une analyse.'}
+                : 'Ajoutez un placement pour obtenir une analyse.'}
             </p>
           </div>
         </div>
@@ -1007,7 +1007,8 @@ export default function InvestmentsPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute un placement pour commencer à suivre ton portefeuille.
+                  Ajoutez un placement pour commencer à suivre votre
+                  portefeuille.
                 </p>
               </div>
             )}
@@ -1030,7 +1031,7 @@ export default function InvestmentsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cet investissement ?"
-          description={`Tu es sur le point de supprimer "${investmentToDelete.title}". Ce placement sera retiré du suivi temporaire actuel.`}
+          description={`Vous êtes sur le point de supprimer "${investmentToDelete.title}". Ce placement sera retiré du suivi temporaire actuel.`}
           confirmLabel="Supprimer le placement"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

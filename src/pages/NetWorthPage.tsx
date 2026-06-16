@@ -111,7 +111,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -167,13 +167,13 @@ function EmptyNetWorthGuide() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée ton premier compte pour commencer ton bilan
+              Créez votre premier compte pour commencer votre bilan
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
-              La page patrimoine devient vraiment utile quand tu ajoutes tes
-              comptes, tes placements et éventuellement tes dettes. Elle calcule
-              ensuite automatiquement ce que tu possèdes réellement.
+              La page patrimoine devient vraiment utile quand vous ajoutez vos
+              comptes, vos placements et éventuellement vos dettes. Elle calcule
+              ensuite automatiquement ce que vous possédez réellement.
             </p>
           </div>
         </div>
@@ -221,7 +221,7 @@ function AccountLine({
           </div>
         </div>
 
-        <p className="font-black text-slate-950">
+        <p className="tabular font-black text-slate-950">
           {formatCurrency(account.balance)}
         </p>
       </div>
@@ -266,7 +266,7 @@ function InvestmentLine({
         </div>
 
         <div className="text-right">
-          <p className="font-black text-slate-950">
+          <p className="tabular font-black text-slate-950">
             {formatCurrency(investment.currentValue)}
           </p>
 
@@ -302,7 +302,7 @@ function CompositionBar({
       <div className="mb-2 flex items-center justify-between gap-4">
         <p className="font-black text-slate-800">{label}</p>
 
-        <p className="font-black text-slate-500">
+        <p className="tabular font-black text-slate-500">
           {formatCurrency(value)} · {percentage} %
         </p>
       </div>
@@ -399,23 +399,23 @@ export default function NetWorthPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-violet-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-violet-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Patrimoine net
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Voir ce que tu possèdes vraiment
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Voyez ce que vous possédez vraiment
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Le patrimoine net additionne tes comptes liquides et tes
+                Le patrimoine net additionne vos comptes liquides et vos
                 investissements détaillés, puis retire les dettes restantes. Les
                 comptes de type investissement ne sont pas recomptés pour éviter
                 les doublons avec les placements détaillés.
@@ -432,7 +432,7 @@ export default function NetWorthPage() {
 
               <Link
                 to="/investissements"
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 Gérer les investissements
               </Link>
@@ -490,8 +490,8 @@ export default function NetWorthPage() {
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-amber-800">
-                Tu as {formatCurrency(ignoredInvestmentAccountsTotal)} dans des
-                comptes de type investissement. Comme la page Investissements
+                Vous avez <span className="tabular">{formatCurrency(ignoredInvestmentAccountsTotal)}</span> dans
+                des comptes de type investissement. Comme la page Investissements
                 suit déjà les placements en détail, ces comptes ne sont pas
                 ajoutés au patrimoine net pour éviter de compter deux fois la
                 même somme.
@@ -538,7 +538,7 @@ export default function NetWorthPage() {
                 </p>
 
                 <p
-                  className={`mt-2 text-3xl font-black ${
+                  className={`tabular mt-2 text-3xl font-black ${
                     netWorth >= 0 ? 'text-emerald-950' : 'text-rose-700'
                   }`}
                 >
@@ -546,7 +546,8 @@ export default function NetWorthPage() {
                 </p>
 
                 <p className="mt-2 text-sm leading-6 text-emerald-800/80">
-                  C’est ton patrimoine net actuel avec les données enregistrées.
+                  C’est votre patrimoine net actuel avec les données
+                  enregistrées.
                 </p>
               </div>
             </div>
@@ -559,8 +560,8 @@ export default function NetWorthPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un compte, un investissement ou une dette pour générer la
-                composition du patrimoine.
+                Ajoutez un compte, un investissement ou une dette pour générer
+                la composition du patrimoine.
               </p>
 
               <Link
@@ -587,7 +588,7 @@ export default function NetWorthPage() {
               </p>
 
               <p
-                className={`mt-2 text-3xl font-black ${
+                className={`tabular mt-2 text-3xl font-black ${
                   investmentGain >= 0 ? 'text-emerald-700' : 'text-rose-700'
                 }`}
               >
@@ -617,7 +618,7 @@ export default function NetWorthPage() {
                   ? `${getInvestmentReturn(
                       bestInvestment,
                     )} % de performance actuelle.`
-                  : 'Ajoute un placement pour obtenir une analyse.'}
+                  : 'Ajoutez un placement pour obtenir une analyse.'}
               </p>
             </div>
 
@@ -678,7 +679,7 @@ export default function NetWorthPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute un compte courant, épargne ou espèces pour commencer.
+                  Ajoutez un compte courant, épargne ou espèces pour commencer.
                 </p>
 
                 <Link
@@ -725,7 +726,7 @@ export default function NetWorthPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute un placement pour compléter ton patrimoine.
+                  Ajoutez un placement pour compléter votre patrimoine.
                 </p>
 
                 <Link
@@ -754,7 +755,7 @@ export default function NetWorthPage() {
                 Objectifs
               </p>
 
-              <p className="mt-2 text-2xl font-black text-violet-950">
+              <p className="tabular mt-2 text-2xl font-black text-violet-950">
                 {formatCurrency(reservedInGoals)}
               </p>
 
@@ -768,7 +769,7 @@ export default function NetWorthPage() {
                 Fonds d’amortissement
               </p>
 
-              <p className="mt-2 text-2xl font-black text-emerald-950">
+              <p className="tabular mt-2 text-2xl font-black text-emerald-950">
                 {formatCurrency(reservedInFunds)}
               </p>
 
@@ -781,7 +782,7 @@ export default function NetWorthPage() {
           <p className="mt-5 text-sm leading-6 text-slate-500">
             Après argent réservé, il reste environ{' '}
             <span
-              className={`font-black ${
+              className={`tabular font-black ${
                 availableLiquidAfterReserved >= 0
                   ? 'text-slate-950'
                   : 'text-rose-700'
@@ -803,12 +804,12 @@ export default function NetWorthPage() {
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Prochaines actions"
-            title="Améliorer ton bilan"
+            title="Améliorer votre bilan"
             icon={<Coins className="h-5 w-5" />}
           />
 
           <p className="mt-5 text-sm leading-6 text-slate-600">
-            Ton patrimoine devient plus précis quand tu relies toutes les
+            Votre patrimoine devient plus précis quand vous reliez toutes les
             grandes parties du carnet : comptes, investissements, dettes et
             objectifs.
           </p>
@@ -820,7 +821,7 @@ export default function NetWorthPage() {
             >
               <p className="font-black">Comptes</p>
               <p className="mt-1 text-sm text-blue-800/80">
-                Ajoute ou ajuste tes soldes.
+                Ajoutez ou ajustez vos soldes.
               </p>
             </Link>
 
@@ -830,7 +831,7 @@ export default function NetWorthPage() {
             >
               <p className="font-black">Dettes</p>
               <p className="mt-1 text-sm text-rose-800/80">
-                Suis ce qu’il reste à rembourser.
+                Suivez ce qu’il reste à rembourser.
               </p>
             </Link>
 
@@ -840,7 +841,7 @@ export default function NetWorthPage() {
             >
               <p className="font-black">Investissements</p>
               <p className="mt-1 text-sm text-violet-800/80">
-                Mesure tes performances.
+                Mesurez vos performances.
               </p>
             </Link>
 
@@ -850,7 +851,7 @@ export default function NetWorthPage() {
             >
               <p className="font-black">Objectifs</p>
               <p className="mt-1 text-sm text-emerald-800/80">
-                Donne un rôle à ton épargne.
+                Donnez un rôle à votre épargne.
               </p>
             </Link>
           </div>

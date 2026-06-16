@@ -124,7 +124,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -185,14 +185,14 @@ function EmptyStatsGuide({ hasAccounts }: { hasAccounts: boolean }) {
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
               {hasAccounts
-                ? 'Ajoute quelques mouvements pour obtenir de vraies analyses'
-                : 'Crée d’abord un compte pour commencer l’analyse'}
+                ? 'Ajoutez quelques mouvements pour obtenir de vraies analyses'
+                : 'Créez d’abord un compte pour commencer l’analyse'}
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               {hasAccounts
-                ? 'L’analyse devient utile quand tu ajoutes des revenus, des dépenses, des budgets, des charges fixes, des objectifs ou des investissements.'
-                : 'Un compte sert de base à tout le suivi financier. Ensuite, tu pourras ajouter tes transactions et obtenir une analyse complète.'}
+                ? 'L’analyse devient utile quand vous ajoutez des revenus, des dépenses, des budgets, des charges fixes, des objectifs ou des investissements.'
+                : 'Un compte sert de base à tout le suivi financier. Ensuite, vous pourrez ajouter vos transactions et obtenir une analyse complète.'}
             </p>
           </div>
         </div>
@@ -312,7 +312,7 @@ function CategoryExpenseRow({
           </div>
         </div>
 
-        <p className="font-black text-rose-700">{formatCurrency(spent)}</p>
+        <p className="tabular font-black text-rose-700">{formatCurrency(spent)}</p>
       </div>
 
       <div className="h-3 overflow-hidden rounded-full bg-white">
@@ -351,7 +351,7 @@ function BudgetAlertRow({
             {emoji} {name}
           </p>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="tabular mt-1 text-sm text-slate-500">
             {formatCurrency(spent)} / {formatCurrency(limit)}
           </p>
         </div>
@@ -426,7 +426,7 @@ function TransactionLine({ transaction }: { transaction: Transaction }) {
           </div>
         </div>
 
-        <p className={`font-black ${amountColor}`}>{amountLabel}</p>
+        <p className={`tabular font-black ${amountColor}`}>{amountLabel}</p>
       </div>
     </article>
   )
@@ -667,12 +667,12 @@ export default function StatsPage() {
       value: totalIncome > 0 ? `${savingsRate} %` : 'À calculer',
       description:
         totalIncome <= 0
-          ? 'Ajoute des revenus pour calculer ton taux d’épargne.'
+          ? 'Ajoutez des revenus pour calculer votre taux d’épargne.'
           : savingsRate >= 20
-            ? 'Très bon rythme : tu conserves une belle part de tes revenus.'
+            ? 'Très bon rythme : vous conservez une belle part de vos revenus.'
             : savingsRate >= 0
-              ? 'Ton mois reste positif, mais il y a peut-être une marge pour épargner plus.'
-              : 'Ton mois est négatif : les dépenses dépassent les revenus enregistrés.',
+              ? 'Votre mois reste positif, et il y a peut-être une marge pour épargner un peu plus.'
+              : 'Votre mois est négatif : les dépenses dépassent les revenus enregistrés.',
       icon: <Percent className="h-5 w-5" />,
       variant:
         totalIncome <= 0
@@ -689,8 +689,8 @@ export default function StatsPage() {
         totalIncome > 0 ? `${recurringWeightOnIncome} %` : formatCurrency(0),
       description:
         totalIncome > 0
-          ? `Tes abonnements représentent ${recurringWeightOnIncome} % de tes revenus du mois.`
-          : 'Ajoute tes revenus pour mesurer le poids réel des charges fixes.',
+          ? `Vos abonnements représentent ${recurringWeightOnIncome} % de vos revenus du mois.`
+          : 'Ajoutez vos revenus pour mesurer le poids réel des charges fixes.',
       icon: <Repeat2 className="h-5 w-5" />,
       variant:
         recurringWeightOnIncome >= 30
@@ -717,7 +717,7 @@ export default function StatsPage() {
       value: totalAssets > 0 ? `${debtWeightOnAssets} %` : 'À suivre',
       description:
         totalDebts > 0
-          ? `Tes dettes représentent ${debtWeightOnAssets} % de tes actifs connus.`
+          ? `Vos dettes représentent ${debtWeightOnAssets} % de vos actifs connus.`
           : 'Aucune dette suivie actuellement.',
       icon: <WalletCards className="h-5 w-5" />,
       variant:
@@ -733,23 +733,23 @@ export default function StatsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-violet-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Analyse financière
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Comprendre ton argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Comprendre votre argent
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Analyse ton mois de{' '}
+                Analysez votre mois de{' '}
                 <span className="font-black text-slate-950">{monthLabel}</span>{' '}
                 avec les revenus, dépenses, budgets, abonnements, dettes,
                 objectifs, patrimoine et investissements.
@@ -766,7 +766,7 @@ export default function StatsPage() {
 
               <Link
                 to="/patrimoine"
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 Voir le patrimoine
               </Link>
@@ -828,7 +828,7 @@ export default function StatsPage() {
       <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
         <SectionHeader
           eyebrow="Lecture automatique"
-          title="Ce que racontent tes chiffres"
+          title="Ce que racontent vos chiffres"
           icon={<Lightbulb className="h-5 w-5" />}
         />
 
@@ -893,7 +893,7 @@ export default function StatsPage() {
                 </p>
 
                 <p
-                  className={`mt-2 text-4xl font-black ${
+                  className={`tabular mt-2 text-4xl font-black ${
                     netCashFlow >= 0 ? 'text-emerald-700' : 'text-rose-700'
                   }`}
                 >
@@ -903,8 +903,8 @@ export default function StatsPage() {
 
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   {netCashFlow >= 0
-                    ? 'Tu as conservé plus d’argent que tu n’en as dépensé.'
-                    : 'Tu as dépensé plus que tes revenus enregistrés ce mois-ci.'}
+                    ? 'Vous avez conservé plus d’argent que vous n’en avez dépensé.'
+                    : 'Vous avez dépensé plus que vos revenus enregistrés ce mois-ci.'}
                 </p>
               </div>
             </div>
@@ -917,8 +917,8 @@ export default function StatsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute des revenus et dépenses pour comparer les entrées et
-                sorties du mois.
+                Ajoutez des revenus et des dépenses pour comparer les entrées et
+                les sorties du mois.
               </p>
 
               <Link
@@ -964,12 +964,12 @@ export default function StatsPage() {
               </div>
 
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                Tu as utilisé{' '}
-                <span className="font-black text-slate-950">
+                Vous avez utilisé{' '}
+                <span className="tabular font-black text-slate-950">
                   {formatCurrency(totalBudgetSpent)}
                 </span>{' '}
                 sur{' '}
-                <span className="font-black text-slate-950">
+                <span className="tabular font-black text-slate-950">
                   {formatCurrency(totalBudgetLimit)}
                 </span>{' '}
                 de budget prévu.
@@ -1006,7 +1006,7 @@ export default function StatsPage() {
               <p className="text-3xl">🐷</p>
 
               <h3 className="mt-4 text-xl font-black text-slate-950">
-                Crée ton premier budget
+                Créez votre premier budget
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
@@ -1029,7 +1029,7 @@ export default function StatsPage() {
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Dépenses"
-            title="Où part ton argent ?"
+            title="Où part votre argent ?"
             icon={<ArrowDownRight className="h-5 w-5" />}
           />
 
@@ -1052,7 +1052,7 @@ export default function StatsPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute des dépenses pour obtenir une analyse par catégorie.
+                  Ajoutez des dépenses pour obtenir une analyse par catégorie.
                 </p>
 
                 <Link
@@ -1087,7 +1087,7 @@ export default function StatsPage() {
                   </p>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    Ajoute des transactions pour voir les plus gros mouvements
+                    Ajoutez des transactions pour voir les plus gros mouvements
                     du mois.
                   </p>
                 </div>
@@ -1107,14 +1107,14 @@ export default function StatsPage() {
                 Charges fixes mensuelles
               </p>
 
-              <p className="mt-2 text-3xl font-black text-rose-950">
+              <p className="tabular mt-2 text-3xl font-black text-rose-950">
                 {formatCurrency(recurringMonthlyTotal)}
               </p>
 
               <p className="mt-2 text-sm text-rose-800/80">
                 {totalIncome > 0
                   ? `Cela représente environ ${recurringWeightOnIncome} % des revenus enregistrés ce mois-ci.`
-                  : 'Ajoute des revenus pour calculer le poids des charges fixes.'}
+                  : 'Ajoutez des revenus pour calculer le poids des charges fixes.'}
               </p>
             </div>
 
@@ -1169,7 +1169,7 @@ export default function StatsPage() {
               </p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un compte, une dette ou un investissement pour obtenir
+                Ajoutez un compte, une dette ou un investissement pour obtenir
                 une vue globale.
               </p>
             </div>
@@ -1198,7 +1198,7 @@ export default function StatsPage() {
                 </p>
 
                 <p
-                  className={`mt-2 text-3xl font-black ${
+                  className={`tabular mt-2 text-3xl font-black ${
                     investmentGain >= 0 ? 'text-emerald-700' : 'text-rose-700'
                   }`}
                 >
@@ -1247,7 +1247,7 @@ export default function StatsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute tes placements pour suivre leur performance.
+                Ajoutez vos placements pour suivre leur performance.
               </p>
 
               <Link
@@ -1274,11 +1274,11 @@ export default function StatsPage() {
                   Argent réservé
                 </p>
 
-                <p className="mt-2 text-3xl font-black text-emerald-950">
+                <p className="tabular mt-2 text-3xl font-black text-emerald-950">
                   {formatCurrency(totalReserved)}
                 </p>
 
-                <p className="mt-2 text-sm text-emerald-800/80">
+                <p className="tabular mt-2 text-sm text-emerald-800/80">
                   Sur un objectif total de{' '}
                   {formatCurrency(totalReservedTarget)}.
                 </p>
@@ -1304,7 +1304,7 @@ export default function StatsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un objectif pour suivre ton épargne réservée.
+                Ajoutez un objectif pour suivre votre épargne réservée.
               </p>
 
               <Link

@@ -169,7 +169,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -196,13 +198,13 @@ function NoAccountWarning() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée d’abord un compte pour ajouter une charge fixe
+              Créez d’abord un compte pour ajouter une charge fixe
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               Une charge fixe doit être liée à un compte pour savoir d’où sort
-              l’argent chaque mois. Une fois ton premier compte créé, tu pourras
-              ajouter Netflix, loyer, assurance, forfaits et autres
+              l’argent chaque mois. Une fois votre premier compte créé, vous
+              pourrez ajouter Netflix, loyer, assurance, forfaits et autres
               prélèvements récurrents.
             </p>
           </div>
@@ -270,8 +272,8 @@ function RecurringPaymentFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, le montant, le jour, la catégorie ou le compte associé.'
-                  : 'Ajoute un abonnement, un loyer, une assurance ou un prélèvement mensuel.'}
+                  ? 'Modifiez le nom, le montant, le jour, la catégorie ou le compte associé.'
+                  : 'Ajoutez un abonnement, un loyer, une assurance ou un prélèvement mensuel.'}
               </p>
             </div>
 
@@ -327,6 +329,7 @@ function RecurringPaymentFormModal({
                 onChange={(event) => updateField('amount', event.target.value)}
                 placeholder="Ex : 14"
                 inputMode="decimal"
+                aria-label="Montant mensuel en euros"
                 className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
             </label>
@@ -467,7 +470,7 @@ function RecurringPaymentCard({
         </div>
 
         <div className="text-left md:text-right">
-          <p className="text-2xl font-black text-rose-700">
+          <p className="tabular text-2xl font-black text-rose-700">
             -{formatCurrency(payment.amount)}
           </p>
 
@@ -485,7 +488,7 @@ function RecurringPaymentCard({
             Montant
           </p>
 
-          <p className="mt-2 text-xl font-black text-slate-950">
+          <p className="tabular mt-2 text-xl font-black text-slate-950">
             {formatCurrency(payment.amount)}
           </p>
         </div>
@@ -623,7 +626,7 @@ export default function RecurringPaymentsPage() {
 
   function openForm() {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une charge fixe.')
+      setFormError('Créez d’abord un compte avant d’ajouter une charge fixe.')
 
       if (action === 'new') {
         clearActionParam()
@@ -640,7 +643,7 @@ export default function RecurringPaymentsPage() {
 
   function openEditForm(payment: RecurringPayment) {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant de modifier une charge fixe.')
+      setFormError('Créez d’abord un compte avant de modifier une charge fixe.')
       return
     }
 
@@ -674,17 +677,17 @@ export default function RecurringPaymentsPage() {
     const dayOfMonth = Number(currentFormValues.dayOfMonth)
 
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une charge fixe.')
+      setFormError('Créez d’abord un compte avant d’ajouter une charge fixe.')
       return
     }
 
     if (!title) {
-      setFormError('Ajoute un nom pour cette charge fixe.')
+      setFormError('Ajoutez un nom pour cette charge fixe.')
       return
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('Ajoute un montant supérieur à 0 €.')
+      setFormError('Ajoutez un montant supérieur à 0 €.')
       return
     }
 
@@ -698,7 +701,7 @@ export default function RecurringPaymentsPage() {
     }
 
     if (!currentFormValues.accountId) {
-      setFormError('Choisis le compte associé à cette charge fixe.')
+      setFormError('Choisissez le compte associé à cette charge fixe.')
       return
     }
 
@@ -739,25 +742,26 @@ export default function RecurringPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-rose-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-rose-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Abonnements et charges fixes
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Anticiper les charges fixes
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Anticipez vos charges fixes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes abonnements, loyers, assurances et prélèvements
-                mensuels. Ces charges fixes ne sont pas encore des transactions
-                réelles : elles servent à anticiper ce qui revient chaque mois.
+                Suivez vos abonnements, loyers, assurances et prélèvements
+                mensuels en toute sérénité. Ces charges fixes ne sont pas encore
+                des transactions réelles : elles vous aident à anticiper ce qui
+                revient chaque mois.
               </p>
             </div>
 
@@ -765,7 +769,7 @@ export default function RecurringPaymentsPage() {
               <button
                 type="button"
                 onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 Nouvelle charge fixe
@@ -850,8 +854,11 @@ export default function RecurringPaymentsPage() {
               </p>
 
               <p className="mt-2 text-sm text-amber-800/80">
-                Montant prévu : {formatCurrency(nextPayment.amount)} depuis le
-                compte {getAccountName(nextPayment.accountId)}.
+                Montant prévu :{' '}
+                <span className="tabular">
+                  {formatCurrency(nextPayment.amount)}
+                </span>{' '}
+                depuis le compte {getAccountName(nextPayment.accountId)}.
               </p>
             </div>
           ) : (
@@ -898,7 +905,7 @@ export default function RecurringPaymentsPage() {
               Total à anticiper
             </p>
 
-            <p className="mt-2 text-3xl font-black text-rose-950">
+            <p className="tabular mt-2 text-3xl font-black text-rose-950">
               {formatCurrency(monthlyTotal)}
             </p>
           </div>
@@ -963,8 +970,8 @@ export default function RecurringPaymentsPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 {hasAccounts
-                  ? 'Ajoute tes charges fixes pour mieux anticiper le mois.'
-                  : 'Crée ton premier compte pour pouvoir enregistrer des abonnements et prélèvements.'}
+                  ? 'Ajoutez vos charges fixes pour mieux anticiper le mois.'
+                  : 'Créez votre premier compte pour pouvoir enregistrer des abonnements et prélèvements.'}
               </p>
             </div>
           )}
@@ -987,7 +994,7 @@ export default function RecurringPaymentsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cette charge fixe ?"
-          description={`Tu es sur le point de supprimer "${paymentToDelete.title}". Cette charge fixe sera supprimée de Supabase.`}
+          description={`Vous êtes sur le point de supprimer "${paymentToDelete.title}". Cette charge fixe sera supprimée de Supabase.`}
           confirmLabel="Supprimer la charge fixe"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

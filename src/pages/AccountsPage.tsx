@@ -201,7 +201,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -223,9 +225,9 @@ function EmptyAccountsCard({ onCreateAccount }: { onCreateAccount: () => void })
       </h3>
 
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-        Crée ton premier compte pour pouvoir enregistrer tes revenus, dépenses
-        et virements. Chaque transaction viendra ensuite modifier les soldes
-        automatiquement.
+        Créez votre premier compte pour pouvoir enregistrer vos revenus,
+        dépenses et virements. Chaque transaction viendra ensuite modifier les
+        soldes automatiquement.
       </p>
 
       <button
@@ -283,8 +285,8 @@ function AccountFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, le type, l’emoji ou le solde du compte.'
-                  : 'Ajoute un compte courant, un livret, des espèces ou un compte d’investissement.'}
+                  ? 'Modifiez le nom, le type, l’emoji ou le solde du compte.'
+                  : 'Ajoutez un compte courant, un livret, des espèces ou un compte d’investissement.'}
               </p>
             </div>
 
@@ -477,14 +479,15 @@ function AccountCard({
             onChange={(event) => setBalanceInput(event.target.value)}
             onBlur={handleBlur}
             inputMode="decimal"
-            className="w-full bg-transparent text-3xl font-black text-slate-950 outline-none"
+            aria-label={`Solde du compte ${account.name}`}
+            className="tabular w-full bg-transparent text-3xl font-black text-slate-950 outline-none"
           />
 
           <span className="text-xl font-black text-slate-400">€</span>
         </div>
 
         <p className="mt-2 text-sm text-slate-500">
-          Clique sur le montant pour ajuster le solde.
+          Cliquez sur le montant pour ajuster le solde.
         </p>
       </div>
 
@@ -706,12 +709,12 @@ export default function AccountsPage() {
     const balance = parseAmount(accountFormValues.balance)
 
     if (!name) {
-      setAccountFormError('Ajoute un nom pour le compte.')
+      setAccountFormError('Ajoutez un nom pour le compte.')
       return
     }
 
     if (!Number.isFinite(balance)) {
-      setAccountFormError('Ajoute un solde valide.')
+      setAccountFormError('Ajoutez un solde valide.')
       return
     }
 
@@ -749,32 +752,32 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Comptes bancaires
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Vue complète de tes comptes
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Vue complète de vos comptes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis ton compte courant, ton épargne, tes espèces et tes comptes
-                d’investissement. Les revenus, dépenses et virements modifient
-                automatiquement les soldes des comptes concernés.
+                Suivez votre compte courant, votre épargne, vos espèces et vos
+                comptes d’investissement. Les revenus, dépenses et virements
+                modifient automatiquement les soldes des comptes concernés.
               </p>
             </div>
 
             <button
               type="button"
               onClick={openAccountForm}
-              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
             >
               <Plus className="h-4 w-4" />
               Nouveau compte
@@ -929,7 +932,7 @@ export default function AccountsPage() {
                   </h3>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    Ajoute un compte pour voir la répartition de ton argent.
+                    Ajoutez un compte pour voir la répartition de votre argent.
                   </p>
                 </div>
               )}
@@ -1013,8 +1016,8 @@ export default function AccountsPage() {
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
                 } fixe${
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
-                }. Pour éviter de casser tes données, supprime ou réattribue d’abord ces éléments.`
-              : `Tu es sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte de ton suivi.`
+                }. Pour éviter de casser vos données, supprimez ou réattribuez d’abord ces éléments.`
+              : `Vous êtes sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte de votre suivi.`
           }
           confirmLabel={
             accountToDeleteHasLinkedItems ? 'Compris' : 'Supprimer le compte'

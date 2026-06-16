@@ -177,7 +177,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -243,8 +243,8 @@ function SaveMoneyModal({
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                L’argent sera retiré du compte choisi, ajouté à ton objectif, et
-                une transaction d’épargne sera créée.
+                L’argent sera retiré du compte choisi, ajouté à votre objectif,
+                et une transaction d’épargne sera créée.
               </p>
             </div>
 
@@ -271,7 +271,7 @@ function SaveMoneyModal({
                   {getSaveMoneyTargetTitle(target)}
                 </p>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="tabular mt-1 text-sm text-slate-500">
                   {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)} ·{' '}
                   {progress} %
                 </p>
@@ -322,6 +322,7 @@ function SaveMoneyModal({
                 onChange={(event) => updateField('amount', event.target.value)}
                 placeholder="Ex : 50"
                 inputMode="decimal"
+                aria-label="Montant à mettre de côté en euros"
                 className="h-12 w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
               />
 
@@ -431,8 +432,8 @@ function GoalFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le titre, les montants, l’emoji ou la date limite.'
-                  : 'Ajoute un projet à suivre : vacances, sécurité, matériel, voiture...'}
+                  ? 'Modifiez le titre, les montants, l’emoji ou la date limite.'
+                  : 'Ajoutez un projet à suivre : vacances, sécurité, matériel, voiture...'}
               </p>
             </div>
 
@@ -599,7 +600,7 @@ function SinkingFundFormModal({
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Prévois une grosse dépense future avec une mise de côté
+                Prévoyez une grosse dépense future avec une mise de côté
                 régulière.
               </p>
             </div>
@@ -774,7 +775,7 @@ function GoalCard({
             Mis de côté
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(goal.currentAmount)}
           </p>
         </div>
@@ -784,7 +785,7 @@ function GoalCard({
             Objectif
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(goal.targetAmount)}
           </p>
         </div>
@@ -794,7 +795,7 @@ function GoalCard({
             Restant
           </p>
 
-          <p className="mt-1 text-xl font-black text-violet-700">
+          <p className="tabular mt-1 text-xl font-black text-violet-700">
             {formatCurrency(remainingAmount)}
           </p>
         </div>
@@ -906,7 +907,7 @@ function SinkingFundCard({
             Actuel
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(fund.currentAmount)}
           </p>
         </div>
@@ -916,7 +917,7 @@ function SinkingFundCard({
             Cible
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(fund.targetAmount)}
           </p>
         </div>
@@ -1172,18 +1173,18 @@ export default function GoalsPage() {
 
     if (accounts.length === 0) {
       setSaveMoneyFormError(
-        'Crée d’abord un compte pour pouvoir mettre de côté.',
+        'Créez d’abord un compte pour pouvoir mettre de côté.',
       )
       return
     }
 
     if (!saveMoneyFormValues.accountId) {
-      setSaveMoneyFormError('Choisis le compte source.')
+      setSaveMoneyFormError('Choisissez le compte source.')
       return
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setSaveMoneyFormError('Ajoute un montant supérieur à 0 €.')
+      setSaveMoneyFormError('Ajoutez un montant supérieur à 0 €.')
       return
     }
 
@@ -1218,12 +1219,12 @@ export default function GoalsPage() {
     const currentAmount = parseAmount(goalFormValues.currentAmount)
 
     if (!title) {
-      setGoalFormError('Ajoute un titre à ton objectif.')
+      setGoalFormError('Ajoutez un titre à votre objectif.')
       return
     }
 
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setGoalFormError('Ajoute un montant cible supérieur à 0.')
+      setGoalFormError('Ajoutez un montant cible supérieur à 0.')
       return
     }
 
@@ -1267,12 +1268,12 @@ export default function GoalsPage() {
     const monthlyContribution = parseAmount(fundFormValues.monthlyContribution)
 
     if (!title) {
-      setFundFormError('Ajoute un titre à ton fonds.')
+      setFundFormError('Ajoutez un titre à votre fonds.')
       return
     }
 
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setFundFormError('Ajoute un montant cible supérieur à 0.')
+      setFundFormError('Ajoutez un montant cible supérieur à 0.')
       return
     }
 
@@ -1289,7 +1290,7 @@ export default function GoalsPage() {
     }
 
     if (!Number.isFinite(monthlyContribution) || monthlyContribution <= 0) {
-      setFundFormError('Ajoute une mensualité prévue supérieure à 0.')
+      setFundFormError('Ajoutez une mensualité prévue supérieure à 0.')
       return
     }
 
@@ -1348,32 +1349,32 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-violet-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Objectifs et épargne
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Donner un but à ton argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Donnez un but à votre argent
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Suis tes projets, tes fonds d’amortissement et ta progression.
-                Quand tu mets de côté, l’argent sort maintenant d’un vrai compte
-                et crée une transaction d’épargne.
+                Suivez vos projets, vos fonds d’amortissement et votre
+                progression. Quand vous mettez de côté, l’argent sort maintenant
+                d’un vrai compte et crée une transaction d’épargne.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleResetGoals}
-              className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-stone-200"
+              className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 shadow-md transition hover:-translate-y-0.5 hover:bg-stone-200"
             >
               <RefreshCcw className="h-4 w-4" />
               Réinitialiser
@@ -1442,12 +1443,12 @@ export default function GoalsPage() {
           </div>
 
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Tu as déjà mis de côté{' '}
-            <span className="font-bold text-slate-950">
+            Vous avez déjà mis de côté{' '}
+            <span className="tabular font-bold text-slate-950">
               {formatCurrency(globalSaved)}
             </span>{' '}
             sur un objectif total de{' '}
-            <span className="font-bold text-slate-950">
+            <span className="tabular font-bold text-slate-950">
               {formatCurrency(globalTarget)}
             </span>
             .
@@ -1504,7 +1505,7 @@ export default function GoalsPage() {
             </p>
 
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              Tes projets importants
+              Vos projets importants
             </h2>
           </div>
 
@@ -1538,7 +1539,7 @@ export default function GoalsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un objectif pour suivre tes projets importants.
+                Ajoutez un objectif pour suivre vos projets importants.
               </p>
             </div>
           )}
@@ -1587,7 +1588,7 @@ export default function GoalsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un fonds pour anticiper une grosse dépense future.
+                Ajoutez un fonds pour anticiper une grosse dépense future.
               </p>
             </div>
           )}
@@ -1632,7 +1633,7 @@ export default function GoalsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cet objectif ?"
-          description={`Tu es sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi actuel.`}
+          description={`Vous êtes sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi actuel.`}
           confirmLabel="Supprimer l’objectif"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}
@@ -1646,7 +1647,7 @@ export default function GoalsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer ce fonds ?"
-          description={`Tu es sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi actuel.`}
+          description={`Vous êtes sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi actuel.`}
           confirmLabel="Supprimer le fonds"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

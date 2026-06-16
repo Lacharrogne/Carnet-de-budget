@@ -264,7 +264,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -296,14 +296,14 @@ function EmptyCalendarGuide({ hasAccounts }: { hasAccounts: boolean }) {
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
               {hasAccounts
-                ? 'Ajoute des mouvements pour alimenter ton calendrier'
-                : 'Crée d’abord un compte pour commencer ton suivi'}
+                ? 'Ajoutez des mouvements pour alimenter votre calendrier'
+                : 'Créez d’abord un compte pour commencer votre suivi'}
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               {hasAccounts
-                ? 'Le calendrier affichera tes transactions datées et tes charges fixes actives. Ajoute une transaction ou un abonnement pour visualiser ton mois.'
-                : 'Une transaction ou une charge fixe doit être reliée à un compte. Commence par créer ton premier compte, puis ajoute tes mouvements.'}
+                ? 'Le calendrier affichera vos transactions datées et vos charges fixes actives. Ajoutez une transaction ou un abonnement pour visualiser votre mois.'
+                : 'Une transaction ou une charge fixe doit être reliée à un compte. Commencez par créer votre premier compte, puis ajoutez vos mouvements.'}
             </p>
           </div>
         </div>
@@ -394,7 +394,7 @@ function CalendarItemCard({
         </div>
 
         <div className="text-right">
-          <p className={`font-black ${getAmountColorClass(item.type)}`}>
+          <p className={`tabular font-black ${getAmountColorClass(item.type)}`}>
             {getAmountLabel(item)}
           </p>
 
@@ -598,23 +598,23 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise card-premium overflow-hidden">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Calendrier financier
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Visualiser ton mois
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Visualisez votre mois
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Retrouve tes revenus, tes dépenses, tes virements et tes charges
+                Retrouvez vos revenus, vos dépenses, vos virements et vos charges
                 fixes par jour. Le calendrier est synchronisé avec les
                 transactions et les abonnements enregistrés dans Supabase.
               </p>
@@ -631,7 +631,7 @@ export default function CalendarPage() {
 
               <Link
                 to={hasAccounts ? '/transactions?action=new' : '/comptes'}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 {hasAccounts ? 'Nouvelle transaction' : 'Créer un compte'}
@@ -844,8 +844,8 @@ export default function CalendarPage() {
 
                       <p className="mt-1 text-sm leading-6 text-slate-500">
                         {hasAccounts
-                          ? 'Ajoute une transaction ou une charge fixe pour remplir le calendrier.'
-                          : 'Crée d’abord un compte pour commencer à suivre ton mois.'}
+                          ? 'Ajoutez une transaction ou une charge fixe pour remplir le calendrier.'
+                          : 'Créez d’abord un compte pour commencer à suivre votre mois.'}
                       </p>
 
                       <Link
