@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { Route, Routes } from 'react-router'
+import { Navigate, Route, Routes } from 'react-router'
 
 import AppLayout from './components/layout/AppLayout'
 import ScrollToTop from './components/layout/ScrollToTop'
@@ -58,6 +58,7 @@ export default function App() {
             <Route path="/calendrier" element={<CalendarPage />} />
             <Route path="/statistiques" element={<StatsPage />} />
             <Route path="/stats" element={<StatsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </AppLayout>
