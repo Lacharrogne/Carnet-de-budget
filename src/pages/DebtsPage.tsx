@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Account } from '../types/budget'
 import type { Debt } from '../types/debt'
@@ -238,6 +239,8 @@ function DebtFormModal({
   onChange: (values: DebtFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof DebtFormValues>(
     field: Field,
     value: DebtFormValues[Field],
@@ -257,7 +260,14 @@ function DebtFormModal({
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="debt-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -265,7 +275,10 @@ function DebtFormModal({
                 {isEditing ? 'Modification' : 'Nouvelle dette'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="debt-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier cette dette'
                   : 'Ajouter une dette à suivre'}
@@ -430,6 +443,7 @@ function RepaymentFormModal({
   onChange: (values: RepaymentFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
   const amount = parseAmount(formValues.amount)
   const selectedAccount = accounts.find((account) => {
     return account.id === formValues.accountId
@@ -454,7 +468,14 @@ function RepaymentFormModal({
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="repayment-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -462,7 +483,10 @@ function RepaymentFormModal({
                 Remboursement
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="repayment-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 Rembourser {debt.title}
               </h2>
 

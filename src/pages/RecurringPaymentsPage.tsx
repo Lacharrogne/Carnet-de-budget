@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
@@ -266,9 +267,18 @@ function RecurringPaymentFormModal({
     })
   }
 
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recurring-modal-title"
+        tabIndex={-1}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -280,7 +290,10 @@ function RecurringPaymentFormModal({
                     : 'Nouvelle charge fixe'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="recurring-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? isIncome
                     ? 'Modifier ce revenu récurrent'

@@ -15,6 +15,7 @@ import {
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import MonthSwitcher from '../components/layout/MonthSwitcher'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import { useSelectedMonth } from '../context/useSelectedMonth'
 import { budgetCategories } from '../data/budgetCategories'
@@ -391,9 +392,16 @@ function BudgetFormModal({
     budgetCategoryOptions.find((category) => category.id === formValues.category) ??
     budgetCategoryOptions[0]
 
+  const dialogRef = useDialogA11y<HTMLFormElement>(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
       <form
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="budget-modal-title"
+        tabIndex={-1}
         onSubmit={onSubmit}
         className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
       >
@@ -404,7 +412,10 @@ function BudgetFormModal({
                 Nouveau budget
               </p>
 
-              <h2 className="mt-1 font-display text-2xl font-semibold text-slate-950">
+              <h2
+                id="budget-modal-title"
+                className="mt-1 font-display text-2xl font-semibold text-slate-950"
+              >
                 Ajouter une limite mensuelle
               </h2>
 

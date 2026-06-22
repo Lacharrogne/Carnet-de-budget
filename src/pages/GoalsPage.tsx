@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Account, SavingGoal, SinkingFund } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -206,6 +207,7 @@ function SaveMoneyModal({
   onChange: (values: SaveMoneyFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
   const currentAmount = getSaveMoneyTargetCurrentAmount(target)
   const targetAmount = getSaveMoneyTargetTargetAmount(target)
   const remainingAmount = getRemainingAmount(currentAmount, targetAmount)
@@ -230,7 +232,14 @@ function SaveMoneyModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setaside-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -238,7 +247,10 @@ function SaveMoneyModal({
                 Mise de côté
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="setaside-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 Mettre de côté depuis un compte
               </h2>
 
@@ -397,6 +409,8 @@ function GoalFormModal({
   onChange: (values: GoalFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof GoalFormValues>(
     field: Field,
     value: GoalFormValues[Field],
@@ -416,7 +430,14 @@ function GoalFormModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="goal-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -424,7 +445,10 @@ function GoalFormModal({
                 {isEditing ? 'Modification' : 'Nouvel objectif'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="goal-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier cet objectif'
                   : 'Créer un objectif d’épargne'}
@@ -566,6 +590,8 @@ function SinkingFundFormModal({
   onChange: (values: SinkingFundFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof SinkingFundFormValues>(
     field: Field,
     value: SinkingFundFormValues[Field],
@@ -585,7 +611,14 @@ function SinkingFundFormModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fund-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -593,7 +626,10 @@ function SinkingFundFormModal({
                 {isEditing ? 'Modification' : 'Nouveau fonds'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="fund-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier ce fonds d’amortissement'
                   : 'Créer un fonds d’amortissement'}
