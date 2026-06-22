@@ -124,6 +124,33 @@ function getRemainingAmount(currentAmount: number, targetAmount: number) {
   return Math.max(targetAmount - currentAmount, 0)
 }
 
+type DeadlinePlan = {
+  isPast: boolean
+  daysLeft: number
+  monthsLeft: number
+  monthlyNeeded: number
+}
+
+/** Plan d'épargne pour tenir une échéance : combien mettre de côté par mois. */
+function getDeadlinePlan(
+  deadline: string,
+  remainingAmount: number,
+  nowMs: number,
+): DeadlinePlan {
+  const dayMs = 24 * 60 * 60 * 1000
+  const target = new Date(`${deadline}T12:00:00`).getTime()
+  const daysLeft = Math.ceil((target - nowMs) / dayMs)
+
+  if (daysLeft <= 0) {
+    return { isPast: true, daysLeft, monthsLeft: 0, monthlyNeeded: 0 }
+  }
+
+  const monthsLeft = Math.max(1, Math.round(daysLeft / 30))
+  const monthlyNeeded = Math.ceil(remainingAmount / monthsLeft)
+
+  return { isPast: false, daysLeft, monthsLeft, monthlyNeeded }
+}
+
 function getSaveMoneyTargetTitle(target: SaveMoneyTarget) {
   return target.type === 'goal' ? target.goal.title : target.fund.title
 }
@@ -758,11 +785,13 @@ function SinkingFundFormModal({
 
 function GoalCard({
   goal,
+  nowMs,
   onSaveRequest,
   onEditRequest,
   onDeleteRequest,
 }: {
   goal: SavingGoal
+  nowMs: number
   onSaveRequest: (goal: SavingGoal) => void
   onEditRequest: (goal: SavingGoal) => void
   onDeleteRequest: (goal: SavingGoal) => void
@@ -770,6 +799,10 @@ function GoalCard({
   const progress = getProgress(goal.currentAmount, goal.targetAmount)
   const remainingAmount = getRemainingAmount(goal.currentAmount, goal.targetAmount)
   const isCompleted = progress >= 100
+  const deadlinePlan =
+    goal.deadline && !isCompleted
+      ? getDeadlinePlan(goal.deadline, remainingAmount, nowMs)
+      : null
 
   return (
     <article className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -852,6 +885,38 @@ function GoalCard({
           />
         </div>
       </div>
+
+      {deadlinePlan && (
+        <div
+          className={`mt-4 rounded-2xl border p-4 text-sm leading-6 ${
+            deadlinePlan.isPast
+              ? 'border-amber-100 bg-amber-50 text-amber-900'
+              : 'border-violet-100 bg-violet-50 text-violet-900'
+          }`}
+        >
+          {deadlinePlan.isPast ? (
+            <p>
+              <span className="font-black">Échéance dépassée.</span> Il reste{' '}
+              <span className="tabular font-bold">
+                {formatCurrency(remainingAmount)}
+              </span>{' '}
+              à mettre de côté — vous pouvez décaler la date dans « Modifier ».
+            </p>
+          ) : (
+            <p>
+              Pour y arriver à temps, mettez environ{' '}
+              <span className="tabular font-black">
+                {formatCurrency(deadlinePlan.monthlyNeeded)}
+              </span>{' '}
+              de côté par mois.{' '}
+              <span className="text-violet-700/80">
+                Encore {deadlinePlan.monthsLeft} mois (
+                {deadlinePlan.daysLeft} jours).
+              </span>
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button
@@ -1035,6 +1100,7 @@ export default function GoalsPage() {
     resetGoals,
   } = useBudgetData()
 
+  const [nowMs] = useState(() => Date.now())
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false)
   const [goalFormValues, setGoalFormValues] =
     useState<GoalFormValues>(defaultGoalFormValues)
@@ -1561,6 +1627,7 @@ export default function GoalsPage() {
               <GoalCard
                 key={`${goal.id}-${goal.title}-${goal.currentAmount}-${goal.targetAmount}-${goal.deadline}`}
                 goal={goal}
+                nowMs={nowMs}
                 onSaveRequest={openSaveMoneyForGoal}
                 onEditRequest={openEditGoalForm}
                 onDeleteRequest={setGoalToDelete}
