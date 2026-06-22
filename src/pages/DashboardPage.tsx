@@ -9,12 +9,14 @@ import {
   Circle,
   CreditCard,
   Landmark,
+  Lightbulb,
   LineChart,
   PiggyBank,
   Plus,
   ReceiptText,
   Repeat2,
   ShieldCheck,
+  Sparkles,
   Target,
   TrendingUp,
   WalletCards,
@@ -29,6 +31,11 @@ import {
   getMonthLabel,
   type EndOfMonthForecast,
 } from '../services/budgetStatsService'
+import { detectSubscriptions } from '../services/subscriptionDetectionService'
+import {
+  getFinancialTips,
+  type FinancialTip,
+} from '../services/financialTipsService'
 import type { BudgetCategoryId, Transaction } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -419,6 +426,64 @@ function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
         mois.
       </p>
     </section>
+  )
+}
+
+const tipToneStyles: Record<
+  FinancialTip['tone'],
+  { card: string; icon: string; link: string; Icon: typeof Lightbulb }
+> = {
+  positive: {
+    card: 'border-emerald-100 bg-emerald-50',
+    icon: 'bg-emerald-100 text-emerald-700',
+    link: 'text-emerald-800 hover:text-emerald-950',
+    Icon: Sparkles,
+  },
+  info: {
+    card: 'border-blue-100 bg-blue-50',
+    icon: 'bg-blue-100 text-blue-700',
+    link: 'text-blue-800 hover:text-blue-950',
+    Icon: Lightbulb,
+  },
+  warning: {
+    card: 'border-amber-100 bg-amber-50',
+    icon: 'bg-amber-100 text-amber-700',
+    link: 'text-amber-900 hover:text-amber-950',
+    Icon: AlertTriangle,
+  },
+}
+
+function TipCard({ tip }: { tip: FinancialTip }) {
+  const styles = tipToneStyles[tip.tone]
+  const Icon = styles.Icon
+
+  return (
+    <article className={`flex flex-col rounded-[1.5rem] border p-5 ${styles.card}`}>
+      <div className="flex items-start gap-3">
+        <div className={`shrink-0 rounded-2xl p-2.5 ${styles.icon}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+
+        <div className="min-w-0">
+          <p className="font-display text-base font-semibold text-slate-950">
+            {tip.title}
+          </p>
+          <p className="mt-1.5 text-sm leading-6 text-slate-600">
+            {tip.message}
+          </p>
+        </div>
+      </div>
+
+      {tip.href && tip.actionLabel && (
+        <Link
+          to={tip.href}
+          className={`mt-3 inline-flex w-fit items-center gap-1 text-sm font-bold transition ${styles.link}`}
+        >
+          {tip.actionLabel}
+          <span aria-hidden>→</span>
+        </Link>
+      )}
+    </article>
   )
 }
 
@@ -1009,6 +1074,22 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
     monthKey,
   })
 
+  const subscriptionCandidatesCount = detectSubscriptions(
+    transactions,
+    recurringPayments,
+  ).length
+
+  const financialTips = getFinancialTips({
+    monthlyIncome,
+    monthlyBalance,
+    budgetUsages,
+    recurringMonthlyTotal,
+    savingGoals,
+    sinkingFunds,
+    subscriptionCandidatesCount,
+    forecast: endOfMonthForecast,
+  })
+
   const watchItems: WatchItem[] = [
     {
       title:
@@ -1173,6 +1254,22 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
       </section>
 
       {endOfMonthForecast && <ForecastCard forecast={endOfMonthForecast} />}
+
+      {financialTips.length > 0 && (
+        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <SectionHeader
+            eyebrow="Conseils pour vous"
+            title="Vos pistes du moment"
+            icon={<Lightbulb className="h-5 w-5" />}
+          />
+
+          <div className="mt-6 grid gap-3 md:grid-cols-2">
+            {financialTips.map((tip) => (
+              <TipCard key={tip.id} tip={tip} />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
