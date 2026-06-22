@@ -538,7 +538,7 @@ export default function StatsPage() {
   })
 
   const activeRecurringPayments = recurringPayments.filter((payment) => {
-    return payment.isActive
+    return payment.isActive && payment.type !== 'income'
   })
 
   const recurringMonthlyTotal = activeRecurringPayments.reduce(

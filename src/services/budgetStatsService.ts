@@ -163,11 +163,13 @@ export type EndOfMonthForecast = {
   dailyPace: number
   /** Charges fixes encore à venir d'ici la fin du mois. */
   upcomingRecurring: number
+  /** Revenus récurrents encore attendus d'ici la fin du mois (salaire…). */
+  upcomingRecurringIncome: number
   /** Estimation des dépenses restantes (rythme quotidien + charges fixes). */
   projectedRemainingExpenses: number
   /** Estimation des dépenses totales du mois. */
   projectedExpenses: number
-  /** Argent disponible estimé en fin de mois (sans nouvelle rentrée). */
+  /** Argent disponible estimé en fin de mois (charges et revenus à venir inclus). */
   projectedEndBalance: number
   /** Estimation du résultat du mois (revenus - dépenses projetées). */
   projectedMonthResult: number
@@ -177,13 +179,13 @@ export type EndOfMonthForecast = {
 }
 
 /**
- * Projette la fin de mois à partir du rythme de dépenses observé et des
- * charges fixes encore à venir. Hypothèse prudente : aucune nouvelle rentrée
- * d'argent n'est supposée d'ici la fin du mois.
+ * Projette la fin de mois à partir du rythme de dépenses observé, des charges
+ * fixes encore à venir et des revenus récurrents encore attendus (salaire…).
  *
  * Le calcul sépare les dépenses « du quotidien » (variables) des charges
  * fixes : le rythme quotidien est estimé sur les seules dépenses non
- * récurrentes, puis on ajoute les charges fixes datées encore à venir.
+ * récurrentes, puis on ajoute les charges fixes datées encore à venir et on
+ * intègre les revenus récurrents encore attendus d'ici la fin du mois.
  */
 export function getEndOfMonthForecast({
   transactions,
@@ -222,16 +224,24 @@ export function getEndOfMonthForecast({
   const dailyPace = everydayExpensesSoFar / Math.max(daysElapsed, 1)
   const projectedEverydayRest = dailyPace * daysRemaining
 
-  const upcomingRecurring = recurringPayments
-    .filter(
-      (payment) => payment.isActive && payment.dayOfMonth > daysElapsed,
-    )
+  const upcomingPayments = recurringPayments.filter(
+    (payment) => payment.isActive && payment.dayOfMonth > daysElapsed,
+  )
+
+  const upcomingRecurring = upcomingPayments
+    .filter((payment) => payment.type !== 'income')
+    .reduce((total, payment) => total + payment.amount, 0)
+
+  const upcomingRecurringIncome = upcomingPayments
+    .filter((payment) => payment.type === 'income')
     .reduce((total, payment) => total + payment.amount, 0)
 
   const projectedRemainingExpenses = projectedEverydayRest + upcomingRecurring
   const projectedExpenses = monthExpenses + projectedRemainingExpenses
-  const projectedEndBalance = liquidBalance - projectedRemainingExpenses
-  const projectedMonthResult = monthIncome - projectedExpenses
+  const projectedEndBalance =
+    liquidBalance - projectedRemainingExpenses + upcomingRecurringIncome
+  const projectedMonthResult =
+    monthIncome + upcomingRecurringIncome - projectedExpenses
 
   let tone: ForecastTone = 'serein'
 
@@ -265,6 +275,7 @@ export function getEndOfMonthForecast({
     daysRemaining,
     dailyPace,
     upcomingRecurring,
+    upcomingRecurringIncome,
     projectedRemainingExpenses,
     projectedExpenses,
     projectedEndBalance,

@@ -330,6 +330,15 @@ function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
       value: `-${formatCurrency(forecast.upcomingRecurring)}`,
       hint: 'd’ici la fin du mois',
     },
+    ...(forecast.upcomingRecurringIncome > 0
+      ? [
+          {
+            label: 'Revenus à venir',
+            value: `+${formatCurrency(forecast.upcomingRecurringIncome)}`,
+            hint: 'salaire et revenus récurrents attendus',
+          },
+        ]
+      : []),
     {
       label: 'Dépenses restantes estimées',
       value: `-${formatCurrency(forecast.projectedRemainingExpenses)}`,
@@ -421,9 +430,8 @@ function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
       </div>
 
       <p className="mt-4 text-xs leading-5 text-slate-400">
-        Estimation prudente, basée sur votre rythme de dépenses du mois et vos
-        charges fixes à venir — sans nouvelle rentrée d’argent d’ici la fin du
-        mois.
+        Estimation basée sur votre rythme de dépenses du mois, vos charges fixes
+        et vos revenus récurrents encore attendus d’ici la fin du mois.
       </p>
     </section>
   )
@@ -974,7 +982,7 @@ export default function DashboardPage() {
   })
 
   const activeRecurringPayments = recurringPayments.filter((payment) => {
-    return payment.isActive
+    return payment.isActive && payment.type !== 'income'
   })
 
   const recurringMonthlyTotal = activeRecurringPayments.reduce(

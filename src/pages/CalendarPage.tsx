@@ -219,6 +219,7 @@ function createRecurringPaymentCalendarItem(
   monthDate: Date,
 ): CalendarItem {
   const dateKey = getRecurringPaymentDateKey(monthDate, payment)
+  const isIncome = payment.type === 'income'
 
   return {
     id: `recurring-${payment.id}-${dateKey}`,
@@ -226,8 +227,8 @@ function createRecurringPaymentCalendarItem(
     amount: payment.amount,
     dateKey,
     category: payment.category,
-    type: 'expense',
-    label: 'Charge fixe',
+    type: isIncome ? 'income' : 'expense',
+    label: isIncome ? 'Revenu fixe' : 'Charge fixe',
     isRecurring: true,
   }
 }
@@ -569,9 +570,9 @@ export default function CalendarPage() {
     .filter((transaction) => transaction.type === 'expense')
     .reduce((total, transaction) => total + transaction.amount, 0)
 
-  const recurringAmount = activeRecurringPayments.reduce((total, payment) => {
-    return total + payment.amount
-  }, 0)
+  const recurringAmount = activeRecurringPayments
+    .filter((payment) => payment.type !== 'income')
+    .reduce((total, payment) => total + payment.amount, 0)
 
   function goToPreviousMonth() {
     const previousMonth = new Date(monthDate)

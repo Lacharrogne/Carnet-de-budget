@@ -234,6 +234,7 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 3,
     isActive: true,
+    type: 'expense',
   },
   {
     id: 'recurring-2',
@@ -243,6 +244,7 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 7,
     isActive: true,
+    type: 'expense',
   },
   {
     id: 'recurring-3',
@@ -252,6 +254,17 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 8,
     isActive: true,
+    type: 'expense',
+  },
+  {
+    id: 'recurring-4',
+    title: 'Salaire',
+    amount: 2100,
+    category: 'salary',
+    accountId: 'account-current',
+    dayOfMonth: 1,
+    isActive: true,
+    type: 'income',
   },
 ]
 export const sinkingFunds: SinkingFund[] = [

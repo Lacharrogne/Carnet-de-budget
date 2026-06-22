@@ -29,6 +29,7 @@ import type {
   Account,
   BudgetCategoryId,
   RecurringPayment,
+  RecurringType,
 } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -38,6 +39,7 @@ type RecurringPaymentFormValues = {
   dayOfMonth: string
   category: BudgetCategoryId
   accountId: string
+  type: RecurringType
 }
 
 const recurringCategoryOptions = budgetCategories.filter((category) => {
@@ -50,6 +52,7 @@ const defaultRecurringPaymentFormValues: RecurringPaymentFormValues = {
   dayOfMonth: '1',
   category: recurringCategoryOptions[0].id,
   accountId: '',
+  type: 'expense',
 }
 
 function createRecurringPaymentId() {
@@ -65,6 +68,7 @@ function getRecurringPaymentFormValues(
     dayOfMonth: String(payment.dayOfMonth),
     category: payment.category,
     accountId: payment.accountId,
+    type: payment.type,
   }
 }
 
@@ -250,6 +254,8 @@ function RecurringPaymentFormModal({
       (category) => category.id === formValues.category,
     ) ?? recurringCategoryOptions[0]
 
+  const isIncome = formValues.type === 'income'
+
   function updateField<Field extends keyof RecurringPaymentFormValues>(
     field: Field,
     value: RecurringPaymentFormValues[Field],
@@ -267,19 +273,27 @@ function RecurringPaymentFormModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-emerald-600">
-                {isEditing ? 'Modification' : 'Nouvelle charge fixe'}
+                {isEditing
+                  ? 'Modification'
+                  : isIncome
+                    ? 'Nouveau revenu récurrent'
+                    : 'Nouvelle charge fixe'}
               </p>
 
               <h2 className="mt-1 text-2xl font-black text-slate-950">
                 {isEditing
-                  ? 'Modifier cette charge fixe'
-                  : 'Ajouter une charge fixe'}
+                  ? isIncome
+                    ? 'Modifier ce revenu récurrent'
+                    : 'Modifier cette charge fixe'
+                  : isIncome
+                    ? 'Ajouter un revenu récurrent'
+                    : 'Ajouter une charge fixe'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                {isEditing
-                  ? 'Modifiez le nom, le montant, le jour, la catégorie ou le compte associé.'
-                  : 'Ajoutez un abonnement, un loyer, une assurance ou un prélèvement mensuel.'}
+                {isIncome
+                  ? 'Salaire, aide ou tout revenu qui revient chaque mois.'
+                  : 'Abonnement, loyer, assurance ou prélèvement mensuel.'}
               </p>
             </div>
 
@@ -313,13 +327,49 @@ function RecurringPaymentFormModal({
             </div>
           </div>
 
+          <div>
+            <span className="text-sm font-bold text-slate-700">Nature</span>
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => updateField('type', 'expense')}
+                aria-pressed={!isIncome}
+                className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${
+                  !isIncome
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-stone-200 bg-stone-50 text-slate-500 hover:bg-stone-100'
+                }`}
+              >
+                Charge (sortie)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateField('type', 'income')}
+                aria-pressed={isIncome}
+                className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${
+                  isIncome
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-stone-200 bg-stone-50 text-slate-500 hover:bg-stone-100'
+                }`}
+              >
+                Revenu (entrée)
+              </button>
+            </div>
+          </div>
+
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Nom</span>
 
             <input
               value={formValues.title}
               onChange={(event) => updateField('title', event.target.value)}
-              placeholder="Ex : Netflix, loyer, assurance..."
+              placeholder={
+                isIncome
+                  ? 'Ex : Salaire, allocation...'
+                  : 'Ex : Netflix, loyer, assurance...'
+              }
               className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             />
           </label>
@@ -443,6 +493,7 @@ function RecurringPaymentCard({
   onDeleteRequest: (payment: RecurringPayment) => void
 }) {
   const category = getCategoryById(payment.category)
+  const isIncome = payment.type === 'income'
 
   return (
     <article className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -457,6 +508,16 @@ function RecurringPaymentCard({
               <h2 className="truncate text-xl font-black text-slate-950">
                 {payment.title}
               </h2>
+
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-black ${
+                  isIncome
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-rose-50 text-rose-700'
+                }`}
+              >
+                {isIncome ? 'Revenu' : 'Charge'}
+              </span>
 
               <span
                 className={`rounded-full px-3 py-1 text-xs font-black ${
@@ -476,8 +537,13 @@ function RecurringPaymentCard({
         </div>
 
         <div className="text-left md:text-right">
-          <p className="tabular text-2xl font-black text-rose-700">
-            -{formatCurrency(payment.amount)}
+          <p
+            className={`tabular text-2xl font-black ${
+              isIncome ? 'text-emerald-700' : 'text-rose-700'
+            }`}
+          >
+            {isIncome ? '+' : '-'}
+            {formatCurrency(payment.amount)}
           </p>
 
           <p className="mt-1 text-sm font-bold text-slate-500">
@@ -707,6 +773,7 @@ export default function RecurringPaymentsPage() {
       accountId: candidate.accountId,
       dayOfMonth: candidate.dayOfMonth,
       isActive: true,
+      type: 'expense',
     })
 
     setDismissedCandidateKeys((keys) => [...keys, candidate.key])
@@ -721,18 +788,24 @@ export default function RecurringPaymentsPage() {
     (payment) => !payment.isActive,
   )
 
-  const monthlyTotal = activePayments.reduce((total, payment) => {
+  const activeExpenses = activePayments.filter(
+    (payment) => payment.type !== 'income',
+  )
+  const activeIncomes = activePayments.filter(
+    (payment) => payment.type === 'income',
+  )
+
+  const monthlyTotal = activeExpenses.reduce((total, payment) => {
+    return total + payment.amount
+  }, 0)
+
+  const monthlyIncomeTotal = activeIncomes.reduce((total, payment) => {
     return total + payment.amount
   }, 0)
 
   const yearlyTotal = monthlyTotal * 12
 
-  const averagePayment =
-    activePayments.length > 0
-      ? Math.round(monthlyTotal / activePayments.length)
-      : 0
-
-  const nextPayment = [...activePayments].sort((firstPayment, secondPayment) => {
+  const nextPayment = [...activeExpenses].sort((firstPayment, secondPayment) => {
     return (
       getDaysBeforePayment(firstPayment.dayOfMonth) -
       getDaysBeforePayment(secondPayment.dayOfMonth)
@@ -847,6 +920,7 @@ export default function RecurringPaymentsPage() {
       category: currentFormValues.category,
       accountId: currentFormValues.accountId,
       isActive: paymentToEdit?.isActive ?? true,
+      type: currentFormValues.type,
     }
 
     if (paymentToEdit) {
@@ -925,7 +999,7 @@ export default function RecurringPaymentsPage() {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
-          title="Charges actives"
+          title="Charges /mois"
           value={formatCurrency(monthlyTotal)}
           description="Total mensuel à anticiper"
           icon={<Repeat2 className="h-5 w-5" />}
@@ -933,28 +1007,28 @@ export default function RecurringPaymentsPage() {
         />
 
         <PageStatCard
+          title="Revenus /mois"
+          value={formatCurrency(monthlyIncomeTotal)}
+          description="Salaire et revenus récurrents"
+          icon={<WalletCards className="h-5 w-5" />}
+          variant="emerald"
+        />
+
+        <PageStatCard
           title="Coût annuel"
           value={formatCurrency(yearlyTotal)}
-          description="Projection sur 12 mois"
+          description="Charges projetées sur 12 mois"
           icon={<CalendarDays className="h-5 w-5" />}
           variant="amber"
         />
 
         <PageStatCard
-          title="Charges suivies"
+          title="Suivis"
           value={String(activePayments.length)}
-          description={`${inactivePayments.length} désactivée${
+          description={`${inactivePayments.length} désactivé${
             inactivePayments.length > 1 ? 's' : ''
           }`}
           icon={<CheckCircle2 className="h-5 w-5" />}
-          variant="emerald"
-        />
-
-        <PageStatCard
-          title="Moyenne"
-          value={formatCurrency(averagePayment)}
-          description="Par charge active"
-          icon={<WalletCards className="h-5 w-5" />}
           variant="blue"
         />
       </section>
