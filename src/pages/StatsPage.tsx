@@ -20,6 +20,7 @@ import MonthSwitcher from '../components/layout/MonthSwitcher'
 import { useBudgetData } from '../context/useBudgetData'
 import { useSelectedMonth } from '../context/useSelectedMonth'
 import {
+  getAdjacentMonthKey,
   getBudgetUsages,
   getCategoryById,
   getMonthLabel,
@@ -70,6 +71,101 @@ function getTransactionDateLabel(date: string) {
     day: '2-digit',
     month: 'long',
   }).format(new Date(`${date}T12:00:00`))
+}
+
+type MonthlyPoint = {
+  key: string
+  label: string
+  income: number
+  expenses: number
+}
+
+function getMonthShortLabel(monthKey: string) {
+  const [year, month] = monthKey.split('-').map(Number)
+
+  return new Intl.DateTimeFormat('fr-FR', { month: 'short' })
+    .format(new Date(year, month - 1, 1))
+    .replace('.', '')
+}
+
+/** Série revenus/dépenses des `count` derniers mois jusqu'à `endMonthKey`. */
+function getMonthlySeries(
+  transactions: Transaction[],
+  endMonthKey: string,
+  count = 6,
+): MonthlyPoint[] {
+  const points: MonthlyPoint[] = []
+
+  for (let offset = count - 1; offset >= 0; offset -= 1) {
+    const key = getAdjacentMonthKey(endMonthKey, -offset)
+    const monthTransactions = transactions.filter((transaction) =>
+      transaction.date.startsWith(key),
+    )
+
+    const income = monthTransactions
+      .filter((transaction) => transaction.type === 'income')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    const expenses = monthTransactions
+      .filter((transaction) => transaction.type === 'expense')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    points.push({ key, label: getMonthShortLabel(key), income, expenses })
+  }
+
+  return points
+}
+
+function MonthlyTrendChart({ points }: { points: MonthlyPoint[] }) {
+  const maxValue = Math.max(
+    1,
+    ...points.flatMap((point) => [point.income, point.expenses]),
+  )
+
+  return (
+    <div className="mt-6">
+      <div className="flex items-end justify-between gap-2 sm:gap-4">
+        {points.map((point) => (
+          <div
+            key={point.key}
+            className="flex flex-1 flex-col items-center gap-2"
+          >
+            <div className="flex h-40 w-full items-end justify-center gap-1.5">
+              <div
+                className="w-1/2 max-w-[1.75rem] rounded-t-lg bg-emerald-500/90"
+                style={{
+                  height: `${Math.max((point.income / maxValue) * 100, point.income > 0 ? 4 : 0)}%`,
+                }}
+                title={`Revenus : ${formatCurrency(point.income)}`}
+              />
+              <div
+                className="w-1/2 max-w-[1.75rem] rounded-t-lg bg-rose-400/90"
+                style={{
+                  height: `${Math.max((point.expenses / maxValue) * 100, point.expenses > 0 ? 4 : 0)}%`,
+                }}
+                title={`Dépenses : ${formatCurrency(point.expenses)}`}
+              />
+            </div>
+
+            <span className="text-xs font-bold capitalize text-slate-500">
+              {point.label}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-semibold text-slate-500">
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-emerald-500/90" />
+          Revenus
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-sm bg-rose-400/90" />
+          Dépenses
+        </span>
+      </div>
+    </div>
+  )
 }
 
 function getEvolutionLabel(currentValue: number, previousValue: number) {
@@ -448,6 +544,7 @@ export default function StatsPage() {
   const { monthKey } = useSelectedMonth()
   const previousMonthKey = getPreviousMonthKey(monthKey)
   const monthLabel = getMonthLabel(monthKey)
+  const monthlySeries = getMonthlySeries(transactions, monthKey)
 
   const hasAccounts = accounts.length > 0
   const hasBudgets = monthlyBudgets.length > 0
@@ -820,6 +917,18 @@ export default function StatsPage() {
           variant={budgetAlerts.length > 0 ? 'amber' : 'emerald'}
         />
       </section>
+
+      {hasTransactions && (
+        <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
+          <SectionHeader
+            eyebrow="Évolution"
+            title="Revenus et dépenses sur 6 mois"
+            icon={<BarChart3 className="h-5 w-5" />}
+          />
+
+          <MonthlyTrendChart points={monthlySeries} />
+        </section>
+      )}
 
       <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
         <SectionHeader
