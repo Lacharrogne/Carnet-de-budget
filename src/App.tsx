@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router'
 import AppLayout from './components/layout/AppLayout'
 import ScrollToTop from './components/layout/ScrollToTop'
 import ModalAutoClose from './components/layout/ModalAutoClose'
+import TrialBanner from './components/layout/TrialBanner'
 
 // Chargement à la demande : chaque page est découpée dans son propre bundle,
 // pour un premier affichage plus rapide.
@@ -40,6 +41,8 @@ export default function App() {
       <ScrollToTop />
 
       <AppLayout>
+        <TrialBanner />
+
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<DashboardPage />} />

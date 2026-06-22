@@ -1,0 +1,26 @@
+/**
+ * Réglages de l'essai gratuit et de l'abonnement.
+ *
+ * Modèle retenu : essai gratuit (toutes les fonctionnalités), puis abonnement
+ * pour continuer. Tant que le paiement n'est pas branché, on NE bloque
+ * personne : il suffira de passer `ENFORCE_TRIAL` à `true` le jour venu.
+ */
+
+/** Durée de l'essai gratuit, en jours (aligné sur la vitrine). */
+export const TRIAL_DURATION_DAYS = 14
+
+/**
+ * Quand `false`, l'accès reste ouvert à tous même après l'essai (on affiche
+ * seulement un rappel). Passez à `true` une fois le paiement en place pour
+ * verrouiller l'app à la fin de l'essai (sauf abonnés).
+ */
+export const ENFORCE_TRIAL = false
+
+/**
+ * Adresse de la page d'abonnement / paiement. `null` tant qu'elle n'existe
+ * pas : les boutons proposeront alors de nous contacter.
+ */
+export const UPGRADE_URL: string | null = null
+
+/** Contact utilisé en repli tant qu'il n'y a pas de page de paiement. */
+export const CONTACT_EMAIL = 'maxi.charr@gmail.com'
