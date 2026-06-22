@@ -8,6 +8,7 @@ import {
   Plus,
   ReceiptText,
   Repeat2,
+  Sparkles,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -19,6 +20,11 @@ import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import {
+  detectSubscriptions,
+  getCandidateEmoji,
+  type SubscriptionCandidate,
+} from '../services/subscriptionDetectionService'
 import type {
   Account,
   BudgetCategoryId,
@@ -556,9 +562,111 @@ function RecurringPaymentCard({
   )
 }
 
+function DetectedSubscriptions({
+  candidates,
+  getAccountName,
+  onAdd,
+  onDismiss,
+}: {
+  candidates: SubscriptionCandidate[]
+  getAccountName: (accountId: string) => string
+  onAdd: (candidate: SubscriptionCandidate) => void
+  onDismiss: (key: string) => void
+}) {
+  if (candidates.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+            Détecté pour vous
+          </p>
+
+          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
+            Abonnements repérés dans vos dépenses
+          </h2>
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Ces dépenses reviennent régulièrement. Ajoutez-les en un clic pour
+            mieux anticiper vos charges fixes — ou ignorez celles qui n’en sont
+            pas.
+          </p>
+        </div>
+
+        <div className="hidden rounded-2xl bg-emerald-100 p-3 text-emerald-700 sm:block">
+          <Sparkles className="h-5 w-5" />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {candidates.map((candidate) => (
+          <article
+            key={candidate.key}
+            className="flex flex-col gap-4 rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
+                  {getCandidateEmoji(candidate)}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate font-black text-slate-950">
+                    {candidate.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Vu {candidate.occurrences} fois sur {candidate.monthsCount}{' '}
+                    mois · le {candidate.dayOfMonth} du mois
+                  </p>
+                </div>
+              </div>
+
+              <p className="tabular shrink-0 text-right font-black text-slate-950">
+                {formatCurrency(candidate.amount)}
+                <span className="block text-xs font-semibold text-slate-400">
+                  ~{formatCurrency(candidate.yearlyEstimate)} / an
+                </span>
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              {getCategoryById(candidate.category).name} ·{' '}
+              {getAccountName(candidate.accountId)}
+            </p>
+
+            <div className="mt-auto flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onAdd(candidate)}
+                className="flex items-center gap-2 rounded-full bg-emerald-950 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-900"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter en charge fixe
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDismiss(candidate.key)}
+                className="flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-stone-200"
+              >
+                <X className="h-4 w-4" />
+                Ignorer
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function RecurringPaymentsPage() {
   const {
     accounts,
+    transactions,
     recurringPayments,
     addRecurringPayment,
     updateRecurringPayment,
@@ -566,6 +674,9 @@ export default function RecurringPaymentsPage() {
     deleteRecurringPayment,
   } = useBudgetData()
 
+  const [dismissedCandidateKeys, setDismissedCandidateKeys] = useState<
+    string[]
+  >([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formValues, setFormValues] = useState<RecurringPaymentFormValues>(() =>
     getDefaultFormValues(accounts),
@@ -581,6 +692,29 @@ export default function RecurringPaymentsPage() {
   const hasAccounts = accounts.length > 0
   const shouldShowForm = hasAccounts && (isFormOpen || action === 'new')
   const displayedFormValues = normalizeFormValues(formValues, accounts)
+
+  const detectedCandidates = detectSubscriptions(
+    transactions,
+    recurringPayments,
+  ).filter((candidate) => !dismissedCandidateKeys.includes(candidate.key))
+
+  function handleAddCandidate(candidate: SubscriptionCandidate) {
+    addRecurringPayment({
+      id: createRecurringPaymentId(),
+      title: candidate.title,
+      amount: candidate.amount,
+      category: candidate.category,
+      accountId: candidate.accountId,
+      dayOfMonth: candidate.dayOfMonth,
+      isActive: true,
+    })
+
+    setDismissedCandidateKeys((keys) => [...keys, candidate.key])
+  }
+
+  function dismissCandidate(key: string) {
+    setDismissedCandidateKeys((keys) => [...keys, key])
+  }
 
   const activePayments = recurringPayments.filter((payment) => payment.isActive)
   const inactivePayments = recurringPayments.filter(
@@ -824,6 +958,15 @@ export default function RecurringPaymentsPage() {
           variant="blue"
         />
       </section>
+
+      {hasAccounts && (
+        <DetectedSubscriptions
+          candidates={detectedCandidates}
+          getAccountName={getAccountName}
+          onAdd={handleAddCandidate}
+          onDismiss={dismissCandidate}
+        />
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
