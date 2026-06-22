@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react'
 
+import BudgetErrorBanner from '../components/ui/BudgetErrorBanner'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -751,6 +752,8 @@ export default function RecurringPaymentsPage() {
     updateRecurringPayment,
     toggleRecurringPayment,
     deleteRecurringPayment,
+    budgetError,
+    clearBudgetError,
   } = useBudgetData()
 
   const [dismissedCandidateKeys, setDismissedCandidateKeys] = useState<
@@ -1009,6 +1012,10 @@ export default function RecurringPaymentsPage() {
       </section>
 
       {!hasAccounts && <NoAccountWarning />}
+
+      {budgetError && (
+        <BudgetErrorBanner message={budgetError} onClose={clearBudgetError} />
+      )}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard

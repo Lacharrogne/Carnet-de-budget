@@ -129,6 +129,10 @@ function MonthlyTrendChart({ points }: { points: MonthlyPoint[] }) {
           <div
             key={point.key}
             className="flex flex-1 flex-col items-center gap-2"
+            role="img"
+            aria-label={`${point.label} : revenus ${formatCurrency(
+              point.income,
+            )}, dépenses ${formatCurrency(point.expenses)}`}
           >
             <div className="flex h-40 w-full items-end justify-center gap-1.5">
               <div
