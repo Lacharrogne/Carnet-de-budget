@@ -14,13 +14,11 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import MonthSwitcher from '../components/layout/MonthSwitcher'
 import { useBudgetData } from '../context/useBudgetData'
+import { useSelectedMonth } from '../context/useSelectedMonth'
 import { budgetCategories } from '../data/budgetCategories'
-import {
-  getBudgetUsages,
-  getCurrentMonthKey,
-  getMonthLabel,
-} from '../services/budgetStatsService'
+import { getBudgetUsages } from '../services/budgetStatsService'
 import type { BudgetCategoryId, MonthlyBudget } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -558,8 +556,7 @@ export default function BudgetsPage() {
   const action = searchParams.get('action')
   const shouldShowBudgetForm = isBudgetFormOpen || action === 'new'
 
-  const monthKey = getCurrentMonthKey()
-  const monthLabel = getMonthLabel(monthKey)
+  const { monthKey, monthLabel } = useSelectedMonth()
 
   const availableCategories = getAvailableBudgetCategories(
     monthlyBudgets,
@@ -737,7 +734,9 @@ export default function BudgetsPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <MonthSwitcher />
+
               <button
                 type="button"
                 onClick={openBudgetForm}

@@ -16,11 +16,12 @@ import {
   WalletCards,
 } from 'lucide-react'
 
+import MonthSwitcher from '../components/layout/MonthSwitcher'
 import { useBudgetData } from '../context/useBudgetData'
+import { useSelectedMonth } from '../context/useSelectedMonth'
 import {
   getBudgetUsages,
   getCategoryById,
-  getCurrentMonthKey,
   getMonthLabel,
 } from '../services/budgetStatsService'
 import type { Transaction } from '../types/budget'
@@ -444,7 +445,7 @@ export default function StatsPage() {
     investments,
   } = useBudgetData()
 
-  const monthKey = getCurrentMonthKey()
+  const { monthKey } = useSelectedMonth()
   const previousMonthKey = getPreviousMonthKey(monthKey)
   const monthLabel = getMonthLabel(monthKey)
 
@@ -756,13 +757,8 @@ export default function StatsPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to={hasAccounts ? '/transactions?action=new' : '/comptes'}
-                className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-stone-200"
-              >
-                {hasAccounts ? 'Ajouter une transaction' : 'Créer un compte'}
-              </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              <MonthSwitcher />
 
               <Link
                 to="/patrimoine"

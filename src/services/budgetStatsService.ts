@@ -33,6 +33,13 @@ export function getMonthLabel(monthKey: string) {
   }).format(new Date(year, month - 1, 1))
 }
 
+/** Renvoie la clé du mois décalé de `delta` mois (ex: -1 = mois précédent). */
+export function getAdjacentMonthKey(monthKey: string, delta: number) {
+  const [year, month] = monthKey.split('-').map(Number)
+
+  return getCurrentMonthKey(new Date(year, month - 1 + delta, 1))
+}
+
 export function getCategoryById(categoryId: BudgetCategoryId) {
   return (
     budgetCategories.find((category) => category.id === categoryId) ??
