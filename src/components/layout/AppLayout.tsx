@@ -7,6 +7,7 @@ import {
   Home,
   Landmark,
   LogOut,
+  Menu,
   PanelLeftClose,
   PanelLeftOpen,
   PiggyBank,
@@ -16,6 +17,7 @@ import {
   TrendingUp,
   UserCircle,
   WalletCards,
+  X,
 } from 'lucide-react'
 
 import { useAuth } from '../../context/useAuth'
@@ -112,6 +114,7 @@ const mobileNavItems = navItems.filter((item) =>
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, signOut } = useAuth()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
 
   async function handleSignOut() {
     await signOut()
@@ -277,14 +280,26 @@ export default function AppLayout({ children }: AppLayoutProps) {
       >
         <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/90 px-4 py-4 backdrop-blur md:px-8">
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
-                Carnet de budget
-              </p>
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsMobileNavOpen(true)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-stone-100 hover:text-slate-950 xl:hidden"
+                aria-label="Ouvrir le menu"
+                aria-expanded={isMobileNavOpen}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
 
-              <p className="truncate text-sm text-slate-500">
-                Simple, beau et plus pratique qu’un fichier Excel.
-              </p>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
+                  Carnet de budget
+                </p>
+
+                <p className="truncate text-sm text-slate-500">
+                  Simple, beau et plus pratique qu’un fichier Excel.
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -372,6 +387,92 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </nav>
       </div>
+
+      {/* Tiroir de navigation complet sur mobile/tablette (toutes les sections). */}
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-50 xl:hidden">
+          <button
+            type="button"
+            aria-label="Fermer le menu"
+            onClick={() => setIsMobileNavOpen(false)}
+            className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
+          />
+
+          <div className="animate-rise absolute left-0 top-0 flex h-full w-[17rem] max-w-[85%] flex-col overflow-y-auto border-r border-stone-200 bg-[#fffdf9] p-4 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
+              <Link
+                to="/"
+                onClick={() => setIsMobileNavOpen(false)}
+                className="flex min-w-0 flex-1 items-center gap-3 rounded-[1.5rem] border border-stone-200 bg-gradient-to-br from-emerald-950 to-teal-900 p-3 text-white shadow-sm"
+              >
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 font-display text-base font-bold text-amber-200 ring-1 ring-white/20">
+                  CB
+                </div>
+
+                <div className="min-w-0">
+                  <p className="text-[0.6rem] font-bold uppercase tracking-[0.22em] text-emerald-200/90">
+                    Carnet de
+                  </p>
+                  <h2 className="truncate font-display text-lg font-semibold text-white">
+                    Budget
+                  </h2>
+                </div>
+              </Link>
+
+              <button
+                type="button"
+                onClick={() => setIsMobileNavOpen(false)}
+                aria-label="Fermer le menu"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-slate-500 transition hover:bg-stone-200 hover:text-slate-950"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <nav className="mt-4 flex-1 space-y-1.5">
+              {navItems.map((item) => {
+                const Icon = item.icon
+
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/'}
+                    onClick={() => setIsMobileNavOpen(false)}
+                    className={({ isActive }) =>
+                      [
+                        'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition',
+                        isActive
+                          ? item.activeClass
+                          : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
+                      ].join(' ')
+                    }
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="truncate">{item.label}</span>
+                  </NavLink>
+                )
+              })}
+            </nav>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileNavOpen(false)
+                void handleSignOut()
+              }}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-rose-50 hover:text-rose-700"
+            >
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -448,15 +448,15 @@ function CalendarDayButton({
     <button
       type="button"
       onClick={onSelect}
-      className={`min-h-24 rounded-[1.5rem] border p-3 text-left transition md:min-h-32 ${
+      className={`min-h-[4.25rem] rounded-2xl border p-1.5 text-left transition md:min-h-32 md:rounded-[1.5rem] md:p-3 ${
         isSelected
           ? 'border-emerald-300 bg-emerald-50 shadow-sm'
           : 'border-stone-200 bg-white hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-sm'
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-1 md:gap-2">
         <span
-          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black md:h-9 md:w-9 md:text-sm ${
             day.isToday
               ? 'bg-emerald-950 text-white'
               : 'bg-stone-50 text-slate-800'
@@ -466,34 +466,34 @@ function CalendarDayButton({
         </span>
 
         {itemCount > 0 && (
-          <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-stone-50 px-2 text-xs font-black text-slate-500">
+          <span className="hidden h-7 min-w-7 items-center justify-center rounded-full bg-stone-50 px-2 text-xs font-black text-slate-500 md:flex">
             {itemCount}
           </span>
         )}
       </div>
 
       {itemCount > 0 && (
-        <div className="mt-4 space-y-2">
-          <div className="flex gap-1">
+        <div className="mt-2 space-y-2 md:mt-4">
+          <div className="flex flex-wrap gap-1">
             {incomeCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-emerald-500" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500 md:h-3 md:w-3" />
             )}
 
             {expenseCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-rose-500" />
+              <span className="h-2 w-2 rounded-full bg-rose-500 md:h-3 md:w-3" />
             )}
 
             {transferCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-blue-500" />
+              <span className="h-2 w-2 rounded-full bg-blue-500 md:h-3 md:w-3" />
             )}
 
             {recurringCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <span className="h-2 w-2 rounded-full bg-amber-400 md:h-3 md:w-3" />
             )}
           </div>
 
           {firstLabel && (
-            <p className="line-clamp-1 text-xs font-black text-slate-600">
+            <p className="hidden line-clamp-1 text-xs font-black text-slate-600 md:block">
               {firstLabel}
             </p>
           )}
@@ -712,7 +712,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-7 gap-2">
+          <div className="mt-8 grid grid-cols-7 gap-1 md:gap-2">
             {weekDays.map((day) => (
               <div
                 key={day}
@@ -723,7 +723,7 @@ export default function CalendarPage() {
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-2">
+          <div className="mt-3 grid grid-cols-7 gap-1 md:gap-2">
             {calendarDays.map((day) => (
               <CalendarDayButton
                 key={day.dateKey}
