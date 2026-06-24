@@ -111,6 +111,14 @@ const mobileNavItems = navItems.filter((item) =>
   ['/', '/transactions', '/abonnements', '/statistiques'].includes(item.path),
 )
 
+// Libellés courts pour la barre du bas (évite que « Analyse » soit coupé).
+const mobileNavLabels: Record<string, string> = {
+  '/': 'Accueil',
+  '/transactions': 'Transac.',
+  '/abonnements': 'Abos',
+  '/statistiques': 'Analyse',
+}
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, signOut } = useAuth()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -336,7 +344,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     end={item.path === '/'}
                     className={({ isActive }) =>
                       [
-                        'flex min-h-14 flex-col items-center justify-center rounded-[1.4rem] px-2 py-2 text-[0.68rem] font-black transition',
+                        'flex min-h-14 flex-col items-center justify-center min-w-0 rounded-[1.4rem] px-1 py-2 text-[0.68rem] font-black transition',
                         isActive
                           ? item.activeClass
                           : 'text-slate-500 hover:bg-stone-50 hover:text-slate-900',
@@ -348,7 +356,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     >
                       <Icon className="h-4 w-4" />
                     </span>
-                    {item.label}
+                    <span className="w-full truncate text-center leading-tight">
+                      {mobileNavLabels[item.path] ?? item.label}
+                    </span>
                   </NavLink>
                 )
               })}
@@ -367,7 +377,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     end={item.path === '/'}
                     className={({ isActive }) =>
                       [
-                        'flex min-h-14 flex-col items-center justify-center rounded-[1.4rem] px-2 py-2 text-[0.68rem] font-black transition',
+                        'flex min-h-14 flex-col items-center justify-center min-w-0 rounded-[1.4rem] px-1 py-2 text-[0.68rem] font-black transition',
                         isActive
                           ? item.activeClass
                           : 'text-slate-500 hover:bg-stone-50 hover:text-slate-900',
@@ -379,7 +389,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     >
                       <Icon className="h-4 w-4" />
                     </span>
-                    {item.label}
+                    <span className="w-full truncate text-center leading-tight">
+                      {mobileNavLabels[item.path] ?? item.label}
+                    </span>
                   </NavLink>
                 )
               })}
