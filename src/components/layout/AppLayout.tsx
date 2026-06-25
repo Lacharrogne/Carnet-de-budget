@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   CreditCard,
+  HelpCircle,
   Home,
   Landmark,
   LogOut,
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react'
 
 import { useAuth } from '../../context/useAuth'
+import { useTour } from '../../context/useTour'
 import QuickAddMenu from './QuickAddMenu'
 
 type AppLayoutProps = {
@@ -121,6 +123,7 @@ const mobileNavLabels: Record<string, string> = {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, signOut } = useAuth()
+  const { start: startTour } = useTour()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
 
@@ -227,6 +230,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
             )
           })}
         </nav>
+
+        <button
+          type="button"
+          onClick={startTour}
+          title={isSidebarCollapsed ? 'Visite guidée' : undefined}
+          className={[
+            'mt-2 flex items-center rounded-2xl text-sm font-bold text-slate-600 transition hover:bg-stone-100 hover:text-slate-950',
+            isSidebarCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
+          ].join(' ')}
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-stone-100 text-slate-600">
+            <HelpCircle className="h-4 w-4" />
+          </span>
+          {!isSidebarCollapsed && <span>Visite guidée</span>}
+        </button>
 
         <div
           className={[
@@ -475,9 +493,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
               type="button"
               onClick={() => {
                 setIsMobileNavOpen(false)
+                startTour()
+              }}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800 transition hover:bg-emerald-100"
+            >
+              <HelpCircle className="h-4 w-4" />
+              Visite guidée
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileNavOpen(false)
                 void handleSignOut()
               }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-rose-50 hover:text-rose-700"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-rose-50 hover:text-rose-700"
             >
               <LogOut className="h-4 w-4" />
               Déconnexion

@@ -5,6 +5,7 @@ import AppLayout from './components/layout/AppLayout'
 import ScrollToTop from './components/layout/ScrollToTop'
 import ModalAutoClose from './components/layout/ModalAutoClose'
 import TrialBanner from './components/layout/TrialBanner'
+import GuidedTour from './components/tour/GuidedTour'
 
 // Chargement à la demande : chaque page est découpée dans son propre bundle,
 // pour un premier affichage plus rapide.
@@ -62,6 +63,8 @@ export default function App() {
           </Routes>
         </Suspense>
       </AppLayout>
+
+      <GuidedTour />
     </>
   )
 }
