@@ -32,19 +32,11 @@ export default function GuidedTour() {
   const isLast = stepIndex === stepCount - 1
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center">
-      <button
-        type="button"
-        aria-label="Fermer la visite guidée"
-        onClick={stop}
-        className="absolute inset-0 cursor-default bg-slate-950/25 backdrop-blur-[1px]"
-      />
-
+    <div className="pointer-events-none fixed inset-0 z-[80] flex items-end justify-center">
       <div
         role="dialog"
-        aria-modal="true"
         aria-label="Visite guidée"
-        className="animate-rise card-premium relative mb-24 w-[calc(100%-1.5rem)] max-w-md p-5 shadow-xl sm:mb-6"
+        className="animate-rise card-premium pointer-events-auto relative mb-24 w-[calc(100%-1.5rem)] max-w-md p-5 shadow-2xl ring-1 ring-stone-200 sm:mb-6"
       >
         <button
           type="button"
