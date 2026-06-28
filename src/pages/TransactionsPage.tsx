@@ -20,6 +20,8 @@ import {
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import { filterTransactionsByHolder } from '../lib/holderFilter'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
@@ -719,11 +721,22 @@ function TransactionFormModal({
 export default function TransactionsPage() {
   const {
     accounts,
-    transactions: localTransactions,
+    transactions: allTransactions,
     addTransaction,
     updateTransaction,
     deleteTransaction,
   } = useBudgetData()
+
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre « par personne » : on n'affiche que les transactions rattachées aux
+  // comptes du titulaire sélectionné (les comptes restent disponibles pour les
+  // formulaires et l'affichage des noms).
+  const localTransactions = filterTransactionsByHolder(
+    allTransactions,
+    accounts,
+    selectedHolder,
+  )
 
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | TransactionType>('all')

@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import { filterAccountsByHolder } from '../lib/holderFilter'
 import type { Account } from '../types/budget'
 import type { Investment, InvestmentType } from '../types/investment'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -318,8 +320,19 @@ function CompositionBar({
 }
 
 export default function NetWorthPage() {
-  const { accounts, debts, investments, savingGoals, sinkingFunds } =
-    useBudgetData()
+  const {
+    accounts: allAccounts,
+    debts,
+    investments,
+    savingGoals,
+    sinkingFunds,
+  } = useBudgetData()
+
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre « par personne » sur les comptes (placements et dettes ne sont pas
+  // rattachés à un titulaire : ils restent globaux dans le patrimoine).
+  const accounts = filterAccountsByHolder(allAccounts, selectedHolder)
 
   const liquidAccounts = accounts.filter((account) => {
     return account.type !== 'investment'
@@ -391,7 +404,7 @@ export default function NetWorthPage() {
   })[0]
 
   const hasAnyData =
-    accounts.length > 0 ||
+    allAccounts.length > 0 ||
     investments.length > 0 ||
     debts.length > 0 ||
     savingGoals.length > 0 ||

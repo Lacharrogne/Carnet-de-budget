@@ -17,7 +17,12 @@ import {
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
 import { useDialogA11y } from '../hooks/useDialogA11y'
+import {
+  filterAccountsByHolder,
+  filterTransactionsByHolder,
+} from '../lib/holderFilter'
 import { getCategoryById } from '../services/budgetStatsService'
 import type {
   Account,
@@ -666,14 +671,25 @@ function RecentAccountTransaction({
 
 export default function AccountsPage() {
   const {
-    accounts,
-    transactions,
+    accounts: allAccounts,
+    transactions: allTransactions,
     recurringPayments,
     addAccount,
     updateAccount,
     updateAccountBalance,
     deleteAccount,
   } = useBudgetData()
+
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre global « par personne » : on n'affiche que les comptes du titulaire
+  // sélectionné (et les transactions rattachées à ses comptes).
+  const accounts = filterAccountsByHolder(allAccounts, selectedHolder)
+  const transactions = filterTransactionsByHolder(
+    allTransactions,
+    allAccounts,
+    selectedHolder,
+  )
 
   const [isAccountFormOpen, setIsAccountFormOpen] = useState(false)
   const [accountFormValues, setAccountFormValues] =
@@ -701,7 +717,7 @@ export default function AccountsPage() {
   // Suggestions de titulaires (pour la saisie) à partir de l'existant.
   const holderSuggestions = Array.from(
     new Set(
-      accounts.map((account) => account.holder.trim()).filter(Boolean),
+      allAccounts.map((account) => account.holder.trim()).filter(Boolean),
     ),
   ).sort((a, b) => a.localeCompare(b))
 
@@ -750,7 +766,7 @@ export default function AccountsPage() {
     }
 
     return (
-      accounts.find((account) => account.id === accountId)?.name ??
+      allAccounts.find((account) => account.id === accountId)?.name ??
       'Compte inconnu'
     )
   }

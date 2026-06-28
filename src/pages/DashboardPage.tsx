@@ -23,6 +23,11 @@ import {
 } from 'lucide-react'
 
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import {
+  filterAccountsByHolder,
+  filterTransactionsByHolder,
+} from '../lib/holderFilter'
 import {
   getBudgetUsages,
   getCategoryById,
@@ -860,14 +865,35 @@ function TransactionLine({ transaction }: { transaction: Transaction }) {
 export default function DashboardPage() {
   const {
     accounts,
-    transactions,
+    transactions: allTransactions,
     monthlyBudgets,
-    recurringPayments,
+    recurringPayments: allRecurringPayments,
     savingGoals,
     sinkingFunds,
     debts,
     investments,
   } = useBudgetData()
+
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre « par personne » : comptes, transactions et charges récurrentes du
+  // titulaire sélectionné. (Objectifs, dettes et placements restent globaux :
+  // ils ne sont pas rattachés à un titulaire de compte.)
+  const visibleAccounts = filterAccountsByHolder(accounts, selectedHolder)
+  const transactions = filterTransactionsByHolder(
+    allTransactions,
+    accounts,
+    selectedHolder,
+  )
+  const visibleAccountIds = new Set(
+    visibleAccounts.map((account) => account.id),
+  )
+  const recurringPayments =
+    selectedHolder === 'all'
+      ? allRecurringPayments
+      : allRecurringPayments.filter((payment) =>
+          visibleAccountIds.has(payment.accountId),
+        )
 
   const monthKey = getCurrentMonthKey()
   const monthLabel = getMonthLabel(monthKey)
@@ -951,7 +977,7 @@ export default function DashboardPage() {
 
   const monthlyBalance = monthlyIncome - monthlyExpenses
 
-  const liquidAccountsTotal = accounts
+  const liquidAccountsTotal = visibleAccounts
     .filter((account) => account.type !== 'investment')
     .reduce((total, account) => total + account.balance, 0)
 

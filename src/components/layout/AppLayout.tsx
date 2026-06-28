@@ -23,6 +23,7 @@ import {
 
 import { useAuth } from '../../context/useAuth'
 import { useTour } from '../../context/useTour'
+import HolderSwitcher from './HolderSwitcher'
 import QuickAddMenu from './QuickAddMenu'
 
 type AppLayoutProps = {
@@ -329,6 +330,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2">
+              <HolderSwitcher />
+
               <div className="hidden sm:block">
                 <QuickAddMenu />
               </div>

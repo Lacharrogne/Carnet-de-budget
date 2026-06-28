@@ -8,6 +8,7 @@ import TrialGate from './components/auth/TrialGate'
 import { AuthProvider } from './context/AuthContext'
 import { BudgetProvider } from './context/BudgetContext'
 import { SelectedMonthProvider } from './context/SelectedMonthContext'
+import { HolderFilterProvider } from './context/HolderFilterContext'
 import { TourProvider } from './context/TourContext'
 import './index.css'
 
@@ -19,9 +20,11 @@ createRoot(document.getElementById('root')!).render(
           <TrialGate>
             <BudgetProvider>
               <SelectedMonthProvider>
-                <TourProvider>
-                  <App />
-                </TourProvider>
+                <HolderFilterProvider>
+                  <TourProvider>
+                    <App />
+                  </TourProvider>
+                </HolderFilterProvider>
               </SelectedMonthProvider>
             </BudgetProvider>
           </TrialGate>
