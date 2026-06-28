@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Account } from '../types/budget'
@@ -304,17 +305,11 @@ function DebtFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="💳"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="💳"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">
