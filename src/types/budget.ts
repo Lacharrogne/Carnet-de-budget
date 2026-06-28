@@ -25,6 +25,8 @@ export type Account = {
   balance: number
   emoji: string
   colorClass: string
+  /** Titulaire du compte (ex. « Maxime », « Chloé », « Commun »). */
+  holder: string
 }
 
 export type BudgetCategory = {

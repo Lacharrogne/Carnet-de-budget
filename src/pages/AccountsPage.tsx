@@ -33,6 +33,7 @@ type AccountFormValues = {
   type: AccountType
   balance: string
   emoji: string
+  holder: string
 }
 
 const defaultAccountFormValues: AccountFormValues = {
@@ -40,6 +41,7 @@ const defaultAccountFormValues: AccountFormValues = {
   type: 'current',
   balance: '',
   emoji: '🏦',
+  holder: '',
 }
 
 const transferCategory: BudgetCategory = {
@@ -60,6 +62,7 @@ function getAccountFormValues(account: Account): AccountFormValues {
     type: account.type,
     balance: String(account.balance),
     emoji: account.emoji,
+    holder: account.holder ?? '',
   }
 }
 
@@ -247,6 +250,7 @@ function AccountFormModal({
   formValues,
   formError,
   isEditing,
+  holderSuggestions,
   onClose,
   onChange,
   onSubmit,
@@ -254,6 +258,7 @@ function AccountFormModal({
   formValues: AccountFormValues
   formError: string
   isEditing: boolean
+  holderSuggestions: string[]
   onClose: () => void
   onChange: (values: AccountFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -377,6 +382,31 @@ function AccountFormModal({
             </label>
           </div>
 
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">
+              Titulaire <span className="font-medium text-slate-400">(facultatif)</span>
+            </span>
+
+            <input
+              value={formValues.holder}
+              onChange={(event) => updateField('holder', event.target.value)}
+              list="account-holders"
+              placeholder="Ex : Maxime, Chloé, Commun..."
+              className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+
+            <datalist id="account-holders">
+              {holderSuggestions.map((holder) => (
+                <option key={holder} value={holder} />
+              ))}
+            </datalist>
+
+            <p className="mt-1.5 text-xs text-slate-500">
+              Pour séparer vos comptes par personne (ex. Maxime / Chloé /
+              Commun).
+            </p>
+          </label>
+
           {isEditing && (
             <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
               Le solde peut être ajusté manuellement, mais les revenus,
@@ -468,6 +498,14 @@ function AccountCard({
 
             <p className="mt-1 text-sm text-slate-500">
               {getAccountTypeLabel(account.type)}
+              {account.holder.trim() && (
+                <>
+                  {' · '}
+                  <span className="font-bold text-slate-600">
+                    {account.holder.trim()}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -660,6 +698,30 @@ export default function AccountsPage() {
     .filter((account) => account.type === 'investment')
     .reduce((total, account) => total + account.balance, 0)
 
+  // Suggestions de titulaires (pour la saisie) à partir de l'existant.
+  const holderSuggestions = Array.from(
+    new Set(
+      accounts.map((account) => account.holder.trim()).filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b))
+
+  // Regroupement des comptes par titulaire (ordre d'apparition conservé).
+  const accountGroups: { holder: string; accounts: Account[] }[] = []
+  for (const account of accounts) {
+    const holder = account.holder.trim() || 'Commun'
+    const existing = accountGroups.find((group) => group.holder === holder)
+
+    if (existing) {
+      existing.accounts.push(account)
+    } else {
+      accountGroups.push({ holder, accounts: [account] })
+    }
+  }
+
+  // On n'affiche les en-têtes par titulaire que si la fonction est réellement
+  // utilisée (au moins deux groupes distincts).
+  const isGroupedByHolder = accountGroups.length > 1
+
   const recentTransactions = [...transactions]
     .sort((firstTransaction, secondTransaction) =>
       secondTransaction.date.localeCompare(firstTransaction.date),
@@ -738,6 +800,7 @@ export default function AccountsPage() {
       balance,
       emoji,
       colorClass: getAccountColorClass(accountFormValues.type),
+      holder: accountFormValues.holder.trim(),
     }
 
     if (accountToEdit) {
@@ -761,6 +824,34 @@ export default function AccountsPage() {
 
     deleteAccount(accountToDelete.id)
     setAccountToDelete(null)
+  }
+
+  function renderAccountCard(account: Account) {
+    const accountTransactions = transactions.filter((transaction) =>
+      isTransactionLinkedToAccount(transaction, account.id),
+    )
+
+    const accountRecurringPayments = recurringPayments.filter(
+      (payment) => payment.accountId === account.id,
+    )
+
+    const lastTransaction = [...accountTransactions].sort(
+      (firstTransaction, secondTransaction) =>
+        secondTransaction.date.localeCompare(firstTransaction.date),
+    )[0]
+
+    return (
+      <AccountCard
+        key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}-${account.holder}`}
+        account={account}
+        transactionCount={accountTransactions.length}
+        recurringPaymentCount={accountRecurringPayments.length}
+        lastTransactionTitle={lastTransaction?.title}
+        onBalanceChange={updateAccountBalance}
+        onEditRequest={openEditAccountForm}
+        onDeleteRequest={setAccountToDelete}
+      />
+    )
   }
 
   return (
@@ -852,37 +943,35 @@ export default function AccountsPage() {
           </div>
 
           <div className="mt-6 grid gap-4">
-            {accounts.length > 0 ? (
-              accounts.map((account) => {
-                const accountTransactions = transactions.filter(
-                  (transaction) =>
-                    isTransactionLinkedToAccount(transaction, account.id),
+            {accounts.length === 0 ? (
+              <EmptyAccountsCard onCreateAccount={openAccountForm} />
+            ) : isGroupedByHolder ? (
+              accountGroups.map((group) => {
+                const subtotal = group.accounts.reduce(
+                  (total, account) => total + account.balance,
+                  0,
                 )
-
-                const accountRecurringPayments = recurringPayments.filter(
-                  (payment) => payment.accountId === account.id,
-                )
-
-                const lastTransaction = [...accountTransactions].sort(
-                  (firstTransaction, secondTransaction) =>
-                    secondTransaction.date.localeCompare(firstTransaction.date),
-                )[0]
 
                 return (
-                  <AccountCard
-                    key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}`}
-                    account={account}
-                    transactionCount={accountTransactions.length}
-                    recurringPaymentCount={accountRecurringPayments.length}
-                    lastTransactionTitle={lastTransaction?.title}
-                    onBalanceChange={updateAccountBalance}
-                    onEditRequest={openEditAccountForm}
-                    onDeleteRequest={setAccountToDelete}
-                  />
+                  <div key={group.holder} className="space-y-3">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 px-4 py-2.5">
+                      <p className="text-sm font-black text-slate-700">
+                        {group.holder} · {group.accounts.length} compte
+                        {group.accounts.length > 1 ? 's' : ''}
+                      </p>
+                      <p className="tabular text-sm font-black text-slate-900">
+                        {formatCurrency(subtotal)}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4">
+                      {group.accounts.map(renderAccountCard)}
+                    </div>
+                  </div>
                 )
               })
             ) : (
-              <EmptyAccountsCard onCreateAccount={openAccountForm} />
+              accounts.map(renderAccountCard)
             )}
           </div>
         </div>
@@ -1005,6 +1094,7 @@ export default function AccountsPage() {
           formValues={accountFormValues}
           formError={accountFormError}
           isEditing={Boolean(accountToEdit)}
+          holderSuggestions={holderSuggestions}
           onClose={closeAccountForm}
           onChange={setAccountFormValues}
           onSubmit={handleAccountSubmit}
