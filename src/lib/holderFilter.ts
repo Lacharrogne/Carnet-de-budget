@@ -31,6 +31,26 @@ export function filterAccountsByHolder(
 }
 
 /**
+ * Éléments rattachés à un compte (ex. paiements récurrents) correspondant au
+ * titulaire : l'élément « appartient » au titulaire de son compte.
+ */
+export function filterByAccountHolder<T extends { accountId: string }>(
+  items: T[],
+  accounts: Account[],
+  holder: HolderFilterValue,
+): T[] {
+  if (holder === ALL_HOLDERS) {
+    return items
+  }
+
+  const ids = new Set(
+    filterAccountsByHolder(accounts, holder).map((account) => account.id),
+  )
+
+  return items.filter((item) => ids.has(item.accountId))
+}
+
+/**
  * Transactions rattachées au titulaire : une transaction « appartient » au
  * titulaire de son compte (et, pour un virement, aussi du compte destinataire).
  */

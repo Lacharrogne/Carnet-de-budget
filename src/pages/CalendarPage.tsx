@@ -15,6 +15,11 @@ import {
 } from 'lucide-react'
 
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import {
+  filterByAccountHolder,
+  filterTransactionsByHolder,
+} from '../lib/holderFilter'
 import { budgetCategories } from '../data/budgetCategories'
 import type {
   BudgetCategoryId,
@@ -505,6 +510,21 @@ function CalendarDayButton({
 
 export default function CalendarPage() {
   const { accounts, transactions, recurringPayments } = useBudgetData()
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre global « par personne » : on ne garde que les transactions et les
+  // charges fixes rattachées aux comptes du titulaire sélectionné.
+  const holderTransactions = filterTransactionsByHolder(
+    transactions,
+    accounts,
+    selectedHolder,
+  )
+
+  const holderRecurringPayments = filterByAccountHolder(
+    recurringPayments,
+    accounts,
+    selectedHolder,
+  )
 
   const today = new Date()
   const [monthDate, setMonthDate] = useState(
@@ -514,17 +534,17 @@ export default function CalendarPage() {
 
   const hasAccounts = accounts.length > 0
 
-  const activeRecurringPayments = recurringPayments.filter((payment) => {
+  const activeRecurringPayments = holderRecurringPayments.filter((payment) => {
     return payment.isActive
   })
 
   const hasCalendarData =
-    transactions.length > 0 || activeRecurringPayments.length > 0
+    holderTransactions.length > 0 || activeRecurringPayments.length > 0
 
   const monthKey = getMonthKey(monthDate)
   const monthLabel = getMonthLabel(monthDate)
 
-  const monthTransactions = transactions.filter((transaction) => {
+  const monthTransactions = holderTransactions.filter((transaction) => {
     return transaction.date.startsWith(monthKey)
   })
 
@@ -533,7 +553,7 @@ export default function CalendarPage() {
   })
 
   const selectedDayItems = [
-    ...transactions
+    ...holderTransactions
       .filter((transaction) => transaction.date === selectedDateKey)
       .map(createTransactionCalendarItem),
     ...monthRecurringItems.filter((item) => item.dateKey === selectedDateKey),
@@ -553,7 +573,7 @@ export default function CalendarPage() {
 
   const calendarDays = getCalendarDays(
     monthDate,
-    transactions,
+    holderTransactions,
     activeRecurringPayments,
   )
 
