@@ -291,3 +291,207 @@ export function exportTransactionsToPdf({
 
   return true
 }
+
+/* ------------------------------------------------------------------- */
+/* Relevé mensuel — récapitulatif par catégorie                        */
+/* ------------------------------------------------------------------- */
+
+export type MonthlyCategoryRow = {
+  categoryName: string
+  emoji: string
+  income: number
+  expenses: number
+}
+
+export type MonthlyReportMeta = {
+  monthKey: string
+  monthLabel: string
+  holderLabel: string
+  totals: ReportTotals
+}
+
+export function monthlyReportToCsv(
+  rows: MonthlyCategoryRow[],
+  { monthLabel, holderLabel, totals }: MonthlyReportMeta,
+) {
+  const preamble = [
+    ['Relevé mensuel', monthLabel].map(escapeCsv).join(';'),
+    ['Personne', holderLabel].map(escapeCsv).join(';'),
+    '',
+  ]
+
+  const headers = ['Catégorie', 'Revenus (€)', 'Dépenses (€)', 'Solde (€)']
+
+  const lines = rows.map((row) =>
+    [
+      row.categoryName,
+      amountForCsv(row.income),
+      amountForCsv(row.expenses),
+      amountForCsv(row.income - row.expenses),
+    ]
+      .map(escapeCsv)
+      .join(';'),
+  )
+
+  const totalLine = [
+    'Total',
+    amountForCsv(totals.income),
+    amountForCsv(totals.expenses),
+    amountForCsv(totals.net),
+  ]
+    .map(escapeCsv)
+    .join(';')
+
+  return [...preamble, headers.join(';'), ...lines, totalLine].join('\r\n')
+}
+
+export function exportMonthlyReportToCsv(
+  rows: MonthlyCategoryRow[],
+  meta: MonthlyReportMeta,
+) {
+  downloadTextFile(
+    `carnet-de-budget-releve-${meta.monthKey}.csv`,
+    monthlyReportToCsv(rows, meta),
+    'text/csv;charset=utf-8',
+  )
+}
+
+/**
+ * Ouvre un relevé mensuel imprimable (→ « Enregistrer en PDF ») : totaux du
+ * mois et récapitulatif par catégorie. Retourne false si la fenêtre a été
+ * bloquée par le navigateur.
+ */
+export function exportMonthlyReportToPdf(
+  rows: MonthlyCategoryRow[],
+  { monthLabel, holderLabel, totals }: MonthlyReportMeta,
+) {
+  const printWindow = window.open('', '_blank', 'noopener,noreferrer')
+
+  if (!printWindow) {
+    return false
+  }
+
+  const generatedAt = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'long',
+  }).format(new Date())
+
+  const savingsRate =
+    totals.income > 0 ? Math.round((totals.net / totals.income) * 100) : null
+
+  const bodyRows = rows
+    .map((row) => {
+      const net = row.income - row.expenses
+      const expenseShare =
+        totals.expenses > 0
+          ? Math.round((row.expenses / totals.expenses) * 100)
+          : 0
+
+      return `
+        <tr>
+          <td><strong>${escapeHtml(row.emoji)} ${escapeHtml(
+            row.categoryName,
+          )}</strong></td>
+          <td class="amount" style="color:#31633a">${
+            row.income > 0 ? escapeHtml(formatCurrency(row.income)) : '—'
+          }</td>
+          <td class="amount" style="color:#a8552f">${
+            row.expenses > 0 ? escapeHtml(formatCurrency(row.expenses)) : '—'
+          }</td>
+          <td class="amount">${escapeHtml(formatCurrency(net))}</td>
+          <td class="muted" style="text-align:right">${
+            row.expenses > 0 ? `${expenseShare}&nbsp;%` : '—'
+          }</td>
+        </tr>`
+    })
+    .join('')
+
+  printWindow.document.write(`<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Relevé mensuel — ${escapeHtml(monthLabel)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    color: #221f1a;
+    margin: 32px;
+    background: #fff;
+  }
+  header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #e8e0d1; padding-bottom: 16px; margin-bottom: 20px; }
+  h1 { font-family: Fraunces, Georgia, serif; font-size: 24px; margin: 0; color: #1e3623; }
+  .subtitle { color: #79736a; font-size: 13px; margin-top: 4px; }
+  .meta { text-align: right; color: #79736a; font-size: 12px; }
+  .totals { display: flex; gap: 12px; margin-bottom: 22px; }
+  .total { flex: 1; border: 1px solid #e8e0d1; border-radius: 14px; padding: 12px 14px; }
+  .total .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #99896c; }
+  .total .value { font-size: 20px; font-weight: 800; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; text-transform: uppercase; letter-spacing: 0.06em; font-size: 10.5px; color: #99896c; border-bottom: 1px solid #e8e0d1; padding: 8px 10px; }
+  td { padding: 9px 10px; border-bottom: 1px solid #f3eee3; vertical-align: top; }
+  td.amount { text-align: right; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.muted { color: #79736a; }
+  tfoot td { font-weight: 800; border-top: 2px solid #e8e0d1; border-bottom: none; }
+  footer { margin-top: 24px; color: #99896c; font-size: 11px; text-align: center; }
+  @media print { body { margin: 12mm; } @page { margin: 12mm; } }
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Relevé mensuel — ${escapeHtml(monthLabel)}</h1>
+      <div class="subtitle">Personne : ${escapeHtml(holderLabel)}</div>
+    </div>
+    <div class="meta">Généré le ${escapeHtml(generatedAt)}</div>
+  </header>
+
+  <div class="totals">
+    <div class="total"><div class="label">Revenus</div><div class="value" style="color:#31633a">${escapeHtml(
+      formatCurrency(totals.income),
+    )}</div></div>
+    <div class="total"><div class="label">Dépenses</div><div class="value" style="color:#a8552f">${escapeHtml(
+      formatCurrency(totals.expenses),
+    )}</div></div>
+    <div class="total"><div class="label">Solde net</div><div class="value">${escapeHtml(
+      formatCurrency(totals.net),
+    )}</div></div>
+    ${
+      savingsRate !== null
+        ? `<div class="total"><div class="label">Taux d'épargne</div><div class="value">${savingsRate}&nbsp;%</div></div>`
+        : ''
+    }
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>Catégorie</th><th style="text-align:right">Revenus</th><th style="text-align:right">Dépenses</th><th style="text-align:right">Solde</th><th style="text-align:right">Part</th></tr>
+    </thead>
+    <tbody>${
+      bodyRows ||
+      '<tr><td colspan="5" class="muted">Aucun mouvement ce mois-ci.</td></tr>'
+    }</tbody>
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        <td class="amount" style="color:#31633a">${escapeHtml(
+          formatCurrency(totals.income),
+        )}</td>
+        <td class="amount" style="color:#a8552f">${escapeHtml(
+          formatCurrency(totals.expenses),
+        )}</td>
+        <td class="amount">${escapeHtml(formatCurrency(totals.net))}</td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <footer>Carnet de budget — votre argent, enfin clair.</footer>
+</body>
+</html>`)
+
+  printWindow.document.close()
+  printWindow.focus()
+  printWindow.setTimeout(() => printWindow.print(), 250)
+
+  return true
+}

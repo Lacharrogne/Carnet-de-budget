@@ -5,6 +5,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   BarChart3,
+  Download,
+  FileText,
   Landmark,
   Lightbulb,
   Percent,
@@ -18,13 +20,20 @@ import {
 
 import MonthSwitcher from '../components/layout/MonthSwitcher'
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
 import { useSelectedMonth } from '../context/useSelectedMonth'
+import { ALL_HOLDERS, filterTransactionsByHolder } from '../lib/holderFilter'
 import {
   getAdjacentMonthKey,
   getBudgetUsages,
   getCategoryById,
   getMonthLabel,
 } from '../services/budgetStatsService'
+import {
+  exportMonthlyReportToCsv,
+  exportMonthlyReportToPdf,
+  type MonthlyCategoryRow,
+} from '../services/exportService'
 import type { Transaction } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -546,6 +555,7 @@ export default function StatsPage() {
   } = useBudgetData()
 
   const { monthKey } = useSelectedMonth()
+  const { selectedHolder } = useHolderFilter()
   const previousMonthKey = getPreviousMonthKey(monthKey)
   const monthLabel = getMonthLabel(monthKey)
   const monthlySeries = getMonthlySeries(transactions, monthKey)
@@ -833,6 +843,88 @@ export default function StatsPage() {
     },
   ]
 
+  // --- Relevé mensuel exportable : récap par catégorie du mois affiché,
+  // honorant le filtre global « par personne » (document autonome). ---
+  const statementTransactions = filterTransactionsByHolder(
+    monthlyTransactions,
+    accounts,
+    selectedHolder,
+  )
+
+  const statementCategoryMap = new Map<
+    Transaction['category'],
+    { income: number; expenses: number }
+  >()
+
+  statementTransactions.forEach((transaction) => {
+    if (transaction.type === 'transfer') {
+      return
+    }
+
+    const entry = statementCategoryMap.get(transaction.category) ?? {
+      income: 0,
+      expenses: 0,
+    }
+
+    if (transaction.type === 'income') {
+      entry.income += transaction.amount
+    } else {
+      entry.expenses += transaction.amount
+    }
+
+    statementCategoryMap.set(transaction.category, entry)
+  })
+
+  const statementRows: MonthlyCategoryRow[] = Array.from(
+    statementCategoryMap.entries(),
+  )
+    .map(([categoryId, value]) => {
+      const category = getCategoryById(categoryId)
+
+      return {
+        categoryName: category.name,
+        emoji: category.emoji,
+        income: value.income,
+        expenses: value.expenses,
+      }
+    })
+    .sort(
+      (first, second) =>
+        second.expenses - first.expenses || second.income - first.income,
+    )
+
+  const statementIncome = statementRows.reduce(
+    (total, row) => total + row.income,
+    0,
+  )
+
+  const statementExpenses = statementRows.reduce(
+    (total, row) => total + row.expenses,
+    0,
+  )
+
+  const statementMeta = {
+    monthKey,
+    monthLabel,
+    holderLabel:
+      selectedHolder === ALL_HOLDERS ? 'Toutes les personnes' : selectedHolder,
+    totals: {
+      income: statementIncome,
+      expenses: statementExpenses,
+      net: statementIncome - statementExpenses,
+    },
+  }
+
+  const canExportStatement = statementRows.length > 0
+
+  function handleExportMonthlyCsv() {
+    exportMonthlyReportToCsv(statementRows, statementMeta)
+  }
+
+  function handleExportMonthlyPdf() {
+    exportMonthlyReportToPdf(statementRows, statementMeta)
+  }
+
   return (
     <div className="space-y-6">
       <section className="animate-rise card-premium overflow-hidden">
@@ -860,6 +952,28 @@ export default function StatsPage() {
 
             <div className="flex flex-wrap items-center gap-3">
               <MonthSwitcher />
+
+              {canExportStatement && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleExportMonthlyCsv}
+                    className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50"
+                  >
+                    <Download className="h-4 w-4" />
+                    Relevé CSV
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleExportMonthlyPdf}
+                    className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Relevé PDF
+                  </button>
+                </>
+              )}
 
               <Link
                 to="/patrimoine"
