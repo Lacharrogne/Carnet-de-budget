@@ -953,27 +953,35 @@ export default function StatsPage() {
             <div className="flex flex-wrap items-center gap-3">
               <MonthSwitcher />
 
-              {canExportStatement && (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleExportMonthlyCsv}
-                    className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50"
-                  >
-                    <Download className="h-4 w-4" />
-                    Relevé CSV
-                  </button>
+              <button
+                type="button"
+                onClick={handleExportMonthlyCsv}
+                disabled={!canExportStatement}
+                title={
+                  canExportStatement
+                    ? 'Exporter le relevé du mois en CSV'
+                    : 'Aucun mouvement à exporter pour ce mois'
+                }
+                className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-white"
+              >
+                <Download className="h-4 w-4" />
+                Relevé CSV
+              </button>
 
-                  <button
-                    type="button"
-                    onClick={handleExportMonthlyPdf}
-                    className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Relevé PDF
-                  </button>
-                </>
-              )}
+              <button
+                type="button"
+                onClick={handleExportMonthlyPdf}
+                disabled={!canExportStatement}
+                title={
+                  canExportStatement
+                    ? 'Ouvrir le relevé du mois (impression / PDF)'
+                    : 'Aucun mouvement à exporter pour ce mois'
+                }
+                className="flex w-fit items-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-bold text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:bg-white"
+              >
+                <FileText className="h-4 w-4" />
+                Relevé PDF
+              </button>
 
               <Link
                 to="/patrimoine"
