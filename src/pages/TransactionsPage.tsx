@@ -61,6 +61,9 @@ const transferCategory: BudgetCategory = {
   colorClass: 'border-blue-100 bg-blue-50 text-blue-900',
 }
 
+/** Nombre de transactions affichées par page (pagination « Voir plus »). */
+const PAGE_SIZE = 20
+
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -739,6 +742,10 @@ export default function TransactionsPage() {
   )
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [amountMin, setAmountMin] = useState('')
+  const [amountMax, setAmountMax] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | TransactionType>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | BudgetCategoryId>(
     'all',
@@ -784,10 +791,17 @@ export default function TransactionsPage() {
 
   function resetFilters() {
     setSearchTerm('')
+    setDateFrom('')
+    setDateTo('')
+    setAmountMin('')
+    setAmountMax('')
     setTypeFilter('all')
     setCategoryFilter('all')
     setSortOption('newest')
   }
+
+  const minAmount = amountMin.trim() ? Number(amountMin.replace(',', '.')) : null
+  const maxAmount = amountMax.trim() ? Number(amountMax.replace(',', '.')) : null
 
   function getAccountName(accountId?: string) {
     if (!accountId) {
@@ -826,7 +840,25 @@ export default function TransactionsPage() {
       const matchesCategory =
         categoryFilter === 'all' || transaction.category === categoryFilter
 
-      return matchesSearch && matchesType && matchesCategory
+      const matchesDate =
+        (!dateFrom || transaction.date >= dateFrom) &&
+        (!dateTo || transaction.date <= dateTo)
+
+      const matchesAmount =
+        (minAmount === null ||
+          Number.isNaN(minAmount) ||
+          transaction.amount >= minAmount) &&
+        (maxAmount === null ||
+          Number.isNaN(maxAmount) ||
+          transaction.amount <= maxAmount)
+
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesCategory &&
+        matchesDate &&
+        matchesAmount
+      )
     })
     .sort((firstTransaction, secondTransaction) => {
       if (sortOption === 'newest') {
@@ -846,9 +878,27 @@ export default function TransactionsPage() {
 
   const hasActiveFilters =
     searchTerm.trim().length > 0 ||
+    dateFrom !== '' ||
+    dateTo !== '' ||
+    amountMin.trim() !== '' ||
+    amountMax.trim() !== '' ||
     typeFilter !== 'all' ||
     categoryFilter !== 'all' ||
     sortOption !== 'newest'
+
+  // Pagination : réinitialise le nombre visible dès qu'un filtre change
+  // (ajustement d'état pendant le rendu, sans effet).
+  const filtersKey = `${normalizedSearch}|${dateFrom}|${dateTo}|${amountMin}|${amountMax}|${typeFilter}|${categoryFilter}|${sortOption}`
+  const [paginationKey, setPaginationKey] = useState(filtersKey)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  if (paginationKey !== filtersKey) {
+    setPaginationKey(filtersKey)
+    setVisibleCount(PAGE_SIZE)
+  }
+
+  const visibleTransactions = filteredTransactions.slice(0, visibleCount)
+  const remainingCount = filteredTransactions.length - visibleTransactions.length
 
   function buildExportRows() {
     return buildTransactionRows(filteredTransactions, {
@@ -1224,6 +1274,72 @@ export default function TransactionsPage() {
             </select>
           </label>
         </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Du
+            </span>
+
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(event) => setDateFrom(event.target.value)}
+              aria-label="Date de début"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Au
+            </span>
+
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(event) => setDateTo(event.target.value)}
+              aria-label="Date de fin"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Montant min (€)
+            </span>
+
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              value={amountMin}
+              onChange={(event) => setAmountMin(event.target.value)}
+              placeholder="0"
+              aria-label="Montant minimum"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Montant max (€)
+            </span>
+
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              value={amountMax}
+              onChange={(event) => setAmountMax(event.target.value)}
+              placeholder="—"
+              aria-label="Montant maximum"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+        </div>
       </section>
 
       <section className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm">
@@ -1270,16 +1386,33 @@ export default function TransactionsPage() {
 
         <div className="mt-5 space-y-3">
           {filteredTransactions.length > 0 ? (
-            filteredTransactions.map((transaction) => (
-              <TransactionCard
-                key={transaction.id}
-                transaction={transaction}
-                accountName={getAccountName(transaction.accountId)}
-                toAccountName={getAccountName(transaction.toAccountId)}
-                onEditRequest={openEditForm}
-                onDeleteRequest={setTransactionToDelete}
-              />
-            ))
+            <>
+              {visibleTransactions.map((transaction) => (
+                <TransactionCard
+                  key={transaction.id}
+                  transaction={transaction}
+                  accountName={getAccountName(transaction.accountId)}
+                  toAccountName={getAccountName(transaction.toAccountId)}
+                  onEditRequest={openEditForm}
+                  onDeleteRequest={setTransactionToDelete}
+                />
+              ))}
+
+              {remainingCount > 0 && (
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleCount((current) => current + PAGE_SIZE)
+                    }
+                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200"
+                  >
+                    Voir plus de transactions ({remainingCount} restante
+                    {remainingCount > 1 ? 's' : ''})
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="rounded-[1.75rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
               <p className="text-3xl">{hasAccounts ? '🔎' : '🏦'}</p>
