@@ -1312,9 +1312,8 @@ export default function TransactionsPage() {
             </span>
 
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              min="0"
               value={amountMin}
               onChange={(event) => setAmountMin(event.target.value)}
               placeholder="0"
@@ -1329,9 +1328,8 @@ export default function TransactionsPage() {
             </span>
 
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              min="0"
               value={amountMax}
               onChange={(event) => setAmountMax(event.target.value)}
               placeholder="—"
