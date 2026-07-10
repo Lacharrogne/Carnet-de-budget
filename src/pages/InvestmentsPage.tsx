@@ -142,6 +142,20 @@ function getInvestmentTypeClasses(type: InvestmentType) {
   }
 }
 
+/** Couleur pleine (hex) du type d'actif — identité utilisée par le donut. */
+function getInvestmentTypeColor(type: InvestmentType): string {
+  const colors: Record<InvestmentType, string> = {
+    etf: '#3b82f6',
+    stock: '#10b981',
+    crypto: '#f59e0b',
+    real_estate: '#8b5cf6',
+    cash: '#64748b',
+    other: '#f43f5e',
+  }
+
+  return colors[type] ?? '#f43f5e'
+}
+
 function getInvestmentGain(investment: Investment) {
   return investment.currentValue - investment.investedAmount
 }
@@ -590,45 +604,111 @@ function InvestmentCard({
   )
 }
 
-function InvestmentTypeCard({
-  type,
-  amount,
-  total,
-}: {
+type AllocationSegment = {
   type: InvestmentType
+  label: string
   amount: number
-  total: number
+  color: string
+}
+
+function AllocationDonut({
+  segments,
+  totalLabel,
+}: {
+  segments: AllocationSegment[]
+  totalLabel: string
 }) {
-  const percentage = total > 0 ? Math.round((amount / total) * 100) : 0
-  const classes = getInvestmentTypeClasses(type)
+  const total = segments.reduce((sum, segment) => sum + segment.amount, 0)
+  const size = 176
+  const strokeWidth = 22
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const gap = segments.length > 1 ? 3 : 0
+
+  let offset = 0
 
   return (
-    <article className={`rounded-[1.5rem] border p-4 ${classes.card}`}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold">
-            {getInvestmentTypeLabel(type)}
-          </p>
+    <div className="flex flex-col items-center gap-6 sm:flex-row">
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          className="-rotate-90"
+          role="img"
+          aria-label="Répartition du portefeuille par type d'actif"
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#f1ece3"
+            strokeWidth={strokeWidth}
+          />
 
-          <p className="tabular mt-2 text-2xl font-black">{formatCurrency(amount)}</p>
+          {total > 0 &&
+            segments.map((segment) => {
+              const segmentLength = (segment.amount / total) * circumference
+              const dash = Math.max(segmentLength - gap, 0.5)
+              const circle = (
+                <circle
+                  key={segment.type}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  fill="none"
+                  stroke={segment.color}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDashoffset={-offset}
+                />
+              )
 
-          <p className="mt-1 text-sm opacity-75">
-            {percentage} % du portefeuille
-          </p>
-        </div>
+              offset += segmentLength
+              return circle
+            })}
+        </svg>
 
-        <div className={`rounded-2xl p-3 ${classes.icon}`}>
-          <BarChart3 className="h-5 w-5" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">
+            Total
+          </span>
+          <span className="tabular text-lg font-black text-slate-950">
+            {totalLabel}
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/70">
-        <div
-          className={`h-full rounded-full ${classes.bar}`}
-          style={{ width: `${Math.max(percentage, amount > 0 ? 4 : 0)}%` }}
-        />
-      </div>
-    </article>
+      <ul className="w-full space-y-2.5">
+        {segments.map((segment) => {
+          const percentage =
+            total > 0 ? Math.round((segment.amount / total) * 100) : 0
+
+          return (
+            <li key={segment.type} className="flex items-center gap-3">
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: segment.color }}
+                aria-hidden="true"
+              />
+
+              <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">
+                {segment.label}
+              </span>
+
+              <span className="tabular text-sm font-black text-slate-950">
+                {formatCurrency(segment.amount)}
+              </span>
+
+              <span className="tabular w-9 text-right text-xs font-bold text-slate-400">
+                {percentage}%
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
 
@@ -680,6 +760,20 @@ export default function InvestmentsPage() {
     'cash',
     'other',
   ]
+
+  // Répartition du portefeuille : uniquement les types réellement détenus,
+  // triés par montant décroissant (alimente le donut).
+  const allocation = investmentTypes
+    .map((type) => ({
+      type,
+      label: getInvestmentTypeLabel(type),
+      color: getInvestmentTypeColor(type),
+      amount: investments
+        .filter((investment) => investment.type === type)
+        .reduce((total, investment) => total + investment.currentValue, 0),
+    }))
+    .filter((segment) => segment.amount > 0)
+    .sort((first, second) => second.amount - first.amount)
 
   function clearActionParam() {
     const nextSearchParams = new URLSearchParams(searchParams)
@@ -952,23 +1046,18 @@ export default function InvestmentsPage() {
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
-            {investmentTypes.map((type) => {
-              const amount = investments
-                .filter((investment) => investment.type === type)
-                .reduce((total, investment) => {
-                  return total + investment.currentValue
-                }, 0)
-
-              return (
-                <InvestmentTypeCard
-                  key={type}
-                  type={type}
-                  amount={amount}
-                  total={totalCurrentValue}
-                />
-              )
-            })}
+          <div className="mt-6">
+            {allocation.length > 0 ? (
+              <AllocationDonut
+                segments={allocation}
+                totalLabel={formatCurrency(totalCurrentValue)}
+              />
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-stone-200 bg-stone-50 p-6 text-center text-sm text-slate-500">
+                Ajoutez un placement pour visualiser la répartition de votre
+                portefeuille.
+              </div>
+            )}
           </div>
         </div>
 
