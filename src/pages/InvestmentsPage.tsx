@@ -5,12 +5,10 @@ import {
   ArrowUpRight,
   BarChart3,
   Coins,
-  Landmark,
   Pencil,
   Percent,
   Plus,
   Trash2,
-  TrendingUp,
   WalletCards,
   X,
 } from 'lucide-react'
@@ -943,91 +941,6 @@ export default function InvestmentsPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Vue globale
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
-                Performance du portefeuille
-              </h2>
-            </div>
-
-            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] bg-stone-50 p-5">
-            <p className="text-sm font-semibold text-slate-500">
-              Résultat global
-            </p>
-
-            <p
-              className={`tabular mt-2 text-4xl font-black ${
-                totalGain >= 0 ? 'text-emerald-700' : 'text-rose-700'
-              }`}
-            >
-              {totalGain >= 0 ? '+' : '-'}
-              {formatCurrency(Math.abs(totalGain))}
-            </p>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Votre portefeuille vaut actuellement{' '}
-              <span className="font-black text-slate-950">
-                {formatCurrency(totalCurrentValue)}
-              </span>{' '}
-              pour un montant investi de{' '}
-              <span className="font-black text-slate-950">
-                {formatCurrency(totalInvested)}
-              </span>
-              .
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Lecture rapide
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
-                Meilleur placement
-              </h2>
-            </div>
-
-            <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
-              <Landmark className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] bg-blue-50 p-5">
-            <p className="text-sm font-semibold text-blue-700">
-              Meilleure performance
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-blue-950">
-              {bestInvestment
-                ? `${bestInvestment.emoji} ${bestInvestment.title}`
-                : 'Aucun'}
-            </p>
-
-            <p className="mt-2 text-sm text-blue-800/80">
-              {bestInvestment
-                ? `${getInvestmentReturn(
-                    bestInvestment,
-                  )} % de performance actuelle.`
-                : 'Ajoutez un placement pour obtenir une analyse.'}
-            </p>
-          </div>
-        </div>
-      </section>
-
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
@@ -1059,6 +972,31 @@ export default function InvestmentsPage() {
               </div>
             )}
           </div>
+
+          {bestInvestment && (
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-stone-50 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  Top
+                </span>
+
+                <span className="truncate text-sm font-bold text-slate-700">
+                  {bestInvestment.emoji} {bestInvestment.title}
+                </span>
+              </div>
+
+              <span
+                className={`tabular shrink-0 text-sm font-black ${
+                  getInvestmentReturn(bestInvestment) >= 0
+                    ? 'text-emerald-700'
+                    : 'text-rose-700'
+                }`}
+              >
+                {getInvestmentReturn(bestInvestment) >= 0 ? '+' : ''}
+                {getInvestmentReturn(bestInvestment)} %
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
