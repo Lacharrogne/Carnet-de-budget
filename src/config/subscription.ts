@@ -17,10 +17,17 @@ export const TRIAL_DURATION_DAYS = 14
 export const ENFORCE_TRIAL = false
 
 /**
- * Adresse de la page d'abonnement / paiement. `null` tant qu'elle n'existe
- * pas : les boutons proposeront alors de nous contacter.
+ * Le paiement et la gestion de l'abonnement sont centralisés sur la vitrine
+ * « Les Carnets » : un seul abonnement débloque tous les carnets. Les boutons
+ * d'abonnement de l'app renvoient donc vers la page Tarifs de la vitrine.
  */
-export const UPGRADE_URL: string | null = null
+export const SUBSCRIPTION_HUB_URL = 'https://lescarnets.app/#tarifs'
+
+/**
+ * Adresse vers laquelle pointent les boutons « Passer à l'abonnement » : la
+ * page Tarifs de la vitrine (hub commun).
+ */
+export const UPGRADE_URL: string | null = SUBSCRIPTION_HUB_URL
 
 /** Contact utilisé en repli tant qu'il n'y a pas de page de paiement. */
 export const CONTACT_EMAIL = 'maxi.charr@gmail.com'
@@ -36,8 +43,8 @@ export const CONTACT_EMAIL = 'maxi.charr@gmail.com'
 export const LEMONSQUEEZY = {
   monthlyUrl: (import.meta.env.VITE_LS_MONTHLY_URL as string | undefined) ?? '',
   yearlyUrl: (import.meta.env.VITE_LS_YEARLY_URL as string | undefined) ?? '',
-  monthlyPrice: '3,99 €',
-  yearlyPrice: '39,99 €',
+  monthlyPrice: '5,99 €',
+  yearlyPrice: '59,99 €',
 }
 
 /** Le paiement est-il configuré (au moins un lien de checkout présent) ? */
