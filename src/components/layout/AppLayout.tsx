@@ -27,6 +27,7 @@ import { useTour } from '../../context/useTour'
 import { SUBSCRIPTION_HUB_URL } from '../../config/subscription'
 import HolderSwitcher from './HolderSwitcher'
 import QuickAddMenu from './QuickAddMenu'
+import Footer from './Footer'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -371,9 +372,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-36 md:px-8 xl:pb-10">
+        <main className="mx-auto max-w-6xl px-4 py-6 md:px-8">
           {children}
         </main>
+
+        <div className="pb-28 xl:pb-0">
+          <Footer />
+        </div>
 
         <nav className="fixed bottom-3 left-1/2 z-30 w-[calc(100%-1.25rem)] max-w-md -translate-x-1/2 xl:hidden">
           <div className="relative rounded-[2rem] border border-stone-200 bg-white/95 px-3 py-2 shadow-2xl backdrop-blur">

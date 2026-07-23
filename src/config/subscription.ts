@@ -21,7 +21,8 @@ export const ENFORCE_TRIAL = false
  * « Les Carnets » : un seul abonnement débloque tous les carnets. Les boutons
  * d'abonnement de l'app renvoient donc vers la page Tarifs de la vitrine.
  */
-export const SUBSCRIPTION_HUB_URL = 'https://lescarnets.app/#tarifs'
+export const VITRINE_URL = 'https://lescarnets.app'
+export const SUBSCRIPTION_HUB_URL = `${VITRINE_URL}/#tarifs`
 
 /**
  * Adresse vers laquelle pointent les boutons « Passer à l'abonnement » : la
