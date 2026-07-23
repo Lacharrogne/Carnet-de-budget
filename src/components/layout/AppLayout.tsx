@@ -145,61 +145,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
           isSidebarCollapsed ? 'w-24' : 'w-72',
         ].join(' ')}
       >
-        <div className="flex items-center justify-between gap-3">
-          <Link
-            to="/"
-            className={[
-              'flex min-w-0 items-center gap-3 rounded-[1.5rem] border border-stone-200 bg-gradient-to-br from-emerald-950 to-teal-900 p-3 text-white shadow-sm transition hover:scale-[1.01]',
-              isSidebarCollapsed ? 'justify-center' : 'flex-1',
-            ].join(' ')}
-          >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 ring-1 ring-white/20">
-              <BrandLogo className="h-11 w-11" fallbackTextClassName="text-base" />
-            </div>
-
-            {!isSidebarCollapsed && (
-              <div className="min-w-0">
-                <p className="text-[0.65rem] font-bold uppercase tracking-[0.22em] text-emerald-200/90">
-                  Carnet de
-                </p>
-
-                <h1 className="truncate font-display text-xl font-semibold text-white">
-                  Budget
-                </h1>
-
-                <p className="truncate text-xs font-medium text-emerald-100/80">
-                  Votre argent, au clair
-                </p>
-              </div>
-            )}
-          </Link>
-
+        <div className="flex items-center justify-between gap-2">
           {!isSidebarCollapsed && (
-            <button
-              type="button"
-              onClick={() => setIsSidebarCollapsed(true)}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-slate-500 transition hover:bg-stone-200 hover:text-slate-950"
-              aria-label="Réduire le menu"
-            >
-              <PanelLeftClose className="h-5 w-5" />
-            </button>
+            <span className="rounded-full bg-emerald-50 px-3.5 py-2 text-xs font-black text-emerald-800">
+              Données synchronisées
+            </span>
           )}
-        </div>
 
-        {isSidebarCollapsed ? (
           <button
             type="button"
-            onClick={() => setIsSidebarCollapsed(false)}
-            className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100"
-            aria-label="Ouvrir le menu"
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className={[
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-stone-100 text-slate-500 transition hover:bg-stone-200 hover:text-slate-950',
+              isSidebarCollapsed ? 'mx-auto' : '',
+            ].join(' ')}
+            aria-label={isSidebarCollapsed ? 'Ouvrir le menu' : 'Réduire le menu'}
           >
-            <PanelLeftOpen className="h-5 w-5" />
+            {isSidebarCollapsed ? (
+              <PanelLeftOpen className="h-5 w-5" />
+            ) : (
+              <PanelLeftClose className="h-5 w-5" />
+            )}
           </button>
-        ) : (
-          <div className="mt-4 rounded-[1.25rem] border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-black text-emerald-800">
-            Données synchronisées
-          </div>
-        )}
+        </div>
 
         <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto pr-1">
           {navItems.map((item) => {
@@ -344,18 +312,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <Menu className="h-5 w-5" />
               </button>
 
-              {/* Marque : visible tant que la sidebar ne l'est pas (mobile/tablette). */}
+              {/* Marque façon Recettes : grand logo rond + nom, à gauche de la barre. */}
               <Link
                 to="/"
-                className="group flex min-w-0 items-center gap-2.5 xl:hidden"
+                className="group flex min-w-0 items-center gap-2.5 sm:gap-3"
               >
                 <BrandLogo
-                  className="h-10 w-10 shrink-0 drop-shadow-sm transition group-hover:scale-105 sm:h-11 sm:w-11"
-                  fallbackTextClassName="text-sm"
+                  className="h-12 w-12 shrink-0 drop-shadow-md transition group-hover:-rotate-2 group-hover:scale-105 sm:h-14 sm:w-14"
+                  fallbackTextClassName="rounded-2xl text-base"
                 />
 
                 <div className="min-w-0">
-                  <p className="truncate font-display text-base font-black leading-tight text-slate-950 sm:text-lg">
+                  <p className="truncate font-display text-lg font-black leading-tight text-slate-950 sm:text-xl">
                     Carnet de budget
                   </p>
 
