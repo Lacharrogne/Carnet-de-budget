@@ -14,6 +14,7 @@ import {
   PiggyBank,
   ReceiptText,
   Repeat2,
+  Sparkles,
   Target,
   TrendingUp,
   UserCircle,
@@ -23,6 +24,7 @@ import {
 
 import { useAuth } from '../../context/useAuth'
 import { useTour } from '../../context/useTour'
+import { SUBSCRIPTION_HUB_URL } from '../../config/subscription'
 import HolderSwitcher from './HolderSwitcher'
 import QuickAddMenu from './QuickAddMenu'
 
@@ -259,6 +261,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <UserCircle className="h-5 w-5" />
               </div>
 
+              <a
+                href={SUBSCRIPTION_HUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-950 to-teal-900 text-amber-200 shadow-sm transition hover:scale-[1.03]"
+                aria-label="Mon abonnement"
+                title="Mon abonnement"
+              >
+                <Sparkles className="h-4 w-4" />
+              </a>
+
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
@@ -286,10 +299,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               </div>
 
+              <a
+                href={SUBSCRIPTION_HUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-emerald-950 to-teal-900 px-4 py-2.5 text-sm font-black text-amber-100 shadow-sm transition hover:scale-[1.01]"
+              >
+                <Sparkles className="h-4 w-4" />
+                Mon abonnement
+              </a>
+
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-black text-slate-600 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
+                className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-black text-slate-600 shadow-sm transition hover:bg-rose-50 hover:text-rose-700"
               >
                 <LogOut className="h-4 w-4" />
                 Déconnexion
@@ -491,6 +514,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 )
               })}
             </nav>
+
+            <a
+              href={SUBSCRIPTION_HUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMobileNavOpen(false)}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-br from-emerald-950 to-teal-900 px-4 py-3 text-sm font-black text-amber-100 shadow-sm transition hover:scale-[1.01]"
+            >
+              <Sparkles className="h-4 w-4" />
+              Mon abonnement
+            </a>
 
             <button
               type="button"
