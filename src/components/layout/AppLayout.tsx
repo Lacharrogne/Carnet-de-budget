@@ -7,6 +7,7 @@ import {
   HelpCircle,
   Home,
   Landmark,
+  LayoutGrid,
   LogOut,
   Menu,
   PanelLeftClose,
@@ -24,10 +25,11 @@ import {
 
 import { useAuth } from '../../context/useAuth'
 import { useTour } from '../../context/useTour'
-import { SUBSCRIPTION_HUB_URL } from '../../config/subscription'
+import { SUBSCRIPTION_HUB_URL, VITRINE_URL } from '../../config/subscription'
 import HolderSwitcher from './HolderSwitcher'
 import QuickAddMenu from './QuickAddMenu'
 import Footer from './Footer'
+import BrandLogo from './BrandLogo'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -151,8 +153,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
               isSidebarCollapsed ? 'justify-center' : 'flex-1',
             ].join(' ')}
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 font-display text-base font-bold text-amber-200 ring-1 ring-white/20">
-              CB
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 ring-1 ring-white/20">
+              <BrandLogo className="h-11 w-11" fallbackTextClassName="text-base" />
             </div>
 
             {!isSidebarCollapsed && (
@@ -329,31 +331,53 @@ export default function AppLayout({ children }: AppLayoutProps) {
           isSidebarCollapsed ? 'xl:pl-24' : 'xl:pl-72',
         ].join(' ')}
       >
-        <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50/90 px-4 py-4 backdrop-blur md:px-8">
-          <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-            <div className="flex min-w-0 items-center gap-3">
+        <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-[#fffdf9]/95 px-4 py-3 backdrop-blur-xl md:px-8">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => setIsMobileNavOpen(true)}
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm transition hover:bg-stone-100 hover:text-slate-950 xl:hidden"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100 hover:text-slate-950 xl:hidden"
                 aria-label="Ouvrir le menu"
                 aria-expanded={isMobileNavOpen}
               >
                 <Menu className="h-5 w-5" />
               </button>
 
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-600">
-                  Carnet de budget
-                </p>
+              {/* Marque : visible tant que la sidebar ne l'est pas (mobile/tablette). */}
+              <Link
+                to="/"
+                className="group flex min-w-0 items-center gap-2.5 xl:hidden"
+              >
+                <BrandLogo
+                  className="h-10 w-10 shrink-0 drop-shadow-sm transition group-hover:scale-105 sm:h-11 sm:w-11"
+                  fallbackTextClassName="text-sm"
+                />
 
-                <p className="truncate text-sm text-slate-500">
-                  Simple, beau et plus pratique qu’un fichier Excel.
-                </p>
-              </div>
+                <div className="min-w-0">
+                  <p className="truncate font-display text-base font-black leading-tight text-slate-950 sm:text-lg">
+                    Carnet de budget
+                  </p>
+
+                  <p className="hidden truncate text-xs font-semibold text-emerald-700/80 sm:block">
+                    Votre argent, au clair
+                  </p>
+                </div>
+              </Link>
             </div>
 
             <div className="flex items-center gap-2">
+              <a
+                href={VITRINE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-bold text-emerald-800 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-emerald-50 sm:inline-flex"
+                title="Découvrir toute la suite Les Carnets"
+              >
+                <LayoutGrid className="h-4 w-4" />
+                Les Carnets
+              </a>
+
               <HolderSwitcher />
 
               <div className="hidden sm:block">
@@ -363,7 +387,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <button
                 type="button"
                 onClick={() => void handleSignOut()}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm transition hover:bg-rose-50 hover:text-rose-700 xl:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-stone-200 transition hover:bg-rose-50 hover:text-rose-700 xl:hidden"
                 aria-label="Se déconnecter"
               >
                 <LogOut className="h-5 w-5" />
@@ -466,8 +490,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 onClick={() => setIsMobileNavOpen(false)}
                 className="flex min-w-0 flex-1 items-center gap-3 rounded-[1.5rem] border border-stone-200 bg-gradient-to-br from-emerald-950 to-teal-900 p-3 text-white shadow-sm"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 font-display text-base font-bold text-amber-200 ring-1 ring-white/20">
-                  CB
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white/95 ring-1 ring-white/20">
+                  <BrandLogo className="h-10 w-10" fallbackTextClassName="text-base" />
                 </div>
 
                 <div className="min-w-0">

@@ -5,6 +5,7 @@ import {
   SUBSCRIPTION_HUB_URL,
   VITRINE_URL,
 } from '../../config/subscription'
+import BrandLogo from './BrandLogo'
 
 type FooterLink = { label: string; to: string }
 
@@ -54,9 +55,10 @@ export default function Footer() {
       <div className="mx-auto grid max-w-6xl gap-10 px-6 py-12 md:grid-cols-[1.2fr_2fr]">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-950 to-teal-900 font-display text-sm font-bold text-amber-200 ring-1 ring-white/10">
-              CB
-            </div>
+            <BrandLogo
+              className="h-11 w-11 shrink-0"
+              fallbackTextClassName="text-sm"
+            />
 
             <div>
               <p className="font-black text-slate-950">Carnet de budget</p>
