@@ -1188,10 +1188,11 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
 
   return (
     <div className="space-y-6">
-      <section className="animate-rise card-premium overflow-hidden">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-emerald-100 bg-gradient-to-br from-emerald-50 via-[#fffdf9] to-amber-50 shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
+          <div className="absolute -right-6 -top-8 h-52 w-52 rounded-full bg-emerald-300/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-36 w-36 rounded-full bg-amber-300/45 blur-3xl" />
+          <div className="absolute -bottom-10 left-8 h-40 w-40 rounded-full bg-sky-200/35 blur-3xl" />
 
           <div className="relative grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-center">
             <div>

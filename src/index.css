@@ -34,9 +34,9 @@
   --color-stone-950: #1d1a14;
 
   /* Marque & positif — vert sauge profond, calme et premium (remplace emerald) */
-  --color-emerald-50: #eef4ee;
-  --color-emerald-100: #d9e7d9;
-  --color-emerald-200: #b6d2b7;
+  --color-emerald-50: #e7f5ec;
+  --color-emerald-100: #cdebd6;
+  --color-emerald-200: #a6dcb4;
   --color-emerald-300: #8bb78e;
   --color-emerald-400: #5d9665;
   --color-emerald-500: #3f7a49;
@@ -79,20 +79,31 @@
   }
 
   body {
-    /* Fond crème vivant : dégradé chaud + halos vert sauge / doré très discrets */
-    background-color: #f7f3ec;
+    /* Fond crème vivant : plusieurs halos colorés (sauge, doré, azur,
+       terracotta) pour donner de la vie sans écraser le côté premium. */
+    background-color: #f6f1e8;
     background-image:
       radial-gradient(
-        62rem 62rem at 12% -8%,
-        rgba(63, 122, 73, 0.07),
+        58rem 58rem at 8% -10%,
+        rgba(63, 122, 73, 0.16),
         transparent 60%
       ),
       radial-gradient(
-        52rem 52rem at 108% 6%,
-        rgba(193, 154, 84, 0.08),
-        transparent 55%
+        50rem 50rem at 104% 2%,
+        rgba(214, 160, 66, 0.16),
+        transparent 58%
       ),
-      linear-gradient(180deg, #faf7f1 0%, #f5f0e7 100%);
+      radial-gradient(
+        52rem 52rem at -6% 108%,
+        rgba(79, 140, 187, 0.13),
+        transparent 58%
+      ),
+      radial-gradient(
+        46rem 46rem at 110% 104%,
+        rgba(203, 111, 72, 0.13),
+        transparent 56%
+      ),
+      linear-gradient(180deg, #faf7f1 0%, #f4eee3 100%);
     background-attachment: fixed;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
