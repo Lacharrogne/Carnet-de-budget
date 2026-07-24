@@ -867,10 +867,10 @@ export default function AccountsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="animate-rise card-premium overflow-hidden">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-blue-200 bg-gradient-to-br from-blue-100 via-blue-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-blue-200/40 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute -right-6 -top-8 h-52 w-52 rounded-full bg-blue-300/45 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-36 w-36 rounded-full bg-emerald-300/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>

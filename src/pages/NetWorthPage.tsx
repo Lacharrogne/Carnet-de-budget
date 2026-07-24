@@ -412,7 +412,7 @@ export default function NetWorthPage() {
 
   return (
     <div className="space-y-6">
-      <section className="animate-rise card-premium overflow-hidden">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-indigo-200 bg-gradient-to-br from-indigo-100 via-indigo-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
           <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
           <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-violet-200/40 blur-3xl" />
