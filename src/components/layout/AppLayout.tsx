@@ -35,85 +35,123 @@ type AppLayoutProps = {
   children: ReactNode
 }
 
-const navItems = [
+// Menu regroupé en familles pour réduire la charge : au lieu de 11 entrées de
+// même niveau, on présente 4 grandes idées (Accueil restant en accès direct).
+const navGroups: {
+  label: string | null
+  items: {
+    label: string
+    path: string
+    icon: typeof Home
+    iconClass: string
+    activeClass: string
+  }[]
+}[] = [
   {
-    label: 'Accueil',
-    path: '/',
-    icon: Home,
-    iconClass: 'bg-emerald-50 text-emerald-700',
-    activeClass: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100',
+    label: null,
+    items: [
+      {
+        label: 'Accueil',
+        path: '/',
+        icon: Home,
+        iconClass: 'bg-emerald-50 text-emerald-700',
+        activeClass: 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100',
+      },
+    ],
   },
   {
-    label: 'Comptes',
-    path: '/comptes',
-    icon: CreditCard,
-    iconClass: 'bg-blue-50 text-blue-700',
-    activeClass: 'bg-blue-50 text-blue-800 ring-1 ring-blue-100',
+    label: 'Au quotidien',
+    items: [
+      {
+        label: 'Comptes',
+        path: '/comptes',
+        icon: CreditCard,
+        iconClass: 'bg-blue-50 text-blue-700',
+        activeClass: 'bg-blue-50 text-blue-800 ring-1 ring-blue-100',
+      },
+      {
+        label: 'Transactions',
+        path: '/transactions',
+        icon: ReceiptText,
+        iconClass: 'bg-teal-50 text-teal-700',
+        activeClass: 'bg-teal-50 text-teal-800 ring-1 ring-teal-100',
+      },
+      {
+        label: 'Abonnements',
+        path: '/abonnements',
+        icon: Repeat2,
+        iconClass: 'bg-amber-50 text-amber-700',
+        activeClass: 'bg-amber-50 text-amber-800 ring-1 ring-amber-100',
+      },
+    ],
   },
   {
-    label: 'Transactions',
-    path: '/transactions',
-    icon: ReceiptText,
-    iconClass: 'bg-teal-50 text-teal-700',
-    activeClass: 'bg-teal-50 text-teal-800 ring-1 ring-teal-100',
+    label: 'Mes objectifs',
+    items: [
+      {
+        label: 'Budgets',
+        path: '/budgets',
+        icon: PiggyBank,
+        iconClass: 'bg-violet-50 text-violet-700',
+        activeClass: 'bg-violet-50 text-violet-800 ring-1 ring-violet-100',
+      },
+      {
+        label: 'Objectifs',
+        path: '/objectifs',
+        icon: Target,
+        iconClass: 'bg-fuchsia-50 text-fuchsia-700',
+        activeClass: 'bg-fuchsia-50 text-fuchsia-800 ring-1 ring-fuchsia-100',
+      },
+      {
+        label: 'Dettes',
+        path: '/dettes',
+        icon: WalletCards,
+        iconClass: 'bg-rose-50 text-rose-700',
+        activeClass: 'bg-rose-50 text-rose-800 ring-1 ring-rose-100',
+      },
+    ],
   },
   {
-    label: 'Abonnements',
-    path: '/abonnements',
-    icon: Repeat2,
-    iconClass: 'bg-amber-50 text-amber-700',
-    activeClass: 'bg-amber-50 text-amber-800 ring-1 ring-amber-100',
+    label: 'Mon patrimoine',
+    items: [
+      {
+        label: 'Investissements',
+        path: '/investissements',
+        icon: TrendingUp,
+        iconClass: 'bg-lime-50 text-lime-700',
+        activeClass: 'bg-lime-50 text-lime-800 ring-1 ring-lime-100',
+      },
+      {
+        label: 'Patrimoine',
+        path: '/patrimoine',
+        icon: Landmark,
+        iconClass: 'bg-indigo-50 text-indigo-700',
+        activeClass: 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-100',
+      },
+    ],
   },
   {
-    label: 'Budgets',
-    path: '/budgets',
-    icon: PiggyBank,
-    iconClass: 'bg-violet-50 text-violet-700',
-    activeClass: 'bg-violet-50 text-violet-800 ring-1 ring-violet-100',
-  },
-  {
-    label: 'Objectifs',
-    path: '/objectifs',
-    icon: Target,
-    iconClass: 'bg-fuchsia-50 text-fuchsia-700',
-    activeClass: 'bg-fuchsia-50 text-fuchsia-800 ring-1 ring-fuchsia-100',
-  },
-  {
-    label: 'Dettes',
-    path: '/dettes',
-    icon: WalletCards,
-    iconClass: 'bg-rose-50 text-rose-700',
-    activeClass: 'bg-rose-50 text-rose-800 ring-1 ring-rose-100',
-  },
-  {
-    label: 'Invest.',
-    path: '/investissements',
-    icon: TrendingUp,
-    iconClass: 'bg-lime-50 text-lime-700',
-    activeClass: 'bg-lime-50 text-lime-800 ring-1 ring-lime-100',
-  },
-  {
-    label: 'Calendrier',
-    path: '/calendrier',
-    icon: CalendarDays,
-    iconClass: 'bg-orange-50 text-orange-700',
-    activeClass: 'bg-orange-50 text-orange-800 ring-1 ring-orange-100',
-  },
-  {
-    label: 'Patrimoine',
-    path: '/patrimoine',
-    icon: Landmark,
-    iconClass: 'bg-indigo-50 text-indigo-700',
-    activeClass: 'bg-indigo-50 text-indigo-800 ring-1 ring-indigo-100',
-  },
-  {
-    label: 'Analyse',
-    path: '/statistiques',
-    icon: BarChart3,
-    iconClass: 'bg-sky-50 text-sky-700',
-    activeClass: 'bg-sky-50 text-sky-800 ring-1 ring-sky-100',
+    label: 'Analyses',
+    items: [
+      {
+        label: 'Calendrier',
+        path: '/calendrier',
+        icon: CalendarDays,
+        iconClass: 'bg-orange-50 text-orange-700',
+        activeClass: 'bg-orange-50 text-orange-800 ring-1 ring-orange-100',
+      },
+      {
+        label: 'Analyse',
+        path: '/statistiques',
+        icon: BarChart3,
+        iconClass: 'bg-sky-50 text-sky-700',
+        activeClass: 'bg-sky-50 text-sky-800 ring-1 ring-sky-100',
+      },
+    ],
   },
 ]
+
+const navItems = navGroups.flatMap((group) => group.items)
 
 const mobileNavItems = navItems.filter((item) =>
   ['/', '/transactions', '/abonnements', '/statistiques'].includes(item.path),
@@ -169,40 +207,58 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </button>
         </div>
 
-        <nav className="mt-4 flex-1 space-y-1.5 overflow-y-auto pr-1">
-          {navItems.map((item) => {
-            const Icon = item.icon
+        <nav className="mt-4 flex-1 overflow-y-auto pr-1">
+          {navGroups.map((group, groupIndex) => (
+            <div
+              key={group.label ?? 'main'}
+              className={groupIndex > 0 ? 'mt-4' : ''}
+            >
+              {group.label &&
+                (isSidebarCollapsed ? (
+                  <div className="mx-auto mb-2 h-px w-8 bg-stone-200" />
+                ) : (
+                  <p className="mb-1.5 px-3 text-[0.65rem] font-black uppercase tracking-[0.14em] text-slate-400">
+                    {group.label}
+                  </p>
+                ))}
 
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
-                title={isSidebarCollapsed ? item.label : undefined}
-                className={({ isActive }) =>
-                  [
-                    'group flex items-center rounded-2xl text-sm font-bold transition',
-                    isSidebarCollapsed
-                      ? 'justify-center px-2 py-2.5'
-                      : 'gap-3 px-3 py-2.5',
-                    isActive
-                      ? item.activeClass
-                      : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
-                  ].join(' ')
-                }
-              >
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
+              <div className="space-y-1.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon
 
-                {!isSidebarCollapsed && (
-                  <span className="truncate">{item.label}</span>
-                )}
-              </NavLink>
-            )
-          })}
+                  return (
+                    <NavLink
+                      key={item.path}
+                      to={item.path}
+                      end={item.path === '/'}
+                      title={isSidebarCollapsed ? item.label : undefined}
+                      className={({ isActive }) =>
+                        [
+                          'group flex items-center rounded-2xl text-sm font-bold transition',
+                          isSidebarCollapsed
+                            ? 'justify-center px-2 py-2.5'
+                            : 'gap-3 px-3 py-2.5',
+                          isActive
+                            ? item.activeClass
+                            : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
+                        ].join(' ')
+                      }
+                    >
+                      <span
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </span>
+
+                      {!isSidebarCollapsed && (
+                        <span className="truncate">{item.label}</span>
+                      )}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         <button
@@ -482,34 +538,49 @@ export default function AppLayout({ children }: AppLayoutProps) {
               </button>
             </div>
 
-            <nav className="mt-4 flex-1 space-y-1.5">
-              {navItems.map((item) => {
-                const Icon = item.icon
+            <nav className="mt-4 flex-1">
+              {navGroups.map((group, groupIndex) => (
+                <div
+                  key={group.label ?? 'main'}
+                  className={groupIndex > 0 ? 'mt-4' : ''}
+                >
+                  {group.label && (
+                    <p className="mb-1.5 px-3 text-[0.65rem] font-black uppercase tracking-[0.14em] text-slate-400">
+                      {group.label}
+                    </p>
+                  )}
 
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.path === '/'}
-                    onClick={() => setIsMobileNavOpen(false)}
-                    className={({ isActive }) =>
-                      [
-                        'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition',
-                        isActive
-                          ? item.activeClass
-                          : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
-                      ].join(' ')
-                    }
-                  >
-                    <span
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </span>
-                    <span className="truncate">{item.label}</span>
-                  </NavLink>
-                )
-              })}
+                  <div className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon
+
+                      return (
+                        <NavLink
+                          key={item.path}
+                          to={item.path}
+                          end={item.path === '/'}
+                          onClick={() => setIsMobileNavOpen(false)}
+                          className={({ isActive }) =>
+                            [
+                              'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-bold transition',
+                              isActive
+                                ? item.activeClass
+                                : 'text-slate-600 hover:bg-stone-100 hover:text-slate-950',
+                            ].join(' ')
+                          }
+                        >
+                          <span
+                            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.iconClass}`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </span>
+                          <span className="truncate">{item.label}</span>
+                        </NavLink>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
 
             <a
