@@ -514,11 +514,11 @@ function PageStatCard({
   variant: StatVariant
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {
@@ -595,11 +595,11 @@ function QuickLinkCard({
   variant: StatVariant
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   return (
@@ -621,11 +621,11 @@ function QuickLinkCard({
 
 function SetupStepCard({ step }: { step: SetupStep }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   return (
@@ -790,11 +790,11 @@ function NewUserDashboard({ steps }: { steps: SetupStep[] }) {
 
 function WatchItemCard({ item }: { item: WatchItem }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   return (

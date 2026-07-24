@@ -55,7 +55,7 @@ const transferCategory: BudgetCategory = {
   name: 'Virement',
   emoji: '🔁',
   description: 'Mouvement entre deux comptes personnels.',
-  colorClass: 'border-blue-100 bg-blue-50 text-blue-900',
+  colorClass: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
 }
 
 function createAccountId() {
@@ -116,18 +116,18 @@ function getAccountTypeIcon(type: AccountType) {
 
 function getAccountTypeStyle(type: AccountType) {
   if (type === 'current') {
-    return 'border-blue-100 bg-blue-50 text-blue-900'
+    return 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900'
   }
 
   if (type === 'savings') {
-    return 'border-emerald-100 bg-emerald-50 text-emerald-900'
+    return 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900'
   }
 
   if (type === 'cash') {
-    return 'border-amber-100 bg-amber-50 text-amber-900'
+    return 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900'
   }
 
-  return 'border-violet-100 bg-violet-50 text-violet-900'
+  return 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900'
 }
 
 function getAccountColorClass(type: AccountType) {
@@ -193,10 +193,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'amber' | 'violet'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {

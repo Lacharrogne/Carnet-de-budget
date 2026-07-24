@@ -95,7 +95,7 @@ function getInvestmentTypeLabel(type: InvestmentType) {
 function getInvestmentTypeClasses(type: InvestmentType) {
   if (type === 'etf') {
     return {
-      card: 'border-blue-100 bg-blue-50 text-blue-900',
+      card: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
       icon: 'bg-blue-100 text-blue-700',
       bar: 'bg-blue-500',
     }
@@ -103,7 +103,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'stock') {
     return {
-      card: 'border-emerald-100 bg-emerald-50 text-emerald-900',
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
       icon: 'bg-emerald-100 text-emerald-700',
       bar: 'bg-emerald-500',
     }
@@ -111,7 +111,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'crypto') {
     return {
-      card: 'border-amber-100 bg-amber-50 text-amber-900',
+      card: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
       icon: 'bg-amber-100 text-amber-700',
       bar: 'bg-amber-500',
     }
@@ -119,7 +119,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'real_estate') {
     return {
-      card: 'border-violet-100 bg-violet-50 text-violet-900',
+      card: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
       icon: 'bg-violet-100 text-violet-700',
       bar: 'bg-violet-500',
     }
@@ -134,7 +134,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
   }
 
   return {
-    card: 'border-rose-100 bg-rose-50 text-rose-900',
+    card: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
     icon: 'bg-rose-100 text-rose-700',
     bar: 'bg-rose-500',
   }
@@ -184,11 +184,11 @@ function PageStatCard({
   variant: StatVariant
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {
