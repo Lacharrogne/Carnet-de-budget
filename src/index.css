@@ -12,10 +12,10 @@
 @theme {
   /* Typographies premium */
   --font-sans:
-    "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Mulish", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-display:
-    "Fraunces", "Plus Jakarta Sans", ui-serif, Georgia, serif;
+    "Fraunces", "Mulish", ui-serif, Georgia, serif;
 
   /* Blanc cassé chaleureux : toutes les cartes "bg-white" gagnent en chaleur. */
   --color-white: #fdfbf6;

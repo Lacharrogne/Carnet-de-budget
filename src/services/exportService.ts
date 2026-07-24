@@ -226,7 +226,7 @@ export function exportTransactionsToPdf({
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: "Mulish", "Segoe UI", system-ui, -apple-system, sans-serif;
     color: #221f1a;
     margin: 32px;
     background: #fff;
@@ -413,7 +413,7 @@ export function exportMonthlyReportToPdf(
 <style>
   * { box-sizing: border-box; }
   body {
-    font-family: "Plus Jakarta Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: "Mulish", "Segoe UI", system-ui, -apple-system, sans-serif;
     color: #221f1a;
     margin: 32px;
     background: #fff;
