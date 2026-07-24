@@ -2,12 +2,10 @@ import { type ReactNode } from 'react'
 import { Link } from 'react-router'
 import {
   AlertTriangle,
-  Banknote,
   BarChart3,
   CalendarDays,
   CheckCircle2,
   Circle,
-  CreditCard,
   Landmark,
   Lightbulb,
   LineChart,
@@ -41,7 +39,7 @@ import {
   getFinancialTips,
   type FinancialTip,
 } from '../services/financialTipsService'
-import type { BudgetCategoryId, Transaction } from '../types/budget'
+import type { Transaction } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
 type StatVariant = 'emerald' | 'blue' | 'rose' | 'amber' | 'violet'
@@ -52,15 +50,6 @@ type SetupStep = {
   href: string
   cta: string
   isCompleted: boolean
-  icon: ReactNode
-  variant: StatVariant
-}
-
-type WatchItem = {
-  title: string
-  description: string
-  value: string
-  href: string
   icon: ReactNode
   variant: StatVariant
 }
@@ -788,33 +777,6 @@ function NewUserDashboard({ steps }: { steps: SetupStep[] }) {
   )
 }
 
-function WatchItemCard({ item }: { item: WatchItem }) {
-  const variants = {
-    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
-    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
-    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
-    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
-    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
-  }
-
-  return (
-    <Link
-      to={item.href}
-      className={`rounded-[1.5rem] border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${variants[item.variant]}`}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-black">{item.title}</p>
-          <p className="mt-1 text-sm opacity-75">{item.description}</p>
-          <p className="mt-3 text-lg font-black">{item.value}</p>
-        </div>
-
-        <div className="rounded-2xl bg-white/70 p-3">{item.icon}</div>
-      </div>
-    </Link>
-  )
-}
-
 function TransactionLine({ transaction }: { transaction: Transaction }) {
   const category = getCategoryById(transaction.category)
   const isIncome = transaction.type === 'income'
@@ -1027,12 +989,6 @@ export default function DashboardPage() {
     })
     .slice(0, 3)
 
-  const nextRecurringPayment = nextRecurringPayments[0]
-
-  const totalMonthlyDebtPayment = debts.reduce((total, debt) => {
-    return total + debt.monthlyPayment
-  }, 0)
-
   const goalsPreview = [
     ...savingGoals.map((goal) => ({
       id: goal.id,
@@ -1069,29 +1025,6 @@ export default function DashboardPage() {
     })
     .slice(0, 5)
 
-const expenseCategories = monthlyTransactions
-  .filter((transaction) => transaction.type === 'expense')
-  .reduce<Record<string, number>>((categories, transaction) => {
-    categories[transaction.category] =
-      (categories[transaction.category] ?? 0) + transaction.amount
-
-    return categories
-  }, {})
-
-const topExpenseCategoryEntry = Object.entries(expenseCategories).sort(
-  ([, firstAmount], [, secondAmount]) => secondAmount - firstAmount,
-)[0]
-
-const topExpenseCategory = topExpenseCategoryEntry
-  ? getCategoryById(topExpenseCategoryEntry[0] as BudgetCategoryId)
-  : null
-
-const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
-
-  const cockpitMessage = topExpenseCategory
-    ? `Ce mois-ci, votre plus gros poste est ${topExpenseCategory.emoji} ${topExpenseCategory.name} avec ${formatCurrency(topExpenseAmount)}.`
-    : 'Ajoutez quelques transactions ce mois-ci pour obtenir un résumé intelligent.'
-
   const financialHealth = getFinancialHealth({
     monthlyIncome,
     monthlyBalance,
@@ -1123,68 +1056,6 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
     subscriptionCandidatesCount,
     forecast: endOfMonthForecast,
   })
-
-  const watchItems: WatchItem[] = [
-    {
-      title:
-        alertBudgets.length > 0
-          ? 'Budgets à surveiller'
-          : 'Budgets maîtrisés',
-      description:
-        alertBudgets.length > 0
-          ? 'Certains budgets sont proches de la limite ou dépassés.'
-          : 'Aucun budget en alerte pour le moment.',
-      value:
-        alertBudgets.length > 0
-          ? `${alertBudgets.length} alerte${alertBudgets.length > 1 ? 's' : ''}`
-          : 'OK',
-      href: '/budgets',
-      icon: <AlertTriangle className="h-5 w-5" />,
-      variant: alertBudgets.length > 0 ? 'amber' : 'emerald',
-    },
-    {
-      title: nextRecurringPayment
-        ? 'Prochaine charge fixe'
-        : 'Aucune charge à venir',
-      description: nextRecurringPayment
-        ? `${nextRecurringPayment.title} · ${getNextPaymentLabel(
-            nextRecurringPayment.dayOfMonth,
-          )}`
-        : 'Ajoutez vos abonnements pour mieux anticiper.',
-      value: nextRecurringPayment
-        ? `-${formatCurrency(nextRecurringPayment.amount)}`
-        : formatCurrency(0),
-      href: '/abonnements',
-      icon: <Repeat2 className="h-5 w-5" />,
-      variant: nextRecurringPayment ? 'rose' : 'blue',
-    },
-    {
-      title: hasDebts ? 'Dettes à suivre' : 'Aucune dette suivie',
-      description: hasDebts
-        ? 'Remboursements prévus et capital restant.'
-        : 'Vous pouvez ajouter une dette si besoin.',
-      value: hasDebts
-        ? `${formatCurrency(totalMonthlyDebtPayment)} / mois`
-        : 'OK',
-      href: '/dettes',
-      icon: <CreditCard className="h-5 w-5" />,
-      variant: hasDebts ? 'rose' : 'emerald',
-    },
-    {
-      title: goalsPreview.length > 0 ? 'Objectifs actifs' : 'Objectifs',
-      description:
-        goalsPreview.length > 0
-          ? 'Projets en cours à alimenter.'
-          : 'Ajoutez un projet pour donner un but à votre argent.',
-      value:
-        goalsPreview.length > 0
-          ? `${goalsPreview.length} à continuer`
-          : 'À créer',
-      href: '/objectifs',
-      icon: <Target className="h-5 w-5" />,
-      variant: goalsPreview.length > 0 ? 'violet' : 'blue',
-    },
-  ]
 
   return (
     <div className="space-y-6">
@@ -1299,101 +1170,12 @@ const topExpenseAmount = topExpenseCategoryEntry?.[1] ?? 0
           />
 
           <div className="mt-6 grid gap-3 md:grid-cols-2">
-            {financialTips.map((tip) => (
+            {financialTips.slice(0, 2).map((tip) => (
               <TipCard key={tip.id} tip={tip} />
             ))}
           </div>
         </section>
       )}
-
-      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <SectionHeader
-            eyebrow="À faire rapidement"
-            title="Actions utiles"
-            icon={<ShieldCheck className="h-5 w-5" />}
-          />
-
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
-            <QuickLinkCard
-              title="Ajouter une transaction"
-              description="Revenu, dépense ou virement."
-              href={hasAccounts ? '/transactions?action=new' : '/comptes'}
-              icon={<ReceiptText className="h-5 w-5" />}
-              variant="emerald"
-            />
-
-            <QuickLinkCard
-              title="Mettre de côté"
-              description="Alimenter un objectif depuis un compte."
-              href="/objectifs"
-              icon={<PiggyBank className="h-5 w-5" />}
-              variant="violet"
-            />
-
-            <QuickLinkCard
-              title="Rembourser une dette"
-              description="Créer un vrai remboursement."
-              href="/dettes"
-              icon={<CreditCard className="h-5 w-5" />}
-              variant="rose"
-            />
-
-            <QuickLinkCard
-              title="Voir le calendrier"
-              description="Anticiper les mouvements."
-              href="/calendrier"
-              icon={<CalendarDays className="h-5 w-5" />}
-              variant="amber"
-            />
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <SectionHeader
-            eyebrow="Résumé intelligent"
-            title="Ce qu’il faut retenir"
-            icon={<Banknote className="h-5 w-5" />}
-            action={
-              <Link
-                to="/statistiques"
-                className="hidden rounded-full bg-stone-100 px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-stone-200 md:inline-flex"
-              >
-                Analyse
-              </Link>
-            }
-          />
-
-          <div className="mt-6 rounded-[1.75rem] border border-emerald-100 bg-emerald-50 p-5 text-emerald-900">
-            <p className="text-sm font-semibold text-emerald-700">
-              Point rapide
-            </p>
-
-            <p className="mt-2 text-lg font-black leading-7">
-              {cockpitMessage}
-            </p>
-
-            <p className="mt-3 text-sm leading-6 text-emerald-800/80">
-              Pour une analyse plus complète avec tendances, catégories et
-              comparaisons, rendez-vous dans la page Analyse.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-        <SectionHeader
-          eyebrow="À surveiller"
-          title="Priorités du moment"
-          icon={<AlertTriangle className="h-5 w-5" />}
-        />
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {watchItems.map((item) => (
-            <WatchItemCard key={item.title} item={item} />
-          ))}
-        </div>
-      </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
