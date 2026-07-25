@@ -76,6 +76,9 @@
   html {
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
+    /* Garde-fou mobile : aucun contenu ne peut déborder horizontalement.
+       Sur <html> uniquement (sticky-safe, contrairement à body/#root). */
+    overflow-x: hidden;
   }
 
   body {
