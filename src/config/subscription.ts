@@ -28,7 +28,7 @@ export const ENFORCE_TRIAL = false
  * d'abonnement de l'app renvoient donc vers la page Tarifs de la vitrine.
  */
 export const VITRINE_URL = 'https://lescarnets.app'
-export const SUBSCRIPTION_HUB_URL = `${VITRINE_URL}/#tarifs`
+export const SUBSCRIPTION_HUB_URL = `${VITRINE_URL}/#hub`
 
 /**
  * Adresse vers laquelle pointent les boutons « Passer à l'abonnement » : la
