@@ -20,7 +20,7 @@ export const TRIAL_DURATION_DAYS = 14
  * seulement un rappel). Passez à `true` une fois le paiement en place pour
  * verrouiller l'app à la fin de l'essai (sauf abonnés).
  */
-export const ENFORCE_TRIAL = false
+export const ENFORCE_TRIAL = true
 
 /**
  * Le paiement et la gestion de l'abonnement sont centralisés sur la vitrine
