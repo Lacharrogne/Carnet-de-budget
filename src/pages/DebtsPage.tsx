@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { EmojiPicker } from '../components/ui/EmojiPicker'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Account } from '../types/budget'
 import type { Debt } from '../types/debt'
@@ -117,10 +119,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -135,7 +137,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -162,7 +166,7 @@ function NoAccountWarning() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée d’abord un compte pour rembourser une dette
+              Créez d’abord un compte pour rembourser une dette
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
@@ -236,6 +240,8 @@ function DebtFormModal({
   onChange: (values: DebtFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof DebtFormValues>(
     field: Field,
     value: DebtFormValues[Field],
@@ -255,7 +261,14 @@ function DebtFormModal({
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="debt-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -263,7 +276,10 @@ function DebtFormModal({
                 {isEditing ? 'Modification' : 'Nouvelle dette'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="debt-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier cette dette'
                   : 'Ajouter une dette à suivre'}
@@ -271,8 +287,8 @@ function DebtFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, les montants, la mensualité ou le taux.'
-                  : 'Ajoute un crédit, un paiement en plusieurs fois ou une dette à rembourser.'}
+                  ? 'Modifiez le nom, les montants, la mensualité ou le taux.'
+                  : 'Ajoutez un crédit, un paiement en plusieurs fois ou une dette à rembourser.'}
               </p>
             </div>
 
@@ -289,17 +305,11 @@ function DebtFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="💳"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="💳"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">
@@ -428,6 +438,7 @@ function RepaymentFormModal({
   onChange: (values: RepaymentFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
   const amount = parseAmount(formValues.amount)
   const selectedAccount = accounts.find((account) => {
     return account.id === formValues.accountId
@@ -452,7 +463,14 @@ function RepaymentFormModal({
         className="absolute inset-0 bg-slate-950/40 backdrop-blur-sm"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="repayment-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -460,7 +478,10 @@ function RepaymentFormModal({
                 Remboursement
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="repayment-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 Rembourser {debt.title}
               </h2>
 
@@ -488,7 +509,7 @@ function RepaymentFormModal({
                 Dette restante
               </p>
 
-              <p className="mt-2 text-xl font-black text-rose-950">
+              <p className="tabular mt-2 text-xl font-black text-rose-950">
                 {formatCurrency(debt.remainingAmount)}
               </p>
             </div>
@@ -498,7 +519,7 @@ function RepaymentFormModal({
                 Mensualité
               </p>
 
-              <p className="mt-2 text-xl font-black text-emerald-950">
+              <p className="tabular mt-2 text-xl font-black text-emerald-950">
                 {formatCurrency(debt.monthlyPayment)}
               </p>
             </div>
@@ -508,7 +529,7 @@ function RepaymentFormModal({
                 Après paiement
               </p>
 
-              <p className="mt-2 text-xl font-black text-slate-950">
+              <p className="tabular mt-2 text-xl font-black text-slate-950">
                 {formatCurrency(Math.max(debt.remainingAmount - amount, 0))}
               </p>
             </div>
@@ -542,7 +563,7 @@ function RepaymentFormModal({
                 {selectedAccount.name}
               </span>{' '}
               :{' '}
-              <span className="font-black text-slate-950">
+              <span className="tabular font-black text-slate-950">
                 {formatCurrency(selectedAccount.balance)}
               </span>
             </div>
@@ -559,6 +580,7 @@ function RepaymentFormModal({
                 onChange={(event) => updateField('amount', event.target.value)}
                 placeholder="Ex : 180"
                 inputMode="decimal"
+                aria-label="Montant remboursé en euros"
                 className="w-full bg-transparent text-sm font-bold text-slate-800 outline-none placeholder:text-slate-400"
               />
 
@@ -680,7 +702,7 @@ function DebtCard({
 
             <p className="mt-1 text-sm text-slate-500">
               Mensualité :{' '}
-              <span className="font-bold text-slate-700">
+              <span className="tabular font-bold text-slate-700">
                 {formatCurrency(debt.monthlyPayment)}
               </span>
               {debt.interestRate > 0 && (
@@ -696,7 +718,7 @@ function DebtCard({
           </div>
         </div>
 
-        <p className="text-2xl font-black text-rose-700">
+        <p className="tabular text-2xl font-black text-rose-700">
           {formatCurrency(debt.remainingAmount)}
         </p>
       </div>
@@ -707,7 +729,7 @@ function DebtCard({
             Total
           </p>
 
-          <p className="mt-2 font-black text-slate-950">
+          <p className="tabular mt-2 font-black text-slate-950">
             {formatCurrency(debt.totalAmount)}
           </p>
         </div>
@@ -717,7 +739,7 @@ function DebtCard({
             Payé
           </p>
 
-          <p className="mt-2 font-black text-emerald-700">
+          <p className="tabular mt-2 font-black text-emerald-700">
             {formatCurrency(paidAmount)}
           </p>
         </div>
@@ -727,7 +749,7 @@ function DebtCard({
             Restant
           </p>
 
-          <p className="mt-2 font-black text-rose-700">
+          <p className="tabular mt-2 font-black text-rose-700">
             {formatCurrency(debt.remainingAmount)}
           </p>
         </div>
@@ -906,7 +928,7 @@ export default function DebtsPage() {
     clearBudgetError()
 
     if (!canRepay) {
-      setRepaymentFormError('Crée d’abord un compte pour rembourser une dette.')
+      setRepaymentFormError('Créez d’abord un compte pour rembourser une dette.')
       return
     }
 
@@ -937,12 +959,12 @@ export default function DebtsPage() {
     const interestRate = parseAmount(formValues.interestRate)
 
     if (!title) {
-      setFormError('Ajoute un nom pour cette dette.')
+      setFormError('Ajoutez un nom pour cette dette.')
       return
     }
 
     if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
-      setFormError('Ajoute un montant total supérieur à 0 €.')
+      setFormError('Ajoutez un montant total supérieur à 0 €.')
       return
     }
 
@@ -958,7 +980,7 @@ export default function DebtsPage() {
     }
 
     if (!Number.isFinite(monthlyPayment) || monthlyPayment <= 0) {
-      setFormError('Ajoute une mensualité supérieure à 0 €.')
+      setFormError('Ajoutez une mensualité supérieure à 0 €.')
       return
     }
 
@@ -996,12 +1018,12 @@ export default function DebtsPage() {
     const amount = parseAmount(repaymentFormValues.amount)
 
     if (!repaymentFormValues.accountId) {
-      setRepaymentFormError('Choisis le compte utilisé pour le remboursement.')
+      setRepaymentFormError('Choisissez le compte utilisé pour le remboursement.')
       return
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setRepaymentFormError('Entre un montant supérieur à 0 €.')
+      setRepaymentFormError('Saisissez un montant supérieur à 0 €.')
       return
     }
 
@@ -1032,32 +1054,33 @@ export default function DebtsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-rose-200 bg-gradient-to-br from-rose-100 via-rose-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-rose-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-rose-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Dettes et remboursements
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Reprendre le contrôle des dettes
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Reprenez le contrôle de vos dettes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes crédits, paiements en plusieurs fois et dettes
-                personnelles. Les remboursements passent maintenant par un vrai
-                compte et créent une transaction automatiquement.
+                Suivez vos crédits, paiements en plusieurs fois et dettes
+                personnelles, à votre rythme. Les remboursements passent
+                maintenant par un vrai compte et créent une transaction
+                automatiquement.
               </p>
             </div>
 
             <button
               type="button"
               onClick={openForm}
-              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
             >
               <Plus className="h-4 w-4" />
               Nouvelle dette
@@ -1134,12 +1157,12 @@ export default function DebtsPage() {
           </div>
 
           <p className="mt-5 text-sm leading-6 text-slate-600">
-            Tu as déjà remboursé{' '}
-            <span className="font-black text-emerald-700">
+            Vous avez déjà remboursé{' '}
+            <span className="tabular font-black text-emerald-700">
               {formatCurrency(totalPaidAmount)}
             </span>{' '}
             sur un total initial de{' '}
-            <span className="font-black text-slate-950">
+            <span className="tabular font-black text-slate-950">
               {formatCurrency(totalDebtAmount)}
             </span>
             .
@@ -1169,7 +1192,7 @@ export default function DebtsPage() {
                 Poids mensuel
               </p>
 
-              <p className="mt-2 text-3xl font-black text-rose-950">
+              <p className="tabular mt-2 text-3xl font-black text-rose-950">
                 {formatCurrency(totalMonthlyPayments)}
               </p>
 
@@ -1240,7 +1263,8 @@ export default function DebtsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute une dette uniquement si tu veux suivre un remboursement.
+                Ajoutez une dette uniquement si vous souhaitez suivre un
+                remboursement.
               </p>
             </div>
           )}
@@ -1274,7 +1298,7 @@ export default function DebtsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cette dette ?"
-          description={`Tu es sur le point de supprimer "${debtToDelete.title}". Cette action retirera cette dette du suivi.`}
+          description={`Vous êtes sur le point de supprimer "${debtToDelete.title}". Cette action retirera cette dette de votre suivi.`}
           confirmLabel="Supprimer la dette"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

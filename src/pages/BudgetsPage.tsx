@@ -14,13 +14,12 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import MonthSwitcher from '../components/layout/MonthSwitcher'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
+import { useSelectedMonth } from '../context/useSelectedMonth'
 import { budgetCategories } from '../data/budgetCategories'
-import {
-  getBudgetUsages,
-  getCurrentMonthKey,
-  getMonthLabel,
-} from '../services/budgetStatsService'
+import { getBudgetUsages } from '../services/budgetStatsService'
 import type { BudgetCategoryId, MonthlyBudget } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -99,10 +98,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -393,9 +392,16 @@ function BudgetFormModal({
     budgetCategoryOptions.find((category) => category.id === formValues.category) ??
     budgetCategoryOptions[0]
 
+  const dialogRef = useDialogA11y<HTMLFormElement>(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
       <form
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="budget-modal-title"
+        tabIndex={-1}
         onSubmit={onSubmit}
         className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
       >
@@ -406,7 +412,10 @@ function BudgetFormModal({
                 Nouveau budget
               </p>
 
-              <h2 className="mt-1 font-display text-2xl font-semibold text-slate-950">
+              <h2
+                id="budget-modal-title"
+                className="mt-1 font-display text-2xl font-semibold text-slate-950"
+              >
                 Ajouter une limite mensuelle
               </h2>
 
@@ -558,8 +567,7 @@ export default function BudgetsPage() {
   const action = searchParams.get('action')
   const shouldShowBudgetForm = isBudgetFormOpen || action === 'new'
 
-  const monthKey = getCurrentMonthKey()
-  const monthLabel = getMonthLabel(monthKey)
+  const { monthKey, monthLabel } = useSelectedMonth()
 
   const availableCategories = getAvailableBudgetCategories(
     monthlyBudgets,
@@ -715,7 +723,7 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="animate-rise card-premium overflow-hidden">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-violet-200 bg-gradient-to-br from-violet-100 via-violet-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
           <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
           <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
@@ -737,7 +745,9 @@ export default function BudgetsPage() {
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <MonthSwitcher />
+
               <button
                 type="button"
                 onClick={openBudgetForm}

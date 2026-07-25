@@ -4,8 +4,12 @@ import { BrowserRouter } from 'react-router'
 
 import App from './App'
 import AuthGate from './components/auth/AuthGate'
+import TrialGate from './components/auth/TrialGate'
 import { AuthProvider } from './context/AuthContext'
 import { BudgetProvider } from './context/BudgetContext'
+import { SelectedMonthProvider } from './context/SelectedMonthContext'
+import { HolderFilterProvider } from './context/HolderFilterContext'
+import { TourProvider } from './context/TourContext'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -13,9 +17,17 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AuthProvider>
         <AuthGate>
-          <BudgetProvider>
-            <App />
-          </BudgetProvider>
+          <TrialGate>
+            <BudgetProvider>
+              <SelectedMonthProvider>
+                <HolderFilterProvider>
+                  <TourProvider>
+                    <App />
+                  </TourProvider>
+                </HolderFilterProvider>
+              </SelectedMonthProvider>
+            </BudgetProvider>
+          </TrialGate>
         </AuthGate>
       </AuthProvider>
     </BrowserRouter>

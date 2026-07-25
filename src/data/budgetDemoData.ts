@@ -26,6 +26,7 @@ export const accounts: Account[] = [
     balance: 2450,
     emoji: '🏦',
     colorClass: 'bg-emerald-50 text-emerald-800 border-emerald-100',
+    holder: 'Commun',
   },
   {
     id: 'account-savings',
@@ -34,6 +35,7 @@ export const accounts: Account[] = [
     balance: 3850,
     emoji: '🐷',
     colorClass: 'bg-teal-50 text-teal-800 border-teal-100',
+    holder: 'Maxime',
   },
   {
     id: 'account-cash',
@@ -42,6 +44,7 @@ export const accounts: Account[] = [
     balance: 85,
     emoji: '💶',
     colorClass: 'bg-amber-50 text-amber-800 border-amber-100',
+    holder: 'Chloé',
   },
 ]
 
@@ -234,6 +237,7 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 3,
     isActive: true,
+    type: 'expense',
   },
   {
     id: 'recurring-2',
@@ -243,6 +247,7 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 7,
     isActive: true,
+    type: 'expense',
   },
   {
     id: 'recurring-3',
@@ -252,6 +257,17 @@ export const recurringPayments: RecurringPayment[] = [
     accountId: 'account-current',
     dayOfMonth: 8,
     isActive: true,
+    type: 'expense',
+  },
+  {
+    id: 'recurring-4',
+    title: 'Salaire',
+    amount: 2100,
+    category: 'salary',
+    accountId: 'account-current',
+    dayOfMonth: 1,
+    isActive: true,
+    type: 'income',
   },
 ]
 export const sinkingFunds: SinkingFund[] = [

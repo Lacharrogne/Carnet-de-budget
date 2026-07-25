@@ -187,11 +187,11 @@ export default function QuickAddMenu({ variant = 'header' }: QuickAddMenuProps) 
                   </p>
 
                   <h2 className="mt-1 text-2xl font-black text-slate-950">
-                    Que veux-tu ajouter ?
+                    Que souhaitez-vous ajouter ?
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Accède rapidement aux actions importantes de ton carnet.
+                    Accédez rapidement aux actions importantes de votre carnet.
                   </p>
                 </div>
 

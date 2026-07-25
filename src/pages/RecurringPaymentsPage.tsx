@@ -8,6 +8,7 @@ import {
   Plus,
   ReceiptText,
   Repeat2,
+  Sparkles,
   ToggleLeft,
   ToggleRight,
   Trash2,
@@ -15,14 +16,22 @@ import {
   X,
 } from 'lucide-react'
 
+import BudgetErrorBanner from '../components/ui/BudgetErrorBanner'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import {
+  detectSubscriptions,
+  getCandidateEmoji,
+  type SubscriptionCandidate,
+} from '../services/subscriptionDetectionService'
 import type {
   Account,
   BudgetCategoryId,
   RecurringPayment,
+  RecurringType,
 } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -32,6 +41,7 @@ type RecurringPaymentFormValues = {
   dayOfMonth: string
   category: BudgetCategoryId
   accountId: string
+  type: RecurringType
 }
 
 const recurringCategoryOptions = budgetCategories.filter((category) => {
@@ -44,6 +54,7 @@ const defaultRecurringPaymentFormValues: RecurringPaymentFormValues = {
   dayOfMonth: '1',
   category: recurringCategoryOptions[0].id,
   accountId: '',
+  type: 'expense',
 }
 
 function createRecurringPaymentId() {
@@ -59,6 +70,7 @@ function getRecurringPaymentFormValues(
     dayOfMonth: String(payment.dayOfMonth),
     category: payment.category,
     accountId: payment.accountId,
+    type: payment.type,
   }
 }
 
@@ -151,10 +163,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -169,7 +181,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -196,13 +210,13 @@ function NoAccountWarning() {
             </p>
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée d’abord un compte pour ajouter une charge fixe
+              Créez d’abord un compte pour ajouter une charge fixe
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               Une charge fixe doit être liée à un compte pour savoir d’où sort
-              l’argent chaque mois. Une fois ton premier compte créé, tu pourras
-              ajouter Netflix, loyer, assurance, forfaits et autres
+              l’argent chaque mois. Une fois votre premier compte créé, vous
+              pourrez ajouter Netflix, loyer, assurance, forfaits et autres
               prélèvements récurrents.
             </p>
           </div>
@@ -242,6 +256,8 @@ function RecurringPaymentFormModal({
       (category) => category.id === formValues.category,
     ) ?? recurringCategoryOptions[0]
 
+  const isIncome = formValues.type === 'income'
+
   function updateField<Field extends keyof RecurringPaymentFormValues>(
     field: Field,
     value: RecurringPaymentFormValues[Field],
@@ -252,26 +268,46 @@ function RecurringPaymentFormModal({
     })
   }
 
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recurring-modal-title"
+        tabIndex={-1}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-emerald-600">
-                {isEditing ? 'Modification' : 'Nouvelle charge fixe'}
+                {isEditing
+                  ? 'Modification'
+                  : isIncome
+                    ? 'Nouveau revenu récurrent'
+                    : 'Nouvelle charge fixe'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="recurring-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
-                  ? 'Modifier cette charge fixe'
-                  : 'Ajouter une charge fixe'}
+                  ? isIncome
+                    ? 'Modifier ce revenu récurrent'
+                    : 'Modifier cette charge fixe'
+                  : isIncome
+                    ? 'Ajouter un revenu récurrent'
+                    : 'Ajouter une charge fixe'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                {isEditing
-                  ? 'Modifie le nom, le montant, le jour, la catégorie ou le compte associé.'
-                  : 'Ajoute un abonnement, un loyer, une assurance ou un prélèvement mensuel.'}
+                {isIncome
+                  ? 'Salaire, aide ou tout revenu qui revient chaque mois.'
+                  : 'Abonnement, loyer, assurance ou prélèvement mensuel.'}
               </p>
             </div>
 
@@ -305,13 +341,49 @@ function RecurringPaymentFormModal({
             </div>
           </div>
 
+          <div>
+            <span className="text-sm font-bold text-slate-700">Nature</span>
+
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => updateField('type', 'expense')}
+                aria-pressed={!isIncome}
+                className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${
+                  !isIncome
+                    ? 'border-rose-200 bg-rose-50 text-rose-700'
+                    : 'border-stone-200 bg-stone-50 text-slate-500 hover:bg-stone-100'
+                }`}
+              >
+                Charge (sortie)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => updateField('type', 'income')}
+                aria-pressed={isIncome}
+                className={`rounded-2xl border px-4 py-3 text-sm font-bold transition ${
+                  isIncome
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-stone-200 bg-stone-50 text-slate-500 hover:bg-stone-100'
+                }`}
+              >
+                Revenu (entrée)
+              </button>
+            </div>
+          </div>
+
           <label className="block">
             <span className="text-sm font-bold text-slate-700">Nom</span>
 
             <input
               value={formValues.title}
               onChange={(event) => updateField('title', event.target.value)}
-              placeholder="Ex : Netflix, loyer, assurance..."
+              placeholder={
+                isIncome
+                  ? 'Ex : Salaire, allocation...'
+                  : 'Ex : Netflix, loyer, assurance...'
+              }
               className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             />
           </label>
@@ -327,6 +399,7 @@ function RecurringPaymentFormModal({
                 onChange={(event) => updateField('amount', event.target.value)}
                 placeholder="Ex : 14"
                 inputMode="decimal"
+                aria-label="Montant mensuel en euros"
                 className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
             </label>
@@ -434,6 +507,7 @@ function RecurringPaymentCard({
   onDeleteRequest: (payment: RecurringPayment) => void
 }) {
   const category = getCategoryById(payment.category)
+  const isIncome = payment.type === 'income'
 
   return (
     <article className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -448,6 +522,16 @@ function RecurringPaymentCard({
               <h2 className="truncate text-xl font-black text-slate-950">
                 {payment.title}
               </h2>
+
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-black ${
+                  isIncome
+                    ? 'bg-emerald-50 text-emerald-700'
+                    : 'bg-rose-50 text-rose-700'
+                }`}
+              >
+                {isIncome ? 'Revenu' : 'Charge'}
+              </span>
 
               <span
                 className={`rounded-full px-3 py-1 text-xs font-black ${
@@ -467,8 +551,13 @@ function RecurringPaymentCard({
         </div>
 
         <div className="text-left md:text-right">
-          <p className="text-2xl font-black text-rose-700">
-            -{formatCurrency(payment.amount)}
+          <p
+            className={`tabular text-2xl font-black ${
+              isIncome ? 'text-emerald-700' : 'text-rose-700'
+            }`}
+          >
+            {isIncome ? '+' : '-'}
+            {formatCurrency(payment.amount)}
           </p>
 
           <p className="mt-1 text-sm font-bold text-slate-500">
@@ -485,7 +574,7 @@ function RecurringPaymentCard({
             Montant
           </p>
 
-          <p className="mt-2 text-xl font-black text-slate-950">
+          <p className="tabular mt-2 text-xl font-black text-slate-950">
             {formatCurrency(payment.amount)}
           </p>
         </div>
@@ -553,16 +642,123 @@ function RecurringPaymentCard({
   )
 }
 
+function DetectedSubscriptions({
+  candidates,
+  getAccountName,
+  onAdd,
+  onDismiss,
+}: {
+  candidates: SubscriptionCandidate[]
+  getAccountName: (accountId: string) => string
+  onAdd: (candidate: SubscriptionCandidate) => void
+  onDismiss: (key: string) => void
+}) {
+  if (candidates.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="overflow-hidden rounded-[2rem] border border-emerald-100 bg-emerald-50/60 p-6 shadow-sm">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+            Détecté pour vous
+          </p>
+
+          <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
+            Abonnements repérés dans vos dépenses
+          </h2>
+
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+            Ces dépenses reviennent régulièrement. Ajoutez-les en un clic pour
+            mieux anticiper vos charges fixes — ou ignorez celles qui n’en sont
+            pas.
+          </p>
+        </div>
+
+        <div className="hidden rounded-2xl bg-emerald-100 p-3 text-emerald-700 sm:block">
+          <Sparkles className="h-5 w-5" />
+        </div>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {candidates.map((candidate) => (
+          <article
+            key={candidate.key}
+            className="flex flex-col gap-4 rounded-[1.5rem] border border-emerald-100 bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-2xl">
+                  {getCandidateEmoji(candidate)}
+                </div>
+
+                <div className="min-w-0">
+                  <p className="truncate font-black text-slate-950">
+                    {candidate.title}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-500">
+                    Vu {candidate.occurrences} fois sur {candidate.monthsCount}{' '}
+                    mois · le {candidate.dayOfMonth} du mois
+                  </p>
+                </div>
+              </div>
+
+              <p className="tabular shrink-0 text-right font-black text-slate-950">
+                {formatCurrency(candidate.amount)}
+                <span className="block text-xs font-semibold text-slate-400">
+                  ~{formatCurrency(candidate.yearlyEstimate)} / an
+                </span>
+              </p>
+            </div>
+
+            <p className="text-xs text-slate-500">
+              {getCategoryById(candidate.category).name} ·{' '}
+              {getAccountName(candidate.accountId)}
+            </p>
+
+            <div className="mt-auto flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => onAdd(candidate)}
+                className="flex items-center gap-2 rounded-full bg-emerald-950 px-4 py-2 text-sm font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-900"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter en charge fixe
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDismiss(candidate.key)}
+                className="flex items-center gap-2 rounded-full bg-stone-100 px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-stone-200"
+              >
+                <X className="h-4 w-4" />
+                Ignorer
+              </button>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}
+
 export default function RecurringPaymentsPage() {
   const {
     accounts,
+    transactions,
     recurringPayments,
     addRecurringPayment,
     updateRecurringPayment,
     toggleRecurringPayment,
     deleteRecurringPayment,
+    budgetError,
+    clearBudgetError,
   } = useBudgetData()
 
+  const [dismissedCandidateKeys, setDismissedCandidateKeys] = useState<
+    string[]
+  >([])
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [formValues, setFormValues] = useState<RecurringPaymentFormValues>(() =>
     getDefaultFormValues(accounts),
@@ -579,23 +775,53 @@ export default function RecurringPaymentsPage() {
   const shouldShowForm = hasAccounts && (isFormOpen || action === 'new')
   const displayedFormValues = normalizeFormValues(formValues, accounts)
 
+  const detectedCandidates = detectSubscriptions(
+    transactions,
+    recurringPayments,
+  ).filter((candidate) => !dismissedCandidateKeys.includes(candidate.key))
+
+  function handleAddCandidate(candidate: SubscriptionCandidate) {
+    addRecurringPayment({
+      id: createRecurringPaymentId(),
+      title: candidate.title,
+      amount: candidate.amount,
+      category: candidate.category,
+      accountId: candidate.accountId,
+      dayOfMonth: candidate.dayOfMonth,
+      isActive: true,
+      type: 'expense',
+    })
+
+    setDismissedCandidateKeys((keys) => [...keys, candidate.key])
+  }
+
+  function dismissCandidate(key: string) {
+    setDismissedCandidateKeys((keys) => [...keys, key])
+  }
+
   const activePayments = recurringPayments.filter((payment) => payment.isActive)
   const inactivePayments = recurringPayments.filter(
     (payment) => !payment.isActive,
   )
 
-  const monthlyTotal = activePayments.reduce((total, payment) => {
+  const activeExpenses = activePayments.filter(
+    (payment) => payment.type !== 'income',
+  )
+  const activeIncomes = activePayments.filter(
+    (payment) => payment.type === 'income',
+  )
+
+  const monthlyTotal = activeExpenses.reduce((total, payment) => {
+    return total + payment.amount
+  }, 0)
+
+  const monthlyIncomeTotal = activeIncomes.reduce((total, payment) => {
     return total + payment.amount
   }, 0)
 
   const yearlyTotal = monthlyTotal * 12
 
-  const averagePayment =
-    activePayments.length > 0
-      ? Math.round(monthlyTotal / activePayments.length)
-      : 0
-
-  const nextPayment = [...activePayments].sort((firstPayment, secondPayment) => {
+  const nextPayment = [...activeExpenses].sort((firstPayment, secondPayment) => {
     return (
       getDaysBeforePayment(firstPayment.dayOfMonth) -
       getDaysBeforePayment(secondPayment.dayOfMonth)
@@ -623,7 +849,7 @@ export default function RecurringPaymentsPage() {
 
   function openForm() {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une charge fixe.')
+      setFormError('Créez d’abord un compte avant d’ajouter une charge fixe.')
 
       if (action === 'new') {
         clearActionParam()
@@ -640,7 +866,7 @@ export default function RecurringPaymentsPage() {
 
   function openEditForm(payment: RecurringPayment) {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant de modifier une charge fixe.')
+      setFormError('Créez d’abord un compte avant de modifier une charge fixe.')
       return
     }
 
@@ -674,17 +900,17 @@ export default function RecurringPaymentsPage() {
     const dayOfMonth = Number(currentFormValues.dayOfMonth)
 
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une charge fixe.')
+      setFormError('Créez d’abord un compte avant d’ajouter une charge fixe.')
       return
     }
 
     if (!title) {
-      setFormError('Ajoute un nom pour cette charge fixe.')
+      setFormError('Ajoutez un nom pour cette charge fixe.')
       return
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('Ajoute un montant supérieur à 0 €.')
+      setFormError('Ajoutez un montant supérieur à 0 €.')
       return
     }
 
@@ -698,7 +924,7 @@ export default function RecurringPaymentsPage() {
     }
 
     if (!currentFormValues.accountId) {
-      setFormError('Choisis le compte associé à cette charge fixe.')
+      setFormError('Choisissez le compte associé à cette charge fixe.')
       return
     }
 
@@ -710,6 +936,7 @@ export default function RecurringPaymentsPage() {
       category: currentFormValues.category,
       accountId: currentFormValues.accountId,
       isActive: paymentToEdit?.isActive ?? true,
+      type: currentFormValues.type,
     }
 
     if (paymentToEdit) {
@@ -739,25 +966,26 @@ export default function RecurringPaymentsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-amber-200 bg-gradient-to-br from-amber-100 via-amber-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-rose-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-rose-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Abonnements et charges fixes
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Anticiper les charges fixes
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Anticipez vos charges fixes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes abonnements, loyers, assurances et prélèvements
-                mensuels. Ces charges fixes ne sont pas encore des transactions
-                réelles : elles servent à anticiper ce qui revient chaque mois.
+                Suivez vos abonnements, loyers, assurances et prélèvements
+                mensuels en toute sérénité. Ces charges fixes ne sont pas encore
+                des transactions réelles : elles vous aident à anticiper ce qui
+                revient chaque mois.
               </p>
             </div>
 
@@ -765,7 +993,7 @@ export default function RecurringPaymentsPage() {
               <button
                 type="button"
                 onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 Nouvelle charge fixe
@@ -785,9 +1013,13 @@ export default function RecurringPaymentsPage() {
 
       {!hasAccounts && <NoAccountWarning />}
 
+      {budgetError && (
+        <BudgetErrorBanner message={budgetError} onClose={clearBudgetError} />
+      )}
+
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
-          title="Charges actives"
+          title="Charges /mois"
           value={formatCurrency(monthlyTotal)}
           description="Total mensuel à anticiper"
           icon={<Repeat2 className="h-5 w-5" />}
@@ -795,31 +1027,40 @@ export default function RecurringPaymentsPage() {
         />
 
         <PageStatCard
+          title="Revenus /mois"
+          value={formatCurrency(monthlyIncomeTotal)}
+          description="Salaire et revenus récurrents"
+          icon={<WalletCards className="h-5 w-5" />}
+          variant="emerald"
+        />
+
+        <PageStatCard
           title="Coût annuel"
           value={formatCurrency(yearlyTotal)}
-          description="Projection sur 12 mois"
+          description="Charges projetées sur 12 mois"
           icon={<CalendarDays className="h-5 w-5" />}
           variant="amber"
         />
 
         <PageStatCard
-          title="Charges suivies"
+          title="Suivis"
           value={String(activePayments.length)}
-          description={`${inactivePayments.length} désactivée${
+          description={`${inactivePayments.length} désactivé${
             inactivePayments.length > 1 ? 's' : ''
           }`}
           icon={<CheckCircle2 className="h-5 w-5" />}
-          variant="emerald"
-        />
-
-        <PageStatCard
-          title="Moyenne"
-          value={formatCurrency(averagePayment)}
-          description="Par charge active"
-          icon={<WalletCards className="h-5 w-5" />}
           variant="blue"
         />
       </section>
+
+      {hasAccounts && (
+        <DetectedSubscriptions
+          candidates={detectedCandidates}
+          getAccountName={getAccountName}
+          onAdd={handleAddCandidate}
+          onDismiss={dismissCandidate}
+        />
+      )}
 
       <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
@@ -850,8 +1091,11 @@ export default function RecurringPaymentsPage() {
               </p>
 
               <p className="mt-2 text-sm text-amber-800/80">
-                Montant prévu : {formatCurrency(nextPayment.amount)} depuis le
-                compte {getAccountName(nextPayment.accountId)}.
+                Montant prévu :{' '}
+                <span className="tabular">
+                  {formatCurrency(nextPayment.amount)}
+                </span>{' '}
+                depuis le compte {getAccountName(nextPayment.accountId)}.
               </p>
             </div>
           ) : (
@@ -898,7 +1142,7 @@ export default function RecurringPaymentsPage() {
               Total à anticiper
             </p>
 
-            <p className="mt-2 text-3xl font-black text-rose-950">
+            <p className="tabular mt-2 text-3xl font-black text-rose-950">
               {formatCurrency(monthlyTotal)}
             </p>
           </div>
@@ -963,8 +1207,8 @@ export default function RecurringPaymentsPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 {hasAccounts
-                  ? 'Ajoute tes charges fixes pour mieux anticiper le mois.'
-                  : 'Crée ton premier compte pour pouvoir enregistrer des abonnements et prélèvements.'}
+                  ? 'Ajoutez vos charges fixes pour mieux anticiper le mois.'
+                  : 'Créez votre premier compte pour pouvoir enregistrer des abonnements et prélèvements.'}
               </p>
             </div>
           )}
@@ -987,7 +1231,7 @@ export default function RecurringPaymentsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cette charge fixe ?"
-          description={`Tu es sur le point de supprimer "${paymentToDelete.title}". Cette charge fixe sera supprimée de Supabase.`}
+          description={`Vous êtes sur le point de supprimer "${paymentToDelete.title}". Cette charge fixe sera supprimée de Supabase.`}
           confirmLabel="Supprimer la charge fixe"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

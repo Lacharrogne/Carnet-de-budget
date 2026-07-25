@@ -15,6 +15,11 @@ import {
 } from 'lucide-react'
 
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import {
+  filterByAccountHolder,
+  filterTransactionsByHolder,
+} from '../lib/holderFilter'
 import { budgetCategories } from '../data/budgetCategories'
 import type {
   BudgetCategoryId,
@@ -219,6 +224,7 @@ function createRecurringPaymentCalendarItem(
   monthDate: Date,
 ): CalendarItem {
   const dateKey = getRecurringPaymentDateKey(monthDate, payment)
+  const isIncome = payment.type === 'income'
 
   return {
     id: `recurring-${payment.id}-${dateKey}`,
@@ -226,8 +232,8 @@ function createRecurringPaymentCalendarItem(
     amount: payment.amount,
     dateKey,
     category: payment.category,
-    type: 'expense',
-    label: 'Charge fixe',
+    type: isIncome ? 'income' : 'expense',
+    label: isIncome ? 'Revenu fixe' : 'Charge fixe',
     isRecurring: true,
   }
 }
@@ -246,10 +252,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -264,7 +270,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -296,14 +302,14 @@ function EmptyCalendarGuide({ hasAccounts }: { hasAccounts: boolean }) {
 
             <h2 className="mt-1 text-xl font-black text-amber-950">
               {hasAccounts
-                ? 'Ajoute des mouvements pour alimenter ton calendrier'
-                : 'Crée d’abord un compte pour commencer ton suivi'}
+                ? 'Ajoutez des mouvements pour alimenter votre calendrier'
+                : 'Créez d’abord un compte pour commencer votre suivi'}
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               {hasAccounts
-                ? 'Le calendrier affichera tes transactions datées et tes charges fixes actives. Ajoute une transaction ou un abonnement pour visualiser ton mois.'
-                : 'Une transaction ou une charge fixe doit être reliée à un compte. Commence par créer ton premier compte, puis ajoute tes mouvements.'}
+                ? 'Le calendrier affichera vos transactions datées et vos charges fixes actives. Ajoutez une transaction ou un abonnement pour visualiser votre mois.'
+                : 'Une transaction ou une charge fixe doit être reliée à un compte. Commencez par créer votre premier compte, puis ajoutez vos mouvements.'}
             </p>
           </div>
         </div>
@@ -394,7 +400,7 @@ function CalendarItemCard({
         </div>
 
         <div className="text-right">
-          <p className={`font-black ${getAmountColorClass(item.type)}`}>
+          <p className={`tabular font-black ${getAmountColorClass(item.type)}`}>
             {getAmountLabel(item)}
           </p>
 
@@ -447,15 +453,15 @@ function CalendarDayButton({
     <button
       type="button"
       onClick={onSelect}
-      className={`min-h-24 rounded-[1.5rem] border p-3 text-left transition md:min-h-32 ${
+      className={`min-h-[4.25rem] rounded-2xl border p-1.5 text-left transition md:min-h-32 md:rounded-[1.5rem] md:p-3 ${
         isSelected
           ? 'border-emerald-300 bg-emerald-50 shadow-sm'
           : 'border-stone-200 bg-white hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-sm'
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-1 md:gap-2">
         <span
-          className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-black ${
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-black md:h-9 md:w-9 md:text-sm ${
             day.isToday
               ? 'bg-emerald-950 text-white'
               : 'bg-stone-50 text-slate-800'
@@ -465,34 +471,34 @@ function CalendarDayButton({
         </span>
 
         {itemCount > 0 && (
-          <span className="flex h-7 min-w-7 items-center justify-center rounded-full bg-stone-50 px-2 text-xs font-black text-slate-500">
+          <span className="hidden h-7 min-w-7 items-center justify-center rounded-full bg-stone-50 px-2 text-xs font-black text-slate-500 md:flex">
             {itemCount}
           </span>
         )}
       </div>
 
       {itemCount > 0 && (
-        <div className="mt-4 space-y-2">
-          <div className="flex gap-1">
+        <div className="mt-2 space-y-2 md:mt-4">
+          <div className="flex flex-wrap gap-1">
             {incomeCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-emerald-500" />
+              <span className="h-2 w-2 rounded-full bg-emerald-500 md:h-3 md:w-3" />
             )}
 
             {expenseCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-rose-500" />
+              <span className="h-2 w-2 rounded-full bg-rose-500 md:h-3 md:w-3" />
             )}
 
             {transferCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-blue-500" />
+              <span className="h-2 w-2 rounded-full bg-blue-500 md:h-3 md:w-3" />
             )}
 
             {recurringCount > 0 && (
-              <span className="h-3 w-3 rounded-full bg-amber-400" />
+              <span className="h-2 w-2 rounded-full bg-amber-400 md:h-3 md:w-3" />
             )}
           </div>
 
           {firstLabel && (
-            <p className="line-clamp-1 text-xs font-black text-slate-600">
+            <p className="hidden line-clamp-1 text-xs font-black text-slate-600 md:block">
               {firstLabel}
             </p>
           )}
@@ -504,6 +510,21 @@ function CalendarDayButton({
 
 export default function CalendarPage() {
   const { accounts, transactions, recurringPayments } = useBudgetData()
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre global « par personne » : on ne garde que les transactions et les
+  // charges fixes rattachées aux comptes du titulaire sélectionné.
+  const holderTransactions = filterTransactionsByHolder(
+    transactions,
+    accounts,
+    selectedHolder,
+  )
+
+  const holderRecurringPayments = filterByAccountHolder(
+    recurringPayments,
+    accounts,
+    selectedHolder,
+  )
 
   const today = new Date()
   const [monthDate, setMonthDate] = useState(
@@ -513,17 +534,17 @@ export default function CalendarPage() {
 
   const hasAccounts = accounts.length > 0
 
-  const activeRecurringPayments = recurringPayments.filter((payment) => {
+  const activeRecurringPayments = holderRecurringPayments.filter((payment) => {
     return payment.isActive
   })
 
   const hasCalendarData =
-    transactions.length > 0 || activeRecurringPayments.length > 0
+    holderTransactions.length > 0 || activeRecurringPayments.length > 0
 
   const monthKey = getMonthKey(monthDate)
   const monthLabel = getMonthLabel(monthDate)
 
-  const monthTransactions = transactions.filter((transaction) => {
+  const monthTransactions = holderTransactions.filter((transaction) => {
     return transaction.date.startsWith(monthKey)
   })
 
@@ -532,7 +553,7 @@ export default function CalendarPage() {
   })
 
   const selectedDayItems = [
-    ...transactions
+    ...holderTransactions
       .filter((transaction) => transaction.date === selectedDateKey)
       .map(createTransactionCalendarItem),
     ...monthRecurringItems.filter((item) => item.dateKey === selectedDateKey),
@@ -552,7 +573,7 @@ export default function CalendarPage() {
 
   const calendarDays = getCalendarDays(
     monthDate,
-    transactions,
+    holderTransactions,
     activeRecurringPayments,
   )
 
@@ -569,9 +590,9 @@ export default function CalendarPage() {
     .filter((transaction) => transaction.type === 'expense')
     .reduce((total, transaction) => total + transaction.amount, 0)
 
-  const recurringAmount = activeRecurringPayments.reduce((total, payment) => {
-    return total + payment.amount
-  }, 0)
+  const recurringAmount = activeRecurringPayments
+    .filter((payment) => payment.type !== 'income')
+    .reduce((total, payment) => total + payment.amount, 0)
 
   function goToPreviousMonth() {
     const previousMonth = new Date(monthDate)
@@ -598,23 +619,23 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-orange-200 bg-gradient-to-br from-orange-100 via-orange-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Calendrier financier
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Visualiser ton mois
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Visualisez votre mois
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Retrouve tes revenus, tes dépenses, tes virements et tes charges
+                Retrouvez vos revenus, vos dépenses, vos virements et vos charges
                 fixes par jour. Le calendrier est synchronisé avec les
                 transactions et les abonnements enregistrés dans Supabase.
               </p>
@@ -631,7 +652,7 @@ export default function CalendarPage() {
 
               <Link
                 to={hasAccounts ? '/transactions?action=new' : '/comptes'}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 {hasAccounts ? 'Nouvelle transaction' : 'Créer un compte'}
@@ -711,7 +732,7 @@ export default function CalendarPage() {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-7 gap-2">
+          <div className="mt-8 grid grid-cols-7 gap-1 md:gap-2">
             {weekDays.map((day) => (
               <div
                 key={day}
@@ -722,7 +743,7 @@ export default function CalendarPage() {
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-7 gap-2">
+          <div className="mt-3 grid grid-cols-7 gap-1 md:gap-2">
             {calendarDays.map((day) => (
               <CalendarDayButton
                 key={day.dateKey}
@@ -844,8 +865,8 @@ export default function CalendarPage() {
 
                       <p className="mt-1 text-sm leading-6 text-slate-500">
                         {hasAccounts
-                          ? 'Ajoute une transaction ou une charge fixe pour remplir le calendrier.'
-                          : 'Crée d’abord un compte pour commencer à suivre ton mois.'}
+                          ? 'Ajoutez une transaction ou une charge fixe pour remplir le calendrier.'
+                          : 'Créez d’abord un compte pour commencer à suivre votre mois.'}
                       </p>
 
                       <Link
