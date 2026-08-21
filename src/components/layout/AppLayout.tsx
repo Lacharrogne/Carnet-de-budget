@@ -20,6 +20,7 @@ import {
 
 import { useAuth } from '../../context/useAuth'
 import QuickAddMenu from './QuickAddMenu'
+import SubscriptionGuard from '../SubscriptionGuard'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -305,7 +306,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </header>
 
         <main className="mx-auto max-w-6xl px-4 py-6 pb-36 md:px-8 xl:pb-10">
-          {children}
+          <SubscriptionGuard>{children}</SubscriptionGuard>
         </main>
 
         <nav className="fixed bottom-3 left-1/2 z-30 w-[calc(100%-1.25rem)] max-w-md -translate-x-1/2 xl:hidden">
