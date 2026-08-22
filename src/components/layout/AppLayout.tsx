@@ -12,6 +12,7 @@ import {
   PiggyBank,
   ReceiptText,
   Repeat2,
+  Settings,
   Target,
   TrendingUp,
   UserCircle,
@@ -103,6 +104,13 @@ const navItems = [
     icon: BarChart3,
     iconClass: 'bg-sky-50 text-sky-700',
     activeClass: 'bg-sky-50 text-sky-800 ring-1 ring-sky-100',
+  },
+  {
+    label: 'Réglages',
+    path: '/reglages',
+    icon: Settings,
+    iconClass: 'bg-stone-100 text-slate-600',
+    activeClass: 'bg-stone-100 text-slate-900 ring-1 ring-stone-200',
   },
 ]
 
@@ -292,6 +300,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <div className="hidden sm:block">
                 <QuickAddMenu />
               </div>
+
+              <Link
+                to="/reglages"
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm transition hover:bg-stone-100 hover:text-slate-900 xl:hidden"
+                aria-label="Réglages"
+              >
+                <Settings className="h-5 w-5" />
+              </Link>
 
               <button
                 type="button"

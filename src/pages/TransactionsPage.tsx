@@ -5,6 +5,7 @@ import {
   ArrowRightLeft,
   ArrowUpRight,
   CalendarDays,
+  Download,
   Filter,
   Pencil,
   Plus,
@@ -20,6 +21,7 @@ import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import { exportTransactionsCsv } from '../lib/exportCsv'
 import type {
   Account,
   BudgetCategory,
@@ -994,24 +996,43 @@ export default function TransactionsPage() {
               </p>
             </div>
 
-            {hasAccounts ? (
-              <button
-                type="button"
-                onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                Nouvelle transaction
-              </button>
-            ) : (
-              <Link
-                to="/comptes"
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                Créer un compte
-              </Link>
-            )}
+            <div className="flex w-fit flex-wrap items-center gap-2">
+              {localTransactions.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    exportTransactionsCsv(
+                      localTransactions,
+                      accounts,
+                      budgetCategories,
+                    )
+                  }
+                  className="flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-50 hover:text-slate-900"
+                >
+                  <Download className="h-4 w-4" />
+                  Exporter
+                </button>
+              )}
+
+              {hasAccounts ? (
+                <button
+                  type="button"
+                  onClick={openForm}
+                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nouvelle transaction
+                </button>
+              ) : (
+                <Link
+                  to="/comptes"
+                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                >
+                  <Plus className="h-4 w-4" />
+                  Créer un compte
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </section>

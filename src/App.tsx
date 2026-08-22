@@ -12,6 +12,7 @@ import GoalsPage from './pages/GoalsPage'
 import InvestmentsPage from './pages/InvestmentsPage'
 import NetWorthPage from './pages/NetWorthPage'
 import RecurringPaymentsPage from './pages/RecurringPaymentsPage'
+import SettingsPage from './pages/SettingsPage'
 import StatsPage from './pages/StatsPage'
 import TransactionsPage from './pages/TransactionsPage'
 import ModalAutoClose from './components/layout/ModalAutoClose'
@@ -40,6 +41,7 @@ export default function App() {
             <Route path="/calendrier" element={<CalendarPage />} />
             <Route path="/statistiques" element={<StatsPage />} />
             <Route path="/stats" element={<StatsPage />} />
+            <Route path="/reglages" element={<SettingsPage />} />
           </Routes>
         </ErrorBoundary>
       </AppLayout>
