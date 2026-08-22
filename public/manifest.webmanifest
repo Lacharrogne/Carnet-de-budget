@@ -1,0 +1,27 @@
+{
+  "name": "Carnet de budget",
+  "short_name": "Budget",
+  "description": "Votre carnet financier : comptes, budgets, dépenses, objectifs et patrimoine.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#faf7f1",
+  "theme_color": "#faf7f1",
+  "lang": "fr",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

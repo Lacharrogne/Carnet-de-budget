@@ -14,6 +14,7 @@ import {
   PiggyBank,
   ReceiptText,
   Repeat2,
+  Settings,
   Sparkles,
   Target,
   TrendingUp,
@@ -395,13 +396,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   Mon abonnement
                 </a>
 
+                <Link
+                  to="/reglages"
+                  onClick={() => setOpenMenu(null)}
+                  className="mt-1.5 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-stone-100"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-slate-600">
+                    <Settings className="h-4 w-4" />
+                  </span>
+                  Réglages
+                </Link>
+
                 <button
                   type="button"
                   onClick={() => {
                     setOpenMenu(null)
                     startTour()
                   }}
-                  className="mt-1.5 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-stone-100"
+                  className="mt-1 flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-stone-100"
                 >
                   <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-stone-100 text-slate-600">
                     <HelpCircle className="h-4 w-4" />
@@ -536,6 +548,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <Sparkles className="h-4 w-4" />
               Mon abonnement
             </a>
+
+            <Link
+              to="/reglages"
+              onClick={() => setIsMobileNavOpen(false)}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-black text-slate-700 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100"
+            >
+              <Settings className="h-4 w-4" />
+              Réglages
+            </Link>
 
             <button
               type="button"
