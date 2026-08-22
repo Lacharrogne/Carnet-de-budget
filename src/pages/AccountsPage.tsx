@@ -16,7 +16,14 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import { useDialogA11y } from '../hooks/useDialogA11y'
+import {
+  filterAccountsByHolder,
+  filterTransactionsByHolder,
+} from '../lib/holderFilter'
 import { getCategoryById } from '../services/budgetStatsService'
 import type {
   Account,
@@ -32,6 +39,7 @@ type AccountFormValues = {
   type: AccountType
   balance: string
   emoji: string
+  holder: string
 }
 
 const defaultAccountFormValues: AccountFormValues = {
@@ -39,6 +47,7 @@ const defaultAccountFormValues: AccountFormValues = {
   type: 'current',
   balance: '',
   emoji: '🏦',
+  holder: '',
 }
 
 const transferCategory: BudgetCategory = {
@@ -46,7 +55,7 @@ const transferCategory: BudgetCategory = {
   name: 'Virement',
   emoji: '🔁',
   description: 'Mouvement entre deux comptes personnels.',
-  colorClass: 'border-blue-100 bg-blue-50 text-blue-900',
+  colorClass: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
 }
 
 function createAccountId() {
@@ -59,6 +68,7 @@ function getAccountFormValues(account: Account): AccountFormValues {
     type: account.type,
     balance: String(account.balance),
     emoji: account.emoji,
+    holder: account.holder ?? '',
   }
 }
 
@@ -106,18 +116,18 @@ function getAccountTypeIcon(type: AccountType) {
 
 function getAccountTypeStyle(type: AccountType) {
   if (type === 'current') {
-    return 'border-blue-100 bg-blue-50 text-blue-900'
+    return 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900'
   }
 
   if (type === 'savings') {
-    return 'border-emerald-100 bg-emerald-50 text-emerald-900'
+    return 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900'
   }
 
   if (type === 'cash') {
-    return 'border-amber-100 bg-amber-50 text-amber-900'
+    return 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900'
   }
 
-  return 'border-violet-100 bg-violet-50 text-violet-900'
+  return 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900'
 }
 
 function getAccountColorClass(type: AccountType) {
@@ -183,10 +193,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'amber' | 'violet'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {
@@ -201,7 +211,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -223,9 +235,9 @@ function EmptyAccountsCard({ onCreateAccount }: { onCreateAccount: () => void })
       </h3>
 
       <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
-        Crée ton premier compte pour pouvoir enregistrer tes revenus, dépenses
-        et virements. Chaque transaction viendra ensuite modifier les soldes
-        automatiquement.
+        Créez votre premier compte pour pouvoir enregistrer vos revenus,
+        dépenses et virements. Chaque transaction viendra ensuite modifier les
+        soldes automatiquement.
       </p>
 
       <button
@@ -244,6 +256,7 @@ function AccountFormModal({
   formValues,
   formError,
   isEditing,
+  holderSuggestions,
   onClose,
   onChange,
   onSubmit,
@@ -251,10 +264,13 @@ function AccountFormModal({
   formValues: AccountFormValues
   formError: string
   isEditing: boolean
+  holderSuggestions: string[]
   onClose: () => void
   onChange: (values: AccountFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof AccountFormValues>(
     field: Field,
     value: AccountFormValues[Field],
@@ -267,7 +283,14 @@ function AccountFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="account-modal-title"
+        tabIndex={-1}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -275,7 +298,10 @@ function AccountFormModal({
                 {isEditing ? 'Modification' : 'Nouveau compte'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="account-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier ce compte'
                   : 'Ajouter un compte bancaire'}
@@ -283,8 +309,8 @@ function AccountFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, le type, l’emoji ou le solde du compte.'
-                  : 'Ajoute un compte courant, un livret, des espèces ou un compte d’investissement.'}
+                  ? 'Modifiez le nom, le type, l’emoji ou le solde du compte.'
+                  : 'Ajoutez un compte courant, un livret, des espèces ou un compte d’investissement.'}
               </p>
             </div>
 
@@ -301,17 +327,11 @@ function AccountFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="🏦"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="🏦"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">
@@ -361,6 +381,31 @@ function AccountFormModal({
               />
             </label>
           </div>
+
+          <label className="block">
+            <span className="text-sm font-bold text-slate-700">
+              Titulaire <span className="font-medium text-slate-400">(facultatif)</span>
+            </span>
+
+            <input
+              value={formValues.holder}
+              onChange={(event) => updateField('holder', event.target.value)}
+              list="account-holders"
+              placeholder="Ex : Maxime, Chloé, Commun..."
+              className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+
+            <datalist id="account-holders">
+              {holderSuggestions.map((holder) => (
+                <option key={holder} value={holder} />
+              ))}
+            </datalist>
+
+            <p className="mt-1.5 text-xs text-slate-500">
+              Pour séparer vos comptes par personne (ex. Maxime / Chloé /
+              Commun).
+            </p>
+          </label>
 
           {isEditing && (
             <div className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-800">
@@ -453,6 +498,14 @@ function AccountCard({
 
             <p className="mt-1 text-sm text-slate-500">
               {getAccountTypeLabel(account.type)}
+              {account.holder.trim() && (
+                <>
+                  {' · '}
+                  <span className="font-bold text-slate-600">
+                    {account.holder.trim()}
+                  </span>
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -477,14 +530,15 @@ function AccountCard({
             onChange={(event) => setBalanceInput(event.target.value)}
             onBlur={handleBlur}
             inputMode="decimal"
-            className="w-full bg-transparent text-3xl font-black text-slate-950 outline-none"
+            aria-label={`Solde du compte ${account.name}`}
+            className="tabular w-full bg-transparent text-3xl font-black text-slate-950 outline-none"
           />
 
           <span className="text-xl font-black text-slate-400">€</span>
         </div>
 
         <p className="mt-2 text-sm text-slate-500">
-          Clique sur le montant pour ajuster le solde.
+          Cliquez sur le montant pour ajuster le solde.
         </p>
       </div>
 
@@ -612,14 +666,25 @@ function RecentAccountTransaction({
 
 export default function AccountsPage() {
   const {
-    accounts,
-    transactions,
+    accounts: allAccounts,
+    transactions: allTransactions,
     recurringPayments,
     addAccount,
     updateAccount,
     updateAccountBalance,
     deleteAccount,
   } = useBudgetData()
+
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre global « par personne » : on n'affiche que les comptes du titulaire
+  // sélectionné (et les transactions rattachées à ses comptes).
+  const accounts = filterAccountsByHolder(allAccounts, selectedHolder)
+  const transactions = filterTransactionsByHolder(
+    allTransactions,
+    allAccounts,
+    selectedHolder,
+  )
 
   const [isAccountFormOpen, setIsAccountFormOpen] = useState(false)
   const [accountFormValues, setAccountFormValues] =
@@ -643,6 +708,30 @@ export default function AccountsPage() {
   const investmentTotal = accounts
     .filter((account) => account.type === 'investment')
     .reduce((total, account) => total + account.balance, 0)
+
+  // Suggestions de titulaires (pour la saisie) à partir de l'existant.
+  const holderSuggestions = Array.from(
+    new Set(
+      allAccounts.map((account) => account.holder.trim()).filter(Boolean),
+    ),
+  ).sort((a, b) => a.localeCompare(b))
+
+  // Regroupement des comptes par titulaire (ordre d'apparition conservé).
+  const accountGroups: { holder: string; accounts: Account[] }[] = []
+  for (const account of accounts) {
+    const holder = account.holder.trim() || 'Commun'
+    const existing = accountGroups.find((group) => group.holder === holder)
+
+    if (existing) {
+      existing.accounts.push(account)
+    } else {
+      accountGroups.push({ holder, accounts: [account] })
+    }
+  }
+
+  // On n'affiche les en-têtes par titulaire que si la fonction est réellement
+  // utilisée (au moins deux groupes distincts).
+  const isGroupedByHolder = accountGroups.length > 1
 
   const recentTransactions = [...transactions]
     .sort((firstTransaction, secondTransaction) =>
@@ -672,7 +761,7 @@ export default function AccountsPage() {
     }
 
     return (
-      accounts.find((account) => account.id === accountId)?.name ??
+      allAccounts.find((account) => account.id === accountId)?.name ??
       'Compte inconnu'
     )
   }
@@ -706,12 +795,12 @@ export default function AccountsPage() {
     const balance = parseAmount(accountFormValues.balance)
 
     if (!name) {
-      setAccountFormError('Ajoute un nom pour le compte.')
+      setAccountFormError('Ajoutez un nom pour le compte.')
       return
     }
 
     if (!Number.isFinite(balance)) {
-      setAccountFormError('Ajoute un solde valide.')
+      setAccountFormError('Ajoutez un solde valide.')
       return
     }
 
@@ -722,6 +811,7 @@ export default function AccountsPage() {
       balance,
       emoji,
       colorClass: getAccountColorClass(accountFormValues.type),
+      holder: accountFormValues.holder.trim(),
     }
 
     if (accountToEdit) {
@@ -747,34 +837,62 @@ export default function AccountsPage() {
     setAccountToDelete(null)
   }
 
+  function renderAccountCard(account: Account) {
+    const accountTransactions = transactions.filter((transaction) =>
+      isTransactionLinkedToAccount(transaction, account.id),
+    )
+
+    const accountRecurringPayments = recurringPayments.filter(
+      (payment) => payment.accountId === account.id,
+    )
+
+    const lastTransaction = [...accountTransactions].sort(
+      (firstTransaction, secondTransaction) =>
+        secondTransaction.date.localeCompare(firstTransaction.date),
+    )[0]
+
+    return (
+      <AccountCard
+        key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}-${account.holder}`}
+        account={account}
+        transactionCount={accountTransactions.length}
+        recurringPaymentCount={accountRecurringPayments.length}
+        lastTransactionTitle={lastTransaction?.title}
+        onBalanceChange={updateAccountBalance}
+        onEditRequest={openEditAccountForm}
+        onDeleteRequest={setAccountToDelete}
+      />
+    )
+  }
+
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-blue-200 bg-gradient-to-br from-blue-100 via-blue-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute -right-6 -top-8 h-52 w-52 rounded-full bg-blue-300/45 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-36 w-36 rounded-full bg-emerald-300/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Comptes bancaires
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Vue complète de tes comptes
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Vue complète de vos comptes
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis ton compte courant, ton épargne, tes espèces et tes comptes
-                d’investissement. Les revenus, dépenses et virements modifient
-                automatiquement les soldes des comptes concernés.
+                Suivez votre compte courant, votre épargne, vos espèces et vos
+                comptes d’investissement. Les revenus, dépenses et virements
+                modifient automatiquement les soldes des comptes concernés.
               </p>
             </div>
 
             <button
               type="button"
               onClick={openAccountForm}
-              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
             >
               <Plus className="h-4 w-4" />
               Nouveau compte
@@ -836,37 +954,35 @@ export default function AccountsPage() {
           </div>
 
           <div className="mt-6 grid gap-4">
-            {accounts.length > 0 ? (
-              accounts.map((account) => {
-                const accountTransactions = transactions.filter(
-                  (transaction) =>
-                    isTransactionLinkedToAccount(transaction, account.id),
+            {accounts.length === 0 ? (
+              <EmptyAccountsCard onCreateAccount={openAccountForm} />
+            ) : isGroupedByHolder ? (
+              accountGroups.map((group) => {
+                const subtotal = group.accounts.reduce(
+                  (total, account) => total + account.balance,
+                  0,
                 )
-
-                const accountRecurringPayments = recurringPayments.filter(
-                  (payment) => payment.accountId === account.id,
-                )
-
-                const lastTransaction = [...accountTransactions].sort(
-                  (firstTransaction, secondTransaction) =>
-                    secondTransaction.date.localeCompare(firstTransaction.date),
-                )[0]
 
                 return (
-                  <AccountCard
-                    key={`${account.id}-${account.name}-${account.type}-${account.balance}-${account.emoji}`}
-                    account={account}
-                    transactionCount={accountTransactions.length}
-                    recurringPaymentCount={accountRecurringPayments.length}
-                    lastTransactionTitle={lastTransaction?.title}
-                    onBalanceChange={updateAccountBalance}
-                    onEditRequest={openEditAccountForm}
-                    onDeleteRequest={setAccountToDelete}
-                  />
+                  <div key={group.holder} className="space-y-3">
+                    <div className="flex items-center justify-between gap-3 rounded-2xl bg-stone-50 px-4 py-2.5">
+                      <p className="text-sm font-black text-slate-700">
+                        {group.holder} · {group.accounts.length} compte
+                        {group.accounts.length > 1 ? 's' : ''}
+                      </p>
+                      <p className="tabular text-sm font-black text-slate-900">
+                        {formatCurrency(subtotal)}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4">
+                      {group.accounts.map(renderAccountCard)}
+                    </div>
+                  </div>
                 )
               })
             ) : (
-              <EmptyAccountsCard onCreateAccount={openAccountForm} />
+              accounts.map(renderAccountCard)
             )}
           </div>
         </div>
@@ -929,7 +1045,7 @@ export default function AccountsPage() {
                   </h3>
 
                   <p className="mt-2 text-sm text-slate-500">
-                    Ajoute un compte pour voir la répartition de ton argent.
+                    Ajoutez un compte pour voir la répartition de votre argent.
                   </p>
                 </div>
               )}
@@ -989,6 +1105,7 @@ export default function AccountsPage() {
           formValues={accountFormValues}
           formError={accountFormError}
           isEditing={Boolean(accountToEdit)}
+          holderSuggestions={holderSuggestions}
           onClose={closeAccountForm}
           onChange={setAccountFormValues}
           onSubmit={handleAccountSubmit}
@@ -1013,8 +1130,8 @@ export default function AccountsPage() {
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
                 } fixe${
                   accountToDeleteRecurringPaymentCount > 1 ? 's' : ''
-                }. Pour éviter de casser tes données, supprime ou réattribue d’abord ces éléments.`
-              : `Tu es sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte de ton suivi.`
+                }. Pour éviter de casser vos données, supprimez ou réattribuez d’abord ces éléments.`
+              : `Vous êtes sur le point de supprimer "${accountToDelete.name}". Cette action retirera ce compte de votre suivi.`
           }
           confirmLabel={
             accountToDeleteHasLinkedItems ? 'Compris' : 'Supprimer le compte'

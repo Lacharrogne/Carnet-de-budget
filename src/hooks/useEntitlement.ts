@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { User } from '@supabase/supabase-js'
 
+import { useAuth } from '../context/useAuth'
 import { ENFORCE_TRIAL, TRIAL_DURATION_DAYS } from '../config/subscription'
 import {
   getSubscription,
@@ -8,29 +8,35 @@ import {
   type SubscriptionRow,
 } from '../services/subscriptionService'
 
-const DAY_MS = 24 * 60 * 60 * 1000
-
 export type EntitlementStatus = 'premium' | 'trialing' | 'expired'
 
 export type Entitlement = {
   status: EntitlementStatus
-  /** Abonné payant à ce carnet (ou au global). */
+  /** Abonné payant à ce carnet (ou au global), lu depuis `subscriptions`. */
   isPremium: boolean
-  /** L'utilisateur a-t-il accès à ce carnet ? (toujours vrai si ENFORCE_TRIAL=false) */
+  /** L'utilisateur a-t-il accès à l'app ? (toujours vrai si ENFORCE_TRIAL=false) */
   hasAccess: boolean
-  /** Jours d'essai restants (0 si terminé ou abonné). */
+  /** Jours d'essai restants (0 si terminé ou si abonné). */
   daysLeft: number
+  /** Fin de l'essai, ou null si la date de création est inconnue. */
   trialEndsAt: Date | null
+  /** Abonnement encore en cours de chargement. */
   loading: boolean
-  subscription: SubscriptionRow | null
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
 /**
- * Statut d'accès à CE carnet : abonné (ce carnet ou global) / essai en cours /
- * essai terminé. L'essai (14 j) est calculé depuis la création du compte et
- * débloque tous les carnets.
+ * Statut d'accès de l'utilisateur (abonné / essai en cours / essai terminé).
+ *
+ * - L'essai est calculé depuis la création du compte (`user.created_at`) +
+ *   `TRIAL_DURATION_DAYS`.
+ * - Le premium vient de la table `subscriptions` (source de vérité écrite par
+ *   le webhook Lemon Squeezy central). Dès qu'on est abonné, l'essai est
+ *   considéré terminé.
  */
-export function useEntitlement(user: User | null): Entitlement {
+export function useEntitlement(): Entitlement {
+  const { user } = useAuth()
   const userId = user?.id ?? null
 
   const [now, setNow] = useState(() => Date.now())
@@ -90,7 +96,10 @@ export function useEntitlement(user: User | null): Entitlement {
       ? 'trialing'
       : 'expired'
 
-  const hasAccess = !ENFORCE_TRIAL || isPremium || isTrialing
+  // Pendant le chargement de l'abonnement, on n'enferme pas (évite un flash de
+  // verrouillage pour un abonné le temps que la requête revienne).
+  const hasAccess =
+    !ENFORCE_TRIAL || isPremium || isTrialing || (Boolean(userId) && loading)
 
   return {
     status,
@@ -99,6 +108,5 @@ export function useEntitlement(user: User | null): Entitlement {
     daysLeft,
     trialEndsAt,
     loading,
-    subscription,
   }
 }

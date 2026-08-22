@@ -9,6 +9,8 @@ type AccountRow = {
   balance: number | string
   emoji: string
   color_class: string
+  // Colonne ajoutée par migration ; peut être absente sur d'anciens schémas.
+  holder?: string | null
 }
 
 function mapAccountFromRow(row: AccountRow): Account {
@@ -19,7 +21,24 @@ function mapAccountFromRow(row: AccountRow): Account {
     balance: Number(row.balance),
     emoji: row.emoji,
     colorClass: row.color_class,
+    holder: row.holder ?? '',
   }
+}
+
+/** Vrai si l'erreur signale l'absence de la colonne `holder` (migration non faite). */
+function isMissingHolderColumn(error: {
+  code?: string
+  message?: string
+} | null) {
+  if (!error) {
+    return false
+  }
+
+  return (
+    ((error.code === '42703' || error.code === 'PGRST204') &&
+      /holder/i.test(error.message ?? '')) ||
+    /["']holder["']/.test(error.message ?? '')
+  )
 }
 
 export async function fetchAccounts(userId: string) {
@@ -37,20 +56,38 @@ export async function fetchAccounts(userId: string) {
 }
 
 export async function createAccount(userId: string, account: Account) {
+  const base = {
+    user_id: userId,
+    name: account.name,
+    type: account.type,
+    balance: account.balance,
+    emoji: account.emoji,
+    color_class: account.colorClass,
+  }
+
   const { data, error } = await supabase
     .from('accounts')
-    .insert({
-      user_id: userId,
-      name: account.name,
-      type: account.type,
-      balance: account.balance,
-      emoji: account.emoji,
-      color_class: account.colorClass,
-    })
+    .insert({ ...base, holder: account.holder })
     .select('*')
     .single()
 
   if (error) {
+    // Schéma sans colonne `holder` : on crée quand même le compte (titulaire
+    // simplement non enregistré tant que la migration n'est pas appliquée).
+    if (isMissingHolderColumn(error)) {
+      const fallback = await supabase
+        .from('accounts')
+        .insert(base)
+        .select('*')
+        .single()
+
+      if (fallback.error) {
+        throw fallback.error
+      }
+
+      return mapAccountFromRow(fallback.data as AccountRow)
+    }
+
     throw error
   }
 
@@ -58,20 +95,37 @@ export async function createAccount(userId: string, account: Account) {
 }
 
 export async function editAccount(account: Account) {
+  const base = {
+    name: account.name,
+    type: account.type,
+    balance: account.balance,
+    emoji: account.emoji,
+    color_class: account.colorClass,
+  }
+
   const { data, error } = await supabase
     .from('accounts')
-    .update({
-      name: account.name,
-      type: account.type,
-      balance: account.balance,
-      emoji: account.emoji,
-      color_class: account.colorClass,
-    })
+    .update({ ...base, holder: account.holder })
     .eq('id', account.id)
     .select('*')
     .single()
 
   if (error) {
+    if (isMissingHolderColumn(error)) {
+      const fallback = await supabase
+        .from('accounts')
+        .update(base)
+        .eq('id', account.id)
+        .select('*')
+        .single()
+
+      if (fallback.error) {
+        throw fallback.error
+      }
+
+      return mapAccountFromRow(fallback.data as AccountRow)
+    }
+
     throw error
   }
 

@@ -9,6 +9,7 @@ import {
   Filter,
   Pencil,
   Plus,
+  Printer,
   ReceiptText,
   Search,
   Trash2,
@@ -17,12 +18,18 @@ import {
   XCircle,
 } from 'lucide-react'
 
-import Button from '../components/ui/Button'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
+import { useHolderFilter } from '../context/useHolderFilter'
+import { filterTransactionsByHolder } from '../lib/holderFilter'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
-import { exportTransactionsCsv } from '../lib/exportCsv'
+import {
+  buildTransactionRows,
+  exportTransactionsToCsv,
+  exportTransactionsToPdf,
+} from '../services/exportService'
 import type {
   Account,
   BudgetCategory,
@@ -51,8 +58,11 @@ const transferCategory: BudgetCategory = {
   name: 'Virement',
   emoji: '🔁',
   description: 'Mouvement entre deux comptes personnels.',
-  colorClass: 'border-blue-100 bg-blue-50 text-blue-900',
+  colorClass: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
 }
+
+/** Nombre de transactions affichées par page (pagination « Voir plus »). */
+const PAGE_SIZE = 20
 
 function getTodayDate() {
   return new Date().toISOString().slice(0, 10)
@@ -159,10 +169,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -177,7 +187,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -199,18 +211,18 @@ function NoAccountWarning() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-amber-700">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">
               Compte nécessaire
             </p>
 
-            <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée d’abord un compte pour ajouter des transactions
+            <h2 className="mt-1 font-display text-xl font-semibold text-amber-950">
+              Créez d’abord un compte pour ajouter des transactions
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
               Une transaction doit être liée à un compte pour que le solde soit
-              automatiquement corrigé. Une fois ton premier compte créé, tu
-              pourras ajouter revenus, dépenses et virements.
+              automatiquement corrigé. Une fois votre premier compte créé, vous
+              pourrez ajouter revenus, dépenses et virements.
             </p>
           </div>
         </div>
@@ -383,6 +395,7 @@ function TransactionFormModal({
   onChange: (values: TransactionFormValues) => void
 }) {
   const canTransfer = accounts.length >= 2
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
 
   function updateField<Field extends keyof TransactionFormValues>(
     field: Field,
@@ -429,22 +442,32 @@ function TransactionFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transaction-modal-title"
+        tabIndex={-1}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
                 {isEditing ? 'Modification' : 'Nouvelle transaction'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="transaction-modal-title"
+                className="mt-1 font-display text-2xl font-semibold text-slate-950"
+              >
                 {isEditing ? 'Modifier le mouvement' : 'Ajouter un mouvement'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie les informations. Les soldes seront corrigés automatiquement.'
-                  : 'Ajoute une dépense, un revenu ou un virement entre deux comptes.'}
+                  ? 'Modifiez les informations. Les soldes seront corrigés automatiquement.'
+                  : 'Ajoutez une dépense, un revenu ou un virement entre deux comptes.'}
               </p>
             </div>
 
@@ -701,13 +724,28 @@ function TransactionFormModal({
 export default function TransactionsPage() {
   const {
     accounts,
-    transactions: localTransactions,
+    transactions: allTransactions,
     addTransaction,
     updateTransaction,
     deleteTransaction,
   } = useBudgetData()
 
+  const { selectedHolder } = useHolderFilter()
+
+  // Filtre « par personne » : on n'affiche que les transactions rattachées aux
+  // comptes du titulaire sélectionné (les comptes restent disponibles pour les
+  // formulaires et l'affichage des noms).
+  const localTransactions = filterTransactionsByHolder(
+    allTransactions,
+    accounts,
+    selectedHolder,
+  )
+
   const [searchTerm, setSearchTerm] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [amountMin, setAmountMin] = useState('')
+  const [amountMax, setAmountMax] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | TransactionType>('all')
   const [categoryFilter, setCategoryFilter] = useState<'all' | BudgetCategoryId>(
     'all',
@@ -753,10 +791,17 @@ export default function TransactionsPage() {
 
   function resetFilters() {
     setSearchTerm('')
+    setDateFrom('')
+    setDateTo('')
+    setAmountMin('')
+    setAmountMax('')
     setTypeFilter('all')
     setCategoryFilter('all')
     setSortOption('newest')
   }
+
+  const minAmount = amountMin.trim() ? Number(amountMin.replace(',', '.')) : null
+  const maxAmount = amountMax.trim() ? Number(amountMax.replace(',', '.')) : null
 
   function getAccountName(accountId?: string) {
     if (!accountId) {
@@ -795,7 +840,25 @@ export default function TransactionsPage() {
       const matchesCategory =
         categoryFilter === 'all' || transaction.category === categoryFilter
 
-      return matchesSearch && matchesType && matchesCategory
+      const matchesDate =
+        (!dateFrom || transaction.date >= dateFrom) &&
+        (!dateTo || transaction.date <= dateTo)
+
+      const matchesAmount =
+        (minAmount === null ||
+          Number.isNaN(minAmount) ||
+          transaction.amount >= minAmount) &&
+        (maxAmount === null ||
+          Number.isNaN(maxAmount) ||
+          transaction.amount <= maxAmount)
+
+      return (
+        matchesSearch &&
+        matchesType &&
+        matchesCategory &&
+        matchesDate &&
+        matchesAmount
+      )
     })
     .sort((firstTransaction, secondTransaction) => {
       if (sortOption === 'newest') {
@@ -815,13 +878,77 @@ export default function TransactionsPage() {
 
   const hasActiveFilters =
     searchTerm.trim().length > 0 ||
+    dateFrom !== '' ||
+    dateTo !== '' ||
+    amountMin.trim() !== '' ||
+    amountMax.trim() !== '' ||
     typeFilter !== 'all' ||
     categoryFilter !== 'all' ||
     sortOption !== 'newest'
 
+  // Pagination : réinitialise le nombre visible dès qu'un filtre change
+  // (ajustement d'état pendant le rendu, sans effet).
+  const filtersKey = `${normalizedSearch}|${dateFrom}|${dateTo}|${amountMin}|${amountMax}|${typeFilter}|${categoryFilter}|${sortOption}`
+  const [paginationKey, setPaginationKey] = useState(filtersKey)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  if (paginationKey !== filtersKey) {
+    setPaginationKey(filtersKey)
+    setVisibleCount(PAGE_SIZE)
+  }
+
+  const visibleTransactions = filteredTransactions.slice(0, visibleCount)
+  const remainingCount = filteredTransactions.length - visibleTransactions.length
+
+  function buildExportRows() {
+    return buildTransactionRows(filteredTransactions, {
+      getAccountName,
+      getCategoryName: (transaction) =>
+        getTransactionCategory(transaction.category).name,
+    })
+  }
+
+  const exportSubtitle = hasActiveFilters
+    ? 'Sélection filtrée de vos transactions'
+    : 'Toutes vos transactions'
+
+  function handleExportCsv() {
+    if (filteredTransactions.length === 0) {
+      return
+    }
+
+    exportTransactionsToCsv(buildExportRows())
+  }
+
+  function handleExportPdf() {
+    if (filteredTransactions.length === 0) {
+      return
+    }
+
+    const income = filteredTransactions
+      .filter((transaction) => transaction.type === 'income')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    const expenses = filteredTransactions
+      .filter((transaction) => transaction.type === 'expense')
+      .reduce((total, transaction) => total + transaction.amount, 0)
+
+    const opened = exportTransactionsToPdf({
+      rows: buildExportRows(),
+      totals: { income, expenses, net: income - expenses },
+      subtitle: exportSubtitle,
+    })
+
+    if (!opened) {
+      window.alert(
+        'Votre navigateur a bloqué la fenêtre d’impression. Autorisez les pop-ups pour exporter en PDF.',
+      )
+    }
+  }
+
   function openForm() {
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une transaction.')
+      setFormError('Créez d’abord un compte avant d’ajouter une transaction.')
 
       if (action === 'new') {
         clearActionParam()
@@ -866,12 +993,12 @@ export default function TransactionsPage() {
     const amount = parseAmount(currentFormValues.amount)
 
     if (!hasAccounts) {
-      setFormError('Crée d’abord un compte avant d’ajouter une transaction.')
+      setFormError('Créez d’abord un compte avant d’ajouter une transaction.')
       return
     }
 
     if (currentFormValues.type !== 'transfer' && !title) {
-      setFormError('Ajoute un titre pour la transaction.')
+      setFormError('Ajoutez un titre pour la transaction.')
       return
     }
 
@@ -880,15 +1007,15 @@ export default function TransactionsPage() {
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setFormError('Ajoute un montant valide supérieur à 0.')
+      setFormError('Ajoutez un montant valide supérieur à 0.')
       return
     }
 
     if (!currentFormValues.accountId) {
       setFormError(
         currentFormValues.type === 'transfer'
-          ? 'Choisis le compte source.'
-          : 'Choisis un compte pour cette transaction.',
+          ? 'Choisissez le compte source.'
+          : 'Choisissez un compte pour cette transaction.',
       )
       return
     }
@@ -900,7 +1027,7 @@ export default function TransactionsPage() {
       }
 
       if (!currentFormValues.toAccountId) {
-        setFormError('Choisis le compte destination.')
+        setFormError('Choisissez le compte destination.')
         return
       }
 
@@ -913,7 +1040,7 @@ export default function TransactionsPage() {
     }
 
     if (!currentFormValues.date) {
-      setFormError('Choisis une date.')
+      setFormError('Choisissez une date.')
       return
     }
 
@@ -962,12 +1089,12 @@ export default function TransactionsPage() {
 
   const deleteDescription =
     transactionToDelete?.type === 'transfer'
-      ? `Tu es sur le point de supprimer "${transactionToDelete.title}". Le virement entre "${getAccountName(
+      ? `Vous êtes sur le point de supprimer "${transactionToDelete.title}". Le virement entre "${getAccountName(
           transactionToDelete.accountId,
         )}" et "${getAccountName(
           transactionToDelete.toAccountId,
         )}" sera annulé et les soldes seront corrigés.`
-      : `Tu es sur le point de supprimer "${
+      : `Vous êtes sur le point de supprimer "${
           transactionToDelete?.title ?? ''
         }". Le solde du compte "${getAccountName(
           transactionToDelete?.accountId,
@@ -975,58 +1102,46 @@ export default function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-teal-200 bg-gradient-to-br from-teal-100 via-teal-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-blue-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Transactions
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Tous tes mouvements d’argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Tous vos mouvements d’argent
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Retrouve tes revenus, tes dépenses, tes abonnements et tes
+                Retrouvez vos revenus, vos dépenses, vos abonnements et vos
                 virements. Les virements déplacent l’argent entre deux comptes
-                sans fausser tes revenus ou tes dépenses.
+                sans fausser vos revenus ni vos dépenses.
               </p>
             </div>
 
-            <div className="flex w-fit flex-wrap items-center gap-2">
-              {localTransactions.length > 0 && (
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={() =>
-                    exportTransactionsCsv(
-                      localTransactions,
-                      accounts,
-                      budgetCategories,
-                    )
-                  }
-                >
-                  <Download className="h-4 w-4" />
-                  Exporter
-                </Button>
-              )}
-
-              {hasAccounts ? (
-                <Button variant="dark" size="lg" onClick={openForm}>
-                  <Plus className="h-4 w-4" />
-                  Nouvelle transaction
-                </Button>
-              ) : (
-                <Button variant="dark" size="lg" to="/comptes">
-                  <Plus className="h-4 w-4" />
-                  Créer un compte
-                </Button>
-              )}
-            </div>
+            {hasAccounts ? (
+              <button
+                type="button"
+                onClick={openForm}
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
+              >
+                <Plus className="h-4 w-4" />
+                Nouvelle transaction
+              </button>
+            ) : (
+              <Link
+                to="/comptes"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
+              >
+                <Plus className="h-4 w-4" />
+                Créer un compte
+              </Link>
+            )}
           </div>
         </div>
       </section>
@@ -1159,10 +1274,74 @@ export default function TransactionsPage() {
             </select>
           </label>
         </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Du
+            </span>
+
+            <input
+              type="date"
+              value={dateFrom}
+              max={dateTo || undefined}
+              onChange={(event) => setDateFrom(event.target.value)}
+              aria-label="Date de début"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Au
+            </span>
+
+            <input
+              type="date"
+              value={dateTo}
+              min={dateFrom || undefined}
+              onChange={(event) => setDateTo(event.target.value)}
+              aria-label="Date de fin"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Montant min (€)
+            </span>
+
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amountMin}
+              onChange={(event) => setAmountMin(event.target.value)}
+              placeholder="0"
+              aria-label="Montant minimum"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
+              Montant max (€)
+            </span>
+
+            <input
+              type="text"
+              inputMode="decimal"
+              value={amountMax}
+              onChange={(event) => setAmountMax(event.target.value)}
+              placeholder="—"
+              aria-label="Montant maximum"
+              className="h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
+          </label>
+        </div>
       </section>
 
       <section className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold text-emerald-600">
               Liste des transactions
@@ -1172,25 +1351,66 @@ export default function TransactionsPage() {
               {filteredTransactions.length} résultat
               {filteredTransactions.length > 1 ? 's' : ''}
             </h2>
+
+            <p className="mt-1 text-sm text-slate-500">
+              {hasActiveFilters
+                ? 'Export limité à votre sélection filtrée.'
+                : 'Exportez vos données comme dans un tableur.'}
+            </p>
           </div>
 
-          <p className="text-sm text-slate-500">
-            Les transactions sont sauvegardées dans Supabase.
-          </p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredTransactions.length === 0}
+              className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              <Download className="h-4 w-4" />
+              Exporter CSV
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportPdf}
+              disabled={filteredTransactions.length === 0}
+              className="flex items-center gap-2 rounded-full border border-stone-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-stone-300 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            >
+              <Printer className="h-4 w-4" />
+              Exporter PDF
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 space-y-3">
           {filteredTransactions.length > 0 ? (
-            filteredTransactions.map((transaction) => (
-              <TransactionCard
-                key={transaction.id}
-                transaction={transaction}
-                accountName={getAccountName(transaction.accountId)}
-                toAccountName={getAccountName(transaction.toAccountId)}
-                onEditRequest={openEditForm}
-                onDeleteRequest={setTransactionToDelete}
-              />
-            ))
+            <>
+              {visibleTransactions.map((transaction) => (
+                <TransactionCard
+                  key={transaction.id}
+                  transaction={transaction}
+                  accountName={getAccountName(transaction.accountId)}
+                  toAccountName={getAccountName(transaction.toAccountId)}
+                  onEditRequest={openEditForm}
+                  onDeleteRequest={setTransactionToDelete}
+                />
+              ))}
+
+              {remainingCount > 0 && (
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVisibleCount((current) => current + PAGE_SIZE)
+                    }
+                    className="inline-flex items-center gap-2 rounded-full border border-stone-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200"
+                  >
+                    Voir plus de transactions ({remainingCount} restante
+                    {remainingCount > 1 ? 's' : ''})
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="rounded-[1.75rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
               <p className="text-3xl">{hasAccounts ? '🔎' : '🏦'}</p>
@@ -1203,8 +1423,8 @@ export default function TransactionsPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 {hasAccounts
-                  ? 'Essaie de modifier ta recherche ou de réinitialiser les filtres.'
-                  : 'Crée ton premier compte pour pouvoir enregistrer des mouvements.'}
+                  ? 'Essayez de modifier votre recherche ou de réinitialiser les filtres.'
+                  : 'Créez votre premier compte pour pouvoir enregistrer des mouvements.'}
               </p>
             </div>
           )}

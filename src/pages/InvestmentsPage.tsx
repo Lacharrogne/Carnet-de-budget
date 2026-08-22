@@ -5,17 +5,17 @@ import {
   ArrowUpRight,
   BarChart3,
   Coins,
-  Landmark,
   Pencil,
   Percent,
   Plus,
   Trash2,
-  TrendingUp,
   WalletCards,
   X,
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { EmojiPicker } from '../components/ui/EmojiPicker'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Investment, InvestmentType } from '../types/investment'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -95,7 +95,7 @@ function getInvestmentTypeLabel(type: InvestmentType) {
 function getInvestmentTypeClasses(type: InvestmentType) {
   if (type === 'etf') {
     return {
-      card: 'border-blue-100 bg-blue-50 text-blue-900',
+      card: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
       icon: 'bg-blue-100 text-blue-700',
       bar: 'bg-blue-500',
     }
@@ -103,7 +103,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'stock') {
     return {
-      card: 'border-emerald-100 bg-emerald-50 text-emerald-900',
+      card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
       icon: 'bg-emerald-100 text-emerald-700',
       bar: 'bg-emerald-500',
     }
@@ -111,7 +111,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'crypto') {
     return {
-      card: 'border-amber-100 bg-amber-50 text-amber-900',
+      card: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
       icon: 'bg-amber-100 text-amber-700',
       bar: 'bg-amber-500',
     }
@@ -119,7 +119,7 @@ function getInvestmentTypeClasses(type: InvestmentType) {
 
   if (type === 'real_estate') {
     return {
-      card: 'border-violet-100 bg-violet-50 text-violet-900',
+      card: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
       icon: 'bg-violet-100 text-violet-700',
       bar: 'bg-violet-500',
     }
@@ -134,10 +134,24 @@ function getInvestmentTypeClasses(type: InvestmentType) {
   }
 
   return {
-    card: 'border-rose-100 bg-rose-50 text-rose-900',
+    card: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
     icon: 'bg-rose-100 text-rose-700',
     bar: 'bg-rose-500',
   }
+}
+
+/** Couleur pleine (hex) du type d'actif — identité utilisée par le donut. */
+function getInvestmentTypeColor(type: InvestmentType): string {
+  const colors: Record<InvestmentType, string> = {
+    etf: '#3b82f6',
+    stock: '#10b981',
+    crypto: '#f59e0b',
+    real_estate: '#8b5cf6',
+    cash: '#64748b',
+    other: '#f43f5e',
+  }
+
+  return colors[type] ?? '#f43f5e'
 }
 
 function getInvestmentGain(investment: Investment) {
@@ -170,11 +184,11 @@ function PageStatCard({
   variant: StatVariant
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {
@@ -190,7 +204,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -217,6 +231,8 @@ function InvestmentFormModal({
   onChange: (values: InvestmentFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof InvestmentFormValues>(
     field: Field,
     value: InvestmentFormValues[Field],
@@ -229,7 +245,14 @@ function InvestmentFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
-      <div className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="investment-modal-title"
+        tabIndex={-1}
+        className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -237,14 +260,17 @@ function InvestmentFormModal({
                 {isEditing ? 'Modification' : 'Nouvel investissement'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="investment-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing ? 'Modifier ce placement' : 'Ajouter un placement'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le nom, le type, la plateforme, les montants ou la note.'
-                  : 'Ajoute un ETF, une action, une crypto ou un autre placement à suivre.'}
+                  ? 'Modifiez le nom, le type, la plateforme, les montants ou la note.'
+                  : 'Ajoutez un ETF, une action, une crypto ou un autre placement à suivre.'}
               </p>
             </div>
 
@@ -261,17 +287,11 @@ function InvestmentFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="📈"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="📈"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">
@@ -479,7 +499,7 @@ function InvestmentCard({
 
         <div className="text-left md:text-right">
           <p
-            className={`text-2xl font-black ${
+            className={`tabular text-2xl font-black ${
               isPositive ? 'text-emerald-700' : 'text-rose-700'
             }`}
           >
@@ -504,7 +524,7 @@ function InvestmentCard({
             Investi
           </p>
 
-          <p className="mt-2 text-xl font-black text-slate-950">
+          <p className="tabular mt-2 text-xl font-black text-slate-950">
             {formatCurrency(investment.investedAmount)}
           </p>
         </div>
@@ -520,7 +540,7 @@ function InvestmentCard({
               onChange={(event) => setCurrentValueInput(event.target.value)}
               onBlur={handleBlur}
               inputMode="decimal"
-              className="w-full bg-transparent text-xl font-black text-slate-950 outline-none"
+              className="tabular w-full bg-transparent text-xl font-black text-slate-950 outline-none"
             />
 
             <span className="font-black text-slate-400">€</span>
@@ -582,45 +602,111 @@ function InvestmentCard({
   )
 }
 
-function InvestmentTypeCard({
-  type,
-  amount,
-  total,
-}: {
+type AllocationSegment = {
   type: InvestmentType
+  label: string
   amount: number
-  total: number
+  color: string
+}
+
+function AllocationDonut({
+  segments,
+  totalLabel,
+}: {
+  segments: AllocationSegment[]
+  totalLabel: string
 }) {
-  const percentage = total > 0 ? Math.round((amount / total) * 100) : 0
-  const classes = getInvestmentTypeClasses(type)
+  const total = segments.reduce((sum, segment) => sum + segment.amount, 0)
+  const size = 176
+  const strokeWidth = 22
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const gap = segments.length > 1 ? 3 : 0
+
+  let offset = 0
 
   return (
-    <article className={`rounded-[1.5rem] border p-4 ${classes.card}`}>
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold">
-            {getInvestmentTypeLabel(type)}
-          </p>
+    <div className="flex flex-col items-center gap-6 sm:flex-row">
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg
+          width={size}
+          height={size}
+          viewBox={`0 0 ${size} ${size}`}
+          className="-rotate-90"
+          role="img"
+          aria-label="Répartition du portefeuille par type d'actif"
+        >
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            fill="none"
+            stroke="#f1ece3"
+            strokeWidth={strokeWidth}
+          />
 
-          <p className="mt-2 text-2xl font-black">{formatCurrency(amount)}</p>
+          {total > 0 &&
+            segments.map((segment) => {
+              const segmentLength = (segment.amount / total) * circumference
+              const dash = Math.max(segmentLength - gap, 0.5)
+              const circle = (
+                <circle
+                  key={segment.type}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  fill="none"
+                  stroke={segment.color}
+                  strokeWidth={strokeWidth}
+                  strokeDasharray={`${dash} ${circumference - dash}`}
+                  strokeDashoffset={-offset}
+                />
+              )
 
-          <p className="mt-1 text-sm opacity-75">
-            {percentage} % du portefeuille
-          </p>
-        </div>
+              offset += segmentLength
+              return circle
+            })}
+        </svg>
 
-        <div className={`rounded-2xl p-3 ${classes.icon}`}>
-          <BarChart3 className="h-5 w-5" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">
+            Total
+          </span>
+          <span className="tabular text-lg font-black text-slate-950">
+            {totalLabel}
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/70">
-        <div
-          className={`h-full rounded-full ${classes.bar}`}
-          style={{ width: `${Math.max(percentage, amount > 0 ? 4 : 0)}%` }}
-        />
-      </div>
-    </article>
+      <ul className="w-full space-y-2.5">
+        {segments.map((segment) => {
+          const percentage =
+            total > 0 ? Math.round((segment.amount / total) * 100) : 0
+
+          return (
+            <li key={segment.type} className="flex items-center gap-3">
+              <span
+                className="h-3 w-3 shrink-0 rounded-full"
+                style={{ backgroundColor: segment.color }}
+                aria-hidden="true"
+              />
+
+              <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700">
+                {segment.label}
+              </span>
+
+              <span className="tabular text-sm font-black text-slate-950">
+                {formatCurrency(segment.amount)}
+              </span>
+
+              <span className="tabular w-9 text-right text-xs font-bold text-slate-400">
+                {percentage}%
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
   )
 }
 
@@ -673,6 +759,20 @@ export default function InvestmentsPage() {
     'other',
   ]
 
+  // Répartition du portefeuille : uniquement les types réellement détenus,
+  // triés par montant décroissant (alimente le donut).
+  const allocation = investmentTypes
+    .map((type) => ({
+      type,
+      label: getInvestmentTypeLabel(type),
+      color: getInvestmentTypeColor(type),
+      amount: investments
+        .filter((investment) => investment.type === type)
+        .reduce((total, investment) => total + investment.currentValue, 0),
+    }))
+    .filter((segment) => segment.amount > 0)
+    .sort((first, second) => second.amount - first.amount)
+
   function clearActionParam() {
     const nextSearchParams = new URLSearchParams(searchParams)
     nextSearchParams.delete('action')
@@ -720,17 +820,17 @@ export default function InvestmentsPage() {
       : investedAmount
 
     if (!title) {
-      setFormError('Ajoute un nom pour ce placement.')
+      setFormError('Ajoutez un nom pour ce placement.')
       return
     }
 
     if (!Number.isFinite(investedAmount) || investedAmount <= 0) {
-      setFormError('Ajoute un montant investi supérieur à 0 €.')
+      setFormError('Ajoutez un montant investi supérieur à 0 €.')
       return
     }
 
     if (!Number.isFinite(currentValue) || currentValue < 0) {
-      setFormError('Ajoute une valeur actuelle valide.')
+      setFormError('Ajoutez une valeur actuelle valide.')
       return
     }
 
@@ -765,32 +865,32 @@ export default function InvestmentsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-lime-200 bg-gradient-to-br from-lime-100 via-lime-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-blue-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-blue-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Investissements
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Suivre ton portefeuille
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Suivez votre portefeuille
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes ETF, actions, cryptos et autres placements. Tu peux
-                maintenant ajouter, modifier, ajuster la valeur actuelle ou
-                supprimer un investissement.
+                Suivez vos ETF, actions, cryptos et autres placements. Vous
+                pouvez maintenant ajouter, modifier, ajuster la valeur actuelle
+                ou supprimer un investissement.
               </p>
             </div>
 
             <button
               type="button"
               onClick={openForm}
-              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+              className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
             >
               <Plus className="h-4 w-4" />
               Nouvel investissement
@@ -841,91 +941,6 @@ export default function InvestmentsPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Vue globale
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
-                Performance du portefeuille
-              </h2>
-            </div>
-
-            <div className="rounded-2xl bg-emerald-50 p-3 text-emerald-700">
-              <TrendingUp className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] bg-stone-50 p-5">
-            <p className="text-sm font-semibold text-slate-500">
-              Résultat global
-            </p>
-
-            <p
-              className={`mt-2 text-4xl font-black ${
-                totalGain >= 0 ? 'text-emerald-700' : 'text-rose-700'
-              }`}
-            >
-              {totalGain >= 0 ? '+' : '-'}
-              {formatCurrency(Math.abs(totalGain))}
-            </p>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              Ton portefeuille vaut actuellement{' '}
-              <span className="font-black text-slate-950">
-                {formatCurrency(totalCurrentValue)}
-              </span>{' '}
-              pour un montant investi de{' '}
-              <span className="font-black text-slate-950">
-                {formatCurrency(totalInvested)}
-              </span>
-              .
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Lecture rapide
-              </p>
-
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
-                Meilleur placement
-              </h2>
-            </div>
-
-            <div className="rounded-2xl bg-blue-50 p-3 text-blue-700">
-              <Landmark className="h-5 w-5" />
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-[1.5rem] bg-blue-50 p-5">
-            <p className="text-sm font-semibold text-blue-700">
-              Meilleure performance
-            </p>
-
-            <p className="mt-2 text-2xl font-black text-blue-950">
-              {bestInvestment
-                ? `${bestInvestment.emoji} ${bestInvestment.title}`
-                : 'Aucun'}
-            </p>
-
-            <p className="mt-2 text-sm text-blue-800/80">
-              {bestInvestment
-                ? `${getInvestmentReturn(
-                    bestInvestment,
-                  )} % de performance actuelle.`
-                : 'Ajoute un placement pour obtenir une analyse.'}
-            </p>
-          </div>
-        </div>
-      </section>
-
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
@@ -944,24 +959,44 @@ export default function InvestmentsPage() {
             </div>
           </div>
 
-          <div className="mt-6 space-y-3">
-            {investmentTypes.map((type) => {
-              const amount = investments
-                .filter((investment) => investment.type === type)
-                .reduce((total, investment) => {
-                  return total + investment.currentValue
-                }, 0)
-
-              return (
-                <InvestmentTypeCard
-                  key={type}
-                  type={type}
-                  amount={amount}
-                  total={totalCurrentValue}
-                />
-              )
-            })}
+          <div className="mt-6">
+            {allocation.length > 0 ? (
+              <AllocationDonut
+                segments={allocation}
+                totalLabel={formatCurrency(totalCurrentValue)}
+              />
+            ) : (
+              <div className="rounded-[1.5rem] border border-dashed border-stone-200 bg-stone-50 p-6 text-center text-sm text-slate-500">
+                Ajoutez un placement pour visualiser la répartition de votre
+                portefeuille.
+              </div>
+            )}
           </div>
+
+          {bestInvestment && (
+            <div className="mt-5 flex items-center justify-between gap-3 rounded-2xl bg-stone-50 px-4 py-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-slate-400">
+                  Top
+                </span>
+
+                <span className="truncate text-sm font-bold text-slate-700">
+                  {bestInvestment.emoji} {bestInvestment.title}
+                </span>
+              </div>
+
+              <span
+                className={`tabular shrink-0 text-sm font-black ${
+                  getInvestmentReturn(bestInvestment) >= 0
+                    ? 'text-emerald-700'
+                    : 'text-rose-700'
+                }`}
+              >
+                {getInvestmentReturn(bestInvestment) >= 0 ? '+' : ''}
+                {getInvestmentReturn(bestInvestment)} %
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
@@ -1007,7 +1042,8 @@ export default function InvestmentsPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-500">
-                  Ajoute un placement pour commencer à suivre ton portefeuille.
+                  Ajoutez un placement pour commencer à suivre votre
+                  portefeuille.
                 </p>
               </div>
             )}
@@ -1030,7 +1066,7 @@ export default function InvestmentsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cet investissement ?"
-          description={`Tu es sur le point de supprimer "${investmentToDelete.title}". Ce placement sera retiré du suivi temporaire actuel.`}
+          description={`Vous êtes sur le point de supprimer "${investmentToDelete.title}". Ce placement sera retiré du suivi temporaire actuel.`}
           confirmLabel="Supprimer le placement"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

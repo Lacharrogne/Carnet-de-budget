@@ -14,13 +14,12 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import MonthSwitcher from '../components/layout/MonthSwitcher'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
+import { useSelectedMonth } from '../context/useSelectedMonth'
 import { budgetCategories } from '../data/budgetCategories'
-import {
-  getBudgetUsages,
-  getCurrentMonthKey,
-  getMonthLabel,
-} from '../services/budgetStatsService'
+import { getBudgetUsages } from '../services/budgetStatsService'
 import type { BudgetCategoryId, MonthlyBudget } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
 
@@ -99,10 +98,10 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
   }
 
   const iconVariants = {
@@ -117,7 +116,9 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">
+            {value}
+          </p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -143,19 +144,19 @@ function EmptyBudgetsGuide({
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-amber-700">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-700">
               Aucun budget pour ce mois
             </p>
 
-            <h2 className="mt-1 text-xl font-black text-amber-950">
-              Crée tes premières limites mensuelles
+            <h2 className="mt-1 font-display text-xl font-semibold text-amber-950">
+              Créez vos premières limites mensuelles
             </h2>
 
             <p className="mt-2 max-w-2xl text-sm leading-6 text-amber-800/80">
-              Les budgets servent à savoir rapidement si une catégorie est
-              maîtrisée, proche de la limite ou dépassée. Ils se basent
-              uniquement sur les dépenses du mois : les revenus et les virements
-              internes ne consomment pas de budget.
+              Un budget vous dit en un coup d’œil si une catégorie est maîtrisée,
+              proche de la limite ou dépassée. Il se base uniquement sur vos
+              dépenses du mois : les revenus et les virements internes ne
+              consomment pas de budget.
             </p>
           </div>
         </div>
@@ -279,7 +280,9 @@ function BudgetCategoryCard({
           </div>
 
           <div className="min-w-0">
-            <h3 className="text-xl font-black text-slate-950">{name}</h3>
+            <h3 className="font-display text-xl font-semibold text-slate-950">
+              {name}
+            </h3>
 
             <p className="mt-1 text-sm leading-6 text-slate-500">
               {description}
@@ -300,7 +303,7 @@ function BudgetCategoryCard({
             Dépensé
           </p>
 
-          <p className="mt-2 text-2xl font-black text-slate-950">
+          <p className="tabular mt-2 text-2xl font-black text-slate-950">
             {formatCurrency(spent)}
           </p>
         </div>
@@ -328,7 +331,9 @@ function BudgetCategoryCard({
             Restant
           </p>
 
-          <p className={`mt-2 text-2xl font-black ${statusClasses.remaining}`}>
+          <p
+            className={`tabular mt-2 text-2xl font-black ${statusClasses.remaining}`}
+          >
             {remaining >= 0
               ? formatCurrency(remaining)
               : `-${formatCurrency(Math.abs(remaining))}`}
@@ -340,22 +345,28 @@ function BudgetCategoryCard({
         <div className="mb-2 flex items-center justify-between gap-3">
           <p className="font-black text-slate-800">Progression du budget</p>
 
-          <p className="font-black text-slate-500">{percentage} %</p>
+          <p className="tabular font-black text-slate-500">{percentage} %</p>
         </div>
 
         <div className="h-4 overflow-hidden rounded-full bg-stone-100">
           <div
-            className={`h-full rounded-full ${statusClasses.bar}`}
+            className={`h-full rounded-full ${statusClasses.bar} transition-[width] duration-500 ease-out`}
             style={{ width: `${Math.min(percentage, 100)}%` }}
           />
         </div>
 
-        <p className="mt-3 text-sm text-slate-500">
-          {remaining >= 0
-            ? `Il reste ${formatCurrency(remaining)} pour cette catégorie.`
-            : `Tu as dépassé ce budget de ${formatCurrency(
+        <p className="mt-3 text-sm leading-6 text-slate-500">
+          {status === 'danger'
+            ? `Budget dépassé de ${formatCurrency(
                 Math.abs(remaining),
-              )}.`}
+              )}. Pensez à lever le pied sur cette catégorie le reste du mois.`
+            : status === 'warning'
+              ? `Il vous reste ${formatCurrency(
+                  remaining,
+                )} pour finir le mois. Encore dans la limite, mais à surveiller.`
+              : `Il vous reste ${formatCurrency(
+                  remaining,
+                )} sur cette catégorie. Vous gardez le contrôle.`}
         </p>
       </div>
     </article>
@@ -381,26 +392,36 @@ function BudgetFormModal({
     budgetCategoryOptions.find((category) => category.id === formValues.category) ??
     budgetCategoryOptions[0]
 
+  const dialogRef = useDialogA11y<HTMLFormElement>(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
       <form
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="budget-modal-title"
+        tabIndex={-1}
         onSubmit={onSubmit}
         className="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
       >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
                 Nouveau budget
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="budget-modal-title"
+                className="mt-1 font-display text-2xl font-semibold text-slate-950"
+              >
                 Ajouter une limite mensuelle
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Choisis une catégorie et définis le montant maximum à ne pas
-                dépasser ce mois-ci.
+                Choisissez une catégorie et définissez le montant maximum à ne
+                pas dépasser ce mois-ci.
               </p>
             </div>
 
@@ -490,8 +511,8 @@ function BudgetFormModal({
 
               <p className="mt-2 text-sm leading-6 text-emerald-800/80">
                 Toutes les catégories disponibles possèdent déjà une limite pour
-                ce mois-ci. Tu peux modifier directement les montants depuis les
-                cartes de budgets.
+                ce mois-ci. Vous pouvez modifier directement les montants depuis
+                les cartes de budgets.
               </p>
             </div>
           )}
@@ -546,8 +567,7 @@ export default function BudgetsPage() {
   const action = searchParams.get('action')
   const shouldShowBudgetForm = isBudgetFormOpen || action === 'new'
 
-  const monthKey = getCurrentMonthKey()
-  const monthLabel = getMonthLabel(monthKey)
+  const { monthKey, monthLabel } = useSelectedMonth()
 
   const availableCategories = getAvailableBudgetCategories(
     monthlyBudgets,
@@ -658,7 +678,7 @@ export default function BudgetsPage() {
     }
 
     if (!displayedBudgetFormValues.category) {
-      setBudgetFormError('Choisis une catégorie.')
+      setBudgetFormError('Choisissez une catégorie.')
       return
     }
 
@@ -676,7 +696,7 @@ export default function BudgetsPage() {
     }
 
     if (!Number.isFinite(limit) || limit <= 0) {
-      setBudgetFormError('Entre un budget supérieur à 0 €.')
+      setBudgetFormError('Indiquez un budget supérieur à 0 €.')
       return
     }
 
@@ -703,36 +723,35 @@ export default function BudgetsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-violet-200 bg-gradient-to-br from-violet-100 via-violet-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-emerald-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-amber-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
-                Budgets mensuels
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+                Budgets · {monthLabel}
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Piloter ton mois sans stress
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Pilotez votre mois, sans stress
               </h1>
 
               <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
-                Suis tes limites par catégorie pour le mois de{' '}
-                <span className="font-semibold text-slate-950">
-                  {monthLabel}
-                </span>
-                . Les budgets se mettent à jour avec tes dépenses du mois. Les
-                revenus et les virements internes ne consomment pas de budget.
+                Suivez vos limites par catégorie. Les budgets se mettent à jour
+                automatiquement avec vos dépenses du mois — les revenus et les
+                virements internes ne consomment jamais de budget.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <MonthSwitcher />
+
               <button
                 type="button"
                 onClick={openBudgetForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
+                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
               >
                 <Plus className="h-4 w-4" />
                 Nouveau budget
@@ -741,7 +760,7 @@ export default function BudgetsPage() {
               <button
                 type="button"
                 onClick={() => setIsResetModalOpen(true)}
-                className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-stone-200 hover:text-slate-950"
+                className="flex w-fit items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-bold text-slate-600 transition hover:-translate-y-0.5 hover:border-stone-300 hover:text-slate-950"
               >
                 <RotateCcw className="h-4 w-4" />
                 Réinitialiser
@@ -791,11 +810,11 @@ export default function BudgetsPage() {
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
                 Vue globale
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
                 {hasBudgets
                   ? `Budget utilisé à ${totalProgress} %`
                   : 'Aucun budget à analyser'}
@@ -823,17 +842,17 @@ export default function BudgetsPage() {
               </div>
 
               <p className="mt-5 text-sm leading-6 text-slate-600">
-                Tu as dépensé{' '}
-                <span className="font-black text-slate-950">
+                Vous avez dépensé{' '}
+                <span className="tabular font-black text-slate-950">
                   {formatCurrency(totalSpent)}
                 </span>{' '}
                 sur un budget prévu de{' '}
-                <span className="font-black text-slate-950">
+                <span className="tabular font-black text-slate-950">
                   {formatCurrency(totalBudget)}
                 </span>
-                . Il te reste donc{' '}
+                . Il vous reste donc{' '}
                 <span
-                  className={`font-black ${
+                  className={`tabular font-black ${
                     totalRemaining >= 0 ? 'text-emerald-700' : 'text-rose-700'
                   }`}
                 >
@@ -846,12 +865,12 @@ export default function BudgetsPage() {
             <div className="mt-6 rounded-[1.5rem] border border-dashed border-stone-200 bg-stone-50 p-8 text-center">
               <p className="text-3xl">🐷</p>
 
-              <h3 className="mt-4 text-xl font-black text-slate-950">
-                Crée un budget pour commencer
+              <h3 className="mt-4 font-display text-xl font-semibold text-slate-950">
+                Créez un budget pour commencer
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Une fois tes limites créées, cette jauge montrera la part du
+                Une fois vos limites créées, cette jauge montrera la part du
                 budget déjà utilisée.
               </p>
 
@@ -869,9 +888,11 @@ export default function BudgetsPage() {
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">Filtrer</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
+                Filtrer
+              </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
                 Voir les priorités
               </h2>
             </div>
@@ -912,11 +933,11 @@ export default function BudgetsPage() {
       <section className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-emerald-600">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-emerald-700">
               Catégories
             </p>
 
-            <h2 className="mt-1 text-2xl font-black text-slate-950">
+            <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight text-slate-950">
               {filteredBudgets.length} budget
               {filteredBudgets.length > 1 ? 's' : ''}
             </h2>
@@ -950,7 +971,7 @@ export default function BudgetsPage() {
                 <CheckCircle2 className="h-6 w-6" />
               </div>
 
-              <h3 className="mt-4 text-xl font-black text-slate-950">
+              <h3 className="mt-4 font-display text-xl font-semibold text-slate-950">
                 {hasBudgets
                   ? 'Aucun budget dans ce filtre'
                   : 'Aucun budget créé'}
@@ -958,8 +979,8 @@ export default function BudgetsPage() {
 
               <p className="mt-2 text-sm text-slate-500">
                 {hasBudgets
-                  ? 'Change de filtre pour afficher les autres catégories.'
-                  : 'Crée une première limite mensuelle pour commencer le suivi.'}
+                  ? 'Changez de filtre pour afficher les autres catégories.'
+                  : 'Créez une première limite mensuelle pour commencer le suivi.'}
               </p>
 
               {!hasBudgets && (
@@ -991,7 +1012,7 @@ export default function BudgetsPage() {
         <ConfirmActionModal
           eyebrow="Réinitialisation"
           title="Réinitialiser les budgets ?"
-          description={`Tu es sur le point de réinitialiser les budgets du mois de ${monthLabel}. Les limites mensuelles seront remises à zéro, mais tes transactions ne seront pas supprimées.`}
+          description={`Vous êtes sur le point de réinitialiser les budgets du mois de ${monthLabel}. Les limites mensuelles seront remises à zéro, mais vos transactions ne seront pas supprimées.`}
           confirmLabel="Réinitialiser"
           cancelLabel="Annuler"
           icon={<RotateCcw className="h-5 w-5" />}

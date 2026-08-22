@@ -4,6 +4,7 @@ import type {
   BudgetCategory,
   BudgetCategoryId,
   MonthlyBudget,
+  RecurringPayment,
   Transaction,
 } from '../types/budget'
 
@@ -30,6 +31,13 @@ export function getMonthLabel(monthKey: string) {
     month: 'long',
     year: 'numeric',
   }).format(new Date(year, month - 1, 1))
+}
+
+/** Renvoie la clé du mois décalé de `delta` mois (ex: -1 = mois précédent). */
+export function getAdjacentMonthKey(monthKey: string, delta: number) {
+  const [year, month] = monthKey.split('-').map(Number)
+
+  return getCurrentMonthKey(new Date(year, month - 1 + delta, 1))
 }
 
 export function getCategoryById(categoryId: BudgetCategoryId) {
@@ -143,4 +151,137 @@ export function getRecentTransactions(transactions: Transaction[], limit = 5) {
   return [...transactions]
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, limit)
+}
+
+export type ForecastTone = 'serein' | 'juste' | 'risque'
+
+export type EndOfMonthForecast = {
+  daysInMonth: number
+  daysElapsed: number
+  daysRemaining: number
+  /** Dépense « du quotidien » moyenne par jour observée ce mois-ci. */
+  dailyPace: number
+  /** Charges fixes encore à venir d'ici la fin du mois. */
+  upcomingRecurring: number
+  /** Revenus récurrents encore attendus d'ici la fin du mois (salaire…). */
+  upcomingRecurringIncome: number
+  /** Estimation des dépenses restantes (rythme quotidien + charges fixes). */
+  projectedRemainingExpenses: number
+  /** Estimation des dépenses totales du mois. */
+  projectedExpenses: number
+  /** Argent disponible estimé en fin de mois (charges et revenus à venir inclus). */
+  projectedEndBalance: number
+  /** Estimation du résultat du mois (revenus - dépenses projetées). */
+  projectedMonthResult: number
+  tone: ForecastTone
+  label: string
+  message: string
+}
+
+/**
+ * Projette la fin de mois à partir du rythme de dépenses observé, des charges
+ * fixes encore à venir et des revenus récurrents encore attendus (salaire…).
+ *
+ * Le calcul sépare les dépenses « du quotidien » (variables) des charges
+ * fixes : le rythme quotidien est estimé sur les seules dépenses non
+ * récurrentes, puis on ajoute les charges fixes datées encore à venir et on
+ * intègre les revenus récurrents encore attendus d'ici la fin du mois.
+ */
+export function getEndOfMonthForecast({
+  transactions,
+  recurringPayments,
+  liquidBalance,
+  monthIncome,
+  monthExpenses,
+  monthKey = getCurrentMonthKey(),
+  today = new Date(),
+}: {
+  transactions: Transaction[]
+  recurringPayments: RecurringPayment[]
+  liquidBalance: number
+  monthIncome: number
+  monthExpenses: number
+  monthKey?: string
+  today?: Date
+}): EndOfMonthForecast | null {
+  // La prévision n'a de sens que pour le mois en cours.
+  if (getCurrentMonthKey(today) !== monthKey) {
+    return null
+  }
+
+  const [year, month] = monthKey.split('-').map(Number)
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const daysElapsed = Math.min(today.getDate(), daysInMonth)
+  const daysRemaining = Math.max(0, daysInMonth - daysElapsed)
+
+  const everydayExpensesSoFar = getTransactionsForMonth(transactions, monthKey)
+    .filter(
+      (transaction) =>
+        transaction.type === 'expense' && !transaction.isRecurring,
+    )
+    .reduce((total, transaction) => total + transaction.amount, 0)
+
+  const dailyPace = everydayExpensesSoFar / Math.max(daysElapsed, 1)
+  const projectedEverydayRest = dailyPace * daysRemaining
+
+  const upcomingPayments = recurringPayments.filter(
+    (payment) => payment.isActive && payment.dayOfMonth > daysElapsed,
+  )
+
+  const upcomingRecurring = upcomingPayments
+    .filter((payment) => payment.type !== 'income')
+    .reduce((total, payment) => total + payment.amount, 0)
+
+  const upcomingRecurringIncome = upcomingPayments
+    .filter((payment) => payment.type === 'income')
+    .reduce((total, payment) => total + payment.amount, 0)
+
+  const projectedRemainingExpenses = projectedEverydayRest + upcomingRecurring
+  const projectedExpenses = monthExpenses + projectedRemainingExpenses
+  const projectedEndBalance =
+    liquidBalance - projectedRemainingExpenses + upcomingRecurringIncome
+  const projectedMonthResult =
+    monthIncome + upcomingRecurringIncome - projectedExpenses
+
+  let tone: ForecastTone = 'serein'
+
+  if (projectedEndBalance < 0) {
+    tone = 'risque'
+  } else if (projectedMonthResult < 0) {
+    tone = 'juste'
+  }
+
+  const tierContent: Record<ForecastTone, { label: string; message: string }> = {
+    serein: {
+      label: 'Fin de mois sereine',
+      message:
+        'À ce rythme, vous gardez de la marge jusqu’à la fin du mois. Tout est sous contrôle.',
+    },
+    juste: {
+      label: 'Fin de mois juste',
+      message:
+        'C’est jouable : en gardant un œil sur les prochaines dépenses, vous passez le cap sans accroc.',
+    },
+    risque: {
+      label: 'Fin de mois à surveiller',
+      message:
+        'À ce rythme, le mois se terminerait dans le rouge. Pas de panique : quelques ajustements suffisent à inverser la tendance.',
+    },
+  }
+
+  return {
+    daysInMonth,
+    daysElapsed,
+    daysRemaining,
+    dailyPace,
+    upcomingRecurring,
+    upcomingRecurringIncome,
+    projectedRemainingExpenses,
+    projectedExpenses,
+    projectedEndBalance,
+    projectedMonthResult,
+    tone,
+    label: tierContent[tone].label,
+    message: tierContent[tone].message,
+  }
 }

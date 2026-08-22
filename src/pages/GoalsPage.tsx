@@ -17,6 +17,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import { EmojiPicker } from '../components/ui/EmojiPicker'
+import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import type { Account, SavingGoal, SinkingFund } from '../types/budget'
 import { formatCurrency } from '../utils/formatCurrency'
@@ -123,6 +125,33 @@ function getRemainingAmount(currentAmount: number, targetAmount: number) {
   return Math.max(targetAmount - currentAmount, 0)
 }
 
+type DeadlinePlan = {
+  isPast: boolean
+  daysLeft: number
+  monthsLeft: number
+  monthlyNeeded: number
+}
+
+/** Plan d'épargne pour tenir une échéance : combien mettre de côté par mois. */
+function getDeadlinePlan(
+  deadline: string,
+  remainingAmount: number,
+  nowMs: number,
+): DeadlinePlan {
+  const dayMs = 24 * 60 * 60 * 1000
+  const target = new Date(`${deadline}T12:00:00`).getTime()
+  const daysLeft = Math.ceil((target - nowMs) / dayMs)
+
+  if (daysLeft <= 0) {
+    return { isPast: true, daysLeft, monthsLeft: 0, monthlyNeeded: 0 }
+  }
+
+  const monthsLeft = Math.max(1, Math.round(daysLeft / 30))
+  const monthlyNeeded = Math.ceil(remainingAmount / monthsLeft)
+
+  return { isPast: false, daysLeft, monthsLeft, monthlyNeeded }
+}
+
 function getSaveMoneyTargetTitle(target: SaveMoneyTarget) {
   return target.type === 'goal' ? target.goal.title : target.fund.title
 }
@@ -157,11 +186,11 @@ function PageStatCard({
   variant: 'emerald' | 'blue' | 'rose' | 'amber' | 'violet'
 }) {
   const variants = {
-    emerald: 'border-emerald-100 bg-emerald-50 text-emerald-900',
-    blue: 'border-blue-100 bg-blue-50 text-blue-900',
-    rose: 'border-rose-100 bg-rose-50 text-rose-900',
-    amber: 'border-amber-100 bg-amber-50 text-amber-900',
-    violet: 'border-violet-100 bg-violet-50 text-violet-900',
+    emerald: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-emerald-100/70 text-emerald-900',
+    blue: 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/70 text-blue-900',
+    rose: 'border-rose-200 bg-gradient-to-br from-rose-50 to-rose-100/70 text-rose-900',
+    amber: 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900',
+    violet: 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900',
   }
 
   const iconVariants = {
@@ -177,7 +206,7 @@ function PageStatCard({
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-semibold">{title}</p>
-          <p className="mt-3 text-3xl font-black tracking-tight">{value}</p>
+          <p className="tabular mt-3 text-3xl font-black tracking-tight">{value}</p>
           <p className="mt-2 text-sm opacity-75">{description}</p>
         </div>
 
@@ -206,6 +235,7 @@ function SaveMoneyModal({
   onChange: (values: SaveMoneyFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
   const currentAmount = getSaveMoneyTargetCurrentAmount(target)
   const targetAmount = getSaveMoneyTargetTargetAmount(target)
   const remainingAmount = getRemainingAmount(currentAmount, targetAmount)
@@ -230,7 +260,14 @@ function SaveMoneyModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setaside-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -238,13 +275,16 @@ function SaveMoneyModal({
                 Mise de côté
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="setaside-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 Mettre de côté depuis un compte
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                L’argent sera retiré du compte choisi, ajouté à ton objectif, et
-                une transaction d’épargne sera créée.
+                L’argent sera retiré du compte choisi, ajouté à votre objectif,
+                et une transaction d’épargne sera créée.
               </p>
             </div>
 
@@ -271,7 +311,7 @@ function SaveMoneyModal({
                   {getSaveMoneyTargetTitle(target)}
                 </p>
 
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="tabular mt-1 text-sm text-slate-500">
                   {formatCurrency(currentAmount)} / {formatCurrency(targetAmount)} ·{' '}
                   {progress} %
                 </p>
@@ -322,6 +362,7 @@ function SaveMoneyModal({
                 onChange={(event) => updateField('amount', event.target.value)}
                 placeholder="Ex : 50"
                 inputMode="decimal"
+                aria-label="Montant à mettre de côté en euros"
                 className="h-12 w-full bg-transparent text-sm font-medium outline-none placeholder:text-slate-400"
               />
 
@@ -396,6 +437,8 @@ function GoalFormModal({
   onChange: (values: GoalFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof GoalFormValues>(
     field: Field,
     value: GoalFormValues[Field],
@@ -415,7 +458,14 @@ function GoalFormModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="goal-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -423,7 +473,10 @@ function GoalFormModal({
                 {isEditing ? 'Modification' : 'Nouvel objectif'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="goal-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier cet objectif'
                   : 'Créer un objectif d’épargne'}
@@ -431,8 +484,8 @@ function GoalFormModal({
 
               <p className="mt-1 text-sm text-slate-500">
                 {isEditing
-                  ? 'Modifie le titre, les montants, l’emoji ou la date limite.'
-                  : 'Ajoute un projet à suivre : vacances, sécurité, matériel, voiture...'}
+                  ? 'Modifiez le titre, les montants, l’emoji ou la date limite.'
+                  : 'Ajoutez un projet à suivre : vacances, sécurité, matériel, voiture...'}
               </p>
             </div>
 
@@ -449,17 +502,11 @@ function GoalFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="🎯"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="🎯"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">Titre</span>
@@ -565,6 +612,8 @@ function SinkingFundFormModal({
   onChange: (values: SinkingFundFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
 }) {
+  const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
+
   function updateField<Field extends keyof SinkingFundFormValues>(
     field: Field,
     value: SinkingFundFormValues[Field],
@@ -584,7 +633,14 @@ function SinkingFundFormModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="fund-modal-title"
+        tabIndex={-1}
+        className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="sticky top-0 z-10 border-b border-stone-100 bg-white/95 p-5 backdrop-blur">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -592,14 +648,17 @@ function SinkingFundFormModal({
                 {isEditing ? 'Modification' : 'Nouveau fonds'}
               </p>
 
-              <h2 className="mt-1 text-2xl font-black text-slate-950">
+              <h2
+                id="fund-modal-title"
+                className="mt-1 text-2xl font-black text-slate-950"
+              >
                 {isEditing
                   ? 'Modifier ce fonds d’amortissement'
                   : 'Créer un fonds d’amortissement'}
               </h2>
 
               <p className="mt-1 text-sm text-slate-500">
-                Prévois une grosse dépense future avec une mise de côté
+                Prévoyez une grosse dépense future avec une mise de côté
                 régulière.
               </p>
             </div>
@@ -617,17 +676,11 @@ function SinkingFundFormModal({
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
           <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
-            <label>
-              <span className="text-sm font-bold text-slate-700">Emoji</span>
-
-              <input
-                value={formValues.emoji}
-                onChange={(event) => updateField('emoji', event.target.value)}
-                placeholder="🐖"
-                maxLength={4}
-                className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-center text-xl font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-              />
-            </label>
+            <EmojiPicker
+              value={formValues.emoji}
+              onChange={(emoji) => updateField('emoji', emoji)}
+              placeholder="🐖"
+            />
 
             <label>
               <span className="text-sm font-bold text-slate-700">Titre</span>
@@ -721,11 +774,13 @@ function SinkingFundFormModal({
 
 function GoalCard({
   goal,
+  nowMs,
   onSaveRequest,
   onEditRequest,
   onDeleteRequest,
 }: {
   goal: SavingGoal
+  nowMs: number
   onSaveRequest: (goal: SavingGoal) => void
   onEditRequest: (goal: SavingGoal) => void
   onDeleteRequest: (goal: SavingGoal) => void
@@ -733,6 +788,10 @@ function GoalCard({
   const progress = getProgress(goal.currentAmount, goal.targetAmount)
   const remainingAmount = getRemainingAmount(goal.currentAmount, goal.targetAmount)
   const isCompleted = progress >= 100
+  const deadlinePlan =
+    goal.deadline && !isCompleted
+      ? getDeadlinePlan(goal.deadline, remainingAmount, nowMs)
+      : null
 
   return (
     <article className="rounded-[2rem] border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
@@ -774,7 +833,7 @@ function GoalCard({
             Mis de côté
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(goal.currentAmount)}
           </p>
         </div>
@@ -784,7 +843,7 @@ function GoalCard({
             Objectif
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(goal.targetAmount)}
           </p>
         </div>
@@ -794,7 +853,7 @@ function GoalCard({
             Restant
           </p>
 
-          <p className="mt-1 text-xl font-black text-violet-700">
+          <p className="tabular mt-1 text-xl font-black text-violet-700">
             {formatCurrency(remainingAmount)}
           </p>
         </div>
@@ -815,6 +874,38 @@ function GoalCard({
           />
         </div>
       </div>
+
+      {deadlinePlan && (
+        <div
+          className={`mt-4 rounded-2xl border p-4 text-sm leading-6 ${
+            deadlinePlan.isPast
+              ? 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100/70 text-amber-900'
+              : 'border-violet-200 bg-gradient-to-br from-violet-50 to-violet-100/70 text-violet-900'
+          }`}
+        >
+          {deadlinePlan.isPast ? (
+            <p>
+              <span className="font-black">Échéance dépassée.</span> Il reste{' '}
+              <span className="tabular font-bold">
+                {formatCurrency(remainingAmount)}
+              </span>{' '}
+              à mettre de côté — vous pouvez décaler la date dans « Modifier ».
+            </p>
+          ) : (
+            <p>
+              Pour y arriver à temps, mettez environ{' '}
+              <span className="tabular font-black">
+                {formatCurrency(deadlinePlan.monthlyNeeded)}
+              </span>{' '}
+              de côté par mois.{' '}
+              <span className="text-violet-700/80">
+                Encore {deadlinePlan.monthsLeft} mois (
+                {deadlinePlan.daysLeft} jours).
+              </span>
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap gap-2">
         <button
@@ -906,7 +997,7 @@ function SinkingFundCard({
             Actuel
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(fund.currentAmount)}
           </p>
         </div>
@@ -916,7 +1007,7 @@ function SinkingFundCard({
             Cible
           </p>
 
-          <p className="mt-1 text-xl font-black text-slate-950">
+          <p className="tabular mt-1 text-xl font-black text-slate-950">
             {formatCurrency(fund.targetAmount)}
           </p>
         </div>
@@ -998,6 +1089,7 @@ export default function GoalsPage() {
     resetGoals,
   } = useBudgetData()
 
+  const [nowMs] = useState(() => Date.now())
   const [isGoalFormOpen, setIsGoalFormOpen] = useState(false)
   const [goalFormValues, setGoalFormValues] =
     useState<GoalFormValues>(defaultGoalFormValues)
@@ -1172,18 +1264,18 @@ export default function GoalsPage() {
 
     if (accounts.length === 0) {
       setSaveMoneyFormError(
-        'Crée d’abord un compte pour pouvoir mettre de côté.',
+        'Créez d’abord un compte pour pouvoir mettre de côté.',
       )
       return
     }
 
     if (!saveMoneyFormValues.accountId) {
-      setSaveMoneyFormError('Choisis le compte source.')
+      setSaveMoneyFormError('Choisissez le compte source.')
       return
     }
 
     if (!Number.isFinite(amount) || amount <= 0) {
-      setSaveMoneyFormError('Ajoute un montant supérieur à 0 €.')
+      setSaveMoneyFormError('Ajoutez un montant supérieur à 0 €.')
       return
     }
 
@@ -1218,12 +1310,12 @@ export default function GoalsPage() {
     const currentAmount = parseAmount(goalFormValues.currentAmount)
 
     if (!title) {
-      setGoalFormError('Ajoute un titre à ton objectif.')
+      setGoalFormError('Ajoutez un titre à votre objectif.')
       return
     }
 
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setGoalFormError('Ajoute un montant cible supérieur à 0.')
+      setGoalFormError('Ajoutez un montant cible supérieur à 0.')
       return
     }
 
@@ -1267,12 +1359,12 @@ export default function GoalsPage() {
     const monthlyContribution = parseAmount(fundFormValues.monthlyContribution)
 
     if (!title) {
-      setFundFormError('Ajoute un titre à ton fonds.')
+      setFundFormError('Ajoutez un titre à votre fonds.')
       return
     }
 
     if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
-      setFundFormError('Ajoute un montant cible supérieur à 0.')
+      setFundFormError('Ajoutez un montant cible supérieur à 0.')
       return
     }
 
@@ -1289,7 +1381,7 @@ export default function GoalsPage() {
     }
 
     if (!Number.isFinite(monthlyContribution) || monthlyContribution <= 0) {
-      setFundFormError('Ajoute une mensualité prévue supérieure à 0.')
+      setFundFormError('Ajoutez une mensualité prévue supérieure à 0.')
       return
     }
 
@@ -1348,32 +1440,32 @@ export default function GoalsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm">
+      <section className="animate-rise overflow-hidden rounded-[1.75rem] border border-fuchsia-200 bg-gradient-to-br from-fuchsia-100 via-fuchsia-50 to-[#fffef9] shadow-md">
         <div className="relative p-6 md:p-8">
-          <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-violet-100/70 blur-3xl" />
-          <div className="absolute bottom-0 right-24 h-32 w-32 rounded-full bg-emerald-100/70 blur-3xl" />
+          <div className="absolute right-0 top-0 h-44 w-44 rounded-full bg-violet-200/40 blur-3xl" />
+          <div className="absolute bottom-0 right-24 h-40 w-40 rounded-full bg-emerald-200/40 blur-3xl" />
 
           <div className="relative flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-600">
+              <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 Objectifs et épargne
               </p>
 
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">
-                Donner un but à ton argent
+              <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-slate-950 md:text-[2.4rem] md:leading-[1.1]">
+                Donnez un but à votre argent
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                Suis tes projets, tes fonds d’amortissement et ta progression.
-                Quand tu mets de côté, l’argent sort maintenant d’un vrai compte
-                et crée une transaction d’épargne.
+                Suivez vos projets, vos fonds d’amortissement et votre
+                progression. Quand vous mettez de côté, l’argent sort maintenant
+                d’un vrai compte et crée une transaction d’épargne.
               </p>
             </div>
 
             <button
               type="button"
               onClick={handleResetGoals}
-              className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-stone-200"
+              className="flex w-fit items-center gap-2 rounded-full bg-stone-100 px-5 py-3 text-sm font-bold text-slate-600 shadow-md transition hover:-translate-y-0.5 hover:bg-stone-200"
             >
               <RefreshCcw className="h-4 w-4" />
               Réinitialiser
@@ -1442,12 +1534,12 @@ export default function GoalsPage() {
           </div>
 
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Tu as déjà mis de côté{' '}
-            <span className="font-bold text-slate-950">
+            Vous avez déjà mis de côté{' '}
+            <span className="tabular font-bold text-slate-950">
               {formatCurrency(globalSaved)}
             </span>{' '}
             sur un objectif total de{' '}
-            <span className="font-bold text-slate-950">
+            <span className="tabular font-bold text-slate-950">
               {formatCurrency(globalTarget)}
             </span>
             .
@@ -1504,7 +1596,7 @@ export default function GoalsPage() {
             </p>
 
             <h2 className="mt-1 text-2xl font-black text-slate-950">
-              Tes projets importants
+              Vos projets importants
             </h2>
           </div>
 
@@ -1524,6 +1616,7 @@ export default function GoalsPage() {
               <GoalCard
                 key={`${goal.id}-${goal.title}-${goal.currentAmount}-${goal.targetAmount}-${goal.deadline}`}
                 goal={goal}
+                nowMs={nowMs}
                 onSaveRequest={openSaveMoneyForGoal}
                 onEditRequest={openEditGoalForm}
                 onDeleteRequest={setGoalToDelete}
@@ -1538,7 +1631,7 @@ export default function GoalsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un objectif pour suivre tes projets importants.
+                Ajoutez un objectif pour suivre vos projets importants.
               </p>
             </div>
           )}
@@ -1587,7 +1680,7 @@ export default function GoalsPage() {
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">
-                Ajoute un fonds pour anticiper une grosse dépense future.
+                Ajoutez un fonds pour anticiper une grosse dépense future.
               </p>
             </div>
           )}
@@ -1632,7 +1725,7 @@ export default function GoalsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer cet objectif ?"
-          description={`Tu es sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi actuel.`}
+          description={`Vous êtes sur le point de supprimer "${goalToDelete.title}". Cet objectif sera retiré du suivi actuel.`}
           confirmLabel="Supprimer l’objectif"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}
@@ -1646,7 +1739,7 @@ export default function GoalsPage() {
         <ConfirmActionModal
           eyebrow="Suppression"
           title="Supprimer ce fonds ?"
-          description={`Tu es sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi actuel.`}
+          description={`Vous êtes sur le point de supprimer "${fundToDelete.title}". Ce fonds d’amortissement sera retiré du suivi actuel.`}
           confirmLabel="Supprimer le fonds"
           cancelLabel="Annuler"
           icon={<Trash2 className="h-5 w-5" />}

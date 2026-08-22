@@ -25,6 +25,8 @@ export type Account = {
   balance: number
   emoji: string
   colorClass: string
+  /** Titulaire du compte (ex. « Maxime », « Chloé », « Commun »). */
+  holder: string
 }
 
 export type BudgetCategory = {
@@ -67,6 +69,8 @@ export type SavingGoal = {
   emoji: string
 }
 
+export type RecurringType = 'income' | 'expense'
+
 export type RecurringPayment = {
   id: string
   title: string
@@ -75,6 +79,8 @@ export type RecurringPayment = {
   accountId: string
   dayOfMonth: number
   isActive: boolean
+  /** Charge (sortie) ou revenu (entrée) récurrent. */
+  type: RecurringType
 }
 
 export type SinkingFund = {

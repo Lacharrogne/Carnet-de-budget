@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
+import { useDialogA11y } from '../../hooks/useDialogA11y'
+
 type ConfirmActionModalProps = {
   eyebrow?: string
   title: string
@@ -38,6 +40,7 @@ export default function ConfirmActionModal({
   }
 
   const classes = variantClasses[variant]
+  const dialogRef = useDialogA11y<HTMLElement>(onCancel)
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-slate-950/40 p-3 backdrop-blur-sm md:items-center">
@@ -48,7 +51,14 @@ export default function ConfirmActionModal({
         className="absolute inset-0 cursor-default"
       />
 
-      <article className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-2xl">
+      <article
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+        tabIndex={-1}
+        className="relative w-full max-w-lg overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-2xl"
+      >
         <div className="border-b border-stone-100 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
@@ -61,7 +71,10 @@ export default function ConfirmActionModal({
                   {eyebrow}
                 </p>
 
-                <h2 className="mt-1 text-2xl font-black text-slate-950">
+                <h2
+                  id="confirm-modal-title"
+                  className="mt-1 text-2xl font-black text-slate-950"
+                >
                   {title}
                 </h2>
               </div>
@@ -70,6 +83,7 @@ export default function ConfirmActionModal({
             <button
               type="button"
               onClick={onCancel}
+              aria-label="Fermer"
               className="rounded-full bg-stone-100 p-3 text-slate-500 transition hover:bg-stone-200 hover:text-slate-950"
             >
               <X className="h-5 w-5" />
