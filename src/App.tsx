@@ -1,6 +1,7 @@
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 
 import AppLayout from './components/layout/AppLayout'
+import ErrorBoundary from './components/ErrorBoundary'
 import ScrollToTop from './components/layout/ScrollToTop'
 import AccountsPage from './pages/AccountsPage'
 import BudgetsPage from './pages/BudgetsPage'
@@ -11,32 +12,38 @@ import GoalsPage from './pages/GoalsPage'
 import InvestmentsPage from './pages/InvestmentsPage'
 import NetWorthPage from './pages/NetWorthPage'
 import RecurringPaymentsPage from './pages/RecurringPaymentsPage'
+import SettingsPage from './pages/SettingsPage'
 import StatsPage from './pages/StatsPage'
 import TransactionsPage from './pages/TransactionsPage'
 import ModalAutoClose from './components/layout/ModalAutoClose'
 
 export default function App() {
+  const location = useLocation()
+
   return (
     <>
       <ModalAutoClose />
       <ScrollToTop />
 
       <AppLayout>
-        <Routes>
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/comptes" element={<AccountsPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/budgets" element={<BudgetsPage />} />
-          <Route path="/abonnements" element={<RecurringPaymentsPage />} />
-          <Route path="/recurrents" element={<RecurringPaymentsPage />} />
-          <Route path="/dettes" element={<DebtsPage />} />
-          <Route path="/patrimoine" element={<NetWorthPage />} />
-          <Route path="/investissements" element={<InvestmentsPage />} />
-          <Route path="/objectifs" element={<GoalsPage />} />
-          <Route path="/calendrier" element={<CalendarPage />} />
-          <Route path="/statistiques" element={<StatsPage />} />
-          <Route path="/stats" element={<StatsPage />} />
-        </Routes>
+        <ErrorBoundary resetKey={location.pathname}>
+          <Routes>
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/comptes" element={<AccountsPage />} />
+            <Route path="/transactions" element={<TransactionsPage />} />
+            <Route path="/budgets" element={<BudgetsPage />} />
+            <Route path="/abonnements" element={<RecurringPaymentsPage />} />
+            <Route path="/recurrents" element={<RecurringPaymentsPage />} />
+            <Route path="/dettes" element={<DebtsPage />} />
+            <Route path="/patrimoine" element={<NetWorthPage />} />
+            <Route path="/investissements" element={<InvestmentsPage />} />
+            <Route path="/objectifs" element={<GoalsPage />} />
+            <Route path="/calendrier" element={<CalendarPage />} />
+            <Route path="/statistiques" element={<StatsPage />} />
+            <Route path="/stats" element={<StatsPage />} />
+            <Route path="/reglages" element={<SettingsPage />} />
+          </Routes>
+        </ErrorBoundary>
       </AppLayout>
     </>
   )

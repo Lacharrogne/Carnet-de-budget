@@ -5,6 +5,7 @@ import {
   ArrowRightLeft,
   ArrowUpRight,
   CalendarDays,
+  Download,
   Filter,
   Pencil,
   Plus,
@@ -16,10 +17,12 @@ import {
   XCircle,
 } from 'lucide-react'
 
+import Button from '../components/ui/Button'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import { exportTransactionsCsv } from '../lib/exportCsv'
 import type {
   Account,
   BudgetCategory,
@@ -994,24 +997,36 @@ export default function TransactionsPage() {
               </p>
             </div>
 
-            {hasAccounts ? (
-              <button
-                type="button"
-                onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                Nouvelle transaction
-              </button>
-            ) : (
-              <Link
-                to="/comptes"
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                Créer un compte
-              </Link>
-            )}
+            <div className="flex w-fit flex-wrap items-center gap-2">
+              {localTransactions.length > 0 && (
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() =>
+                    exportTransactionsCsv(
+                      localTransactions,
+                      accounts,
+                      budgetCategories,
+                    )
+                  }
+                >
+                  <Download className="h-4 w-4" />
+                  Exporter
+                </Button>
+              )}
+
+              {hasAccounts ? (
+                <Button variant="dark" size="lg" onClick={openForm}>
+                  <Plus className="h-4 w-4" />
+                  Nouvelle transaction
+                </Button>
+              ) : (
+                <Button variant="dark" size="lg" to="/comptes">
+                  <Plus className="h-4 w-4" />
+                  Créer un compte
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </section>
