@@ -1,0 +1,21 @@
+{
+  "name": "Carnet de budget",
+  "short_name": "Budget",
+  "description": "Le cockpit de vos finances : comptes, budgets, dépenses, objectifs et patrimoine.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fafaf9",
+  "theme_color": "#047857",
+  "lang": "fr",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
