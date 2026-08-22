@@ -4,7 +4,7 @@
  * cache des assets statiques, sans jamais mettre en cache les réponses de
  * données/authentification (Supabase).
  */
-const VERSION = 'v2'
+const VERSION = 'v3'
 const SHELL_CACHE = `budget-shell-${VERSION}`
 const ASSET_CACHE = `budget-assets-${VERSION}`
 
