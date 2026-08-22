@@ -9,6 +9,7 @@ import {
   UserCircle,
 } from 'lucide-react'
 
+import Button from '../components/ui/Button'
 import { useAuth } from '../context/useAuth'
 import { useBudgetData } from '../context/useBudgetData'
 import { useEntitlement } from '../hooks/useEntitlement'
@@ -224,15 +225,14 @@ export default function SettingsPage() {
               : 'Aucune transaction à exporter pour le moment.'}
           </p>
 
-          <button
-            type="button"
+          <Button
             onClick={handleExport}
             disabled={!hasTransactions}
-            className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+            className="w-fit shrink-0"
           >
             <Download className="h-4 w-4" />
             Exporter en CSV
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -246,14 +246,14 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <button
-            type="button"
+          <Button
+            variant="danger"
             onClick={() => void signOut()}
-            className="inline-flex w-fit items-center justify-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-black text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:-translate-y-0.5 hover:bg-rose-50 hover:text-rose-700"
+            className="w-fit"
           >
             <LogOut className="h-4 w-4" />
             Se déconnecter
-          </button>
+          </Button>
         </div>
       </section>
     </div>

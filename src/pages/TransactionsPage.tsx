@@ -17,6 +17,7 @@ import {
   XCircle,
 } from 'lucide-react'
 
+import Button from '../components/ui/Button'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
@@ -998,8 +999,9 @@ export default function TransactionsPage() {
 
             <div className="flex w-fit flex-wrap items-center gap-2">
               {localTransactions.length > 0 && (
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="lg"
                   onClick={() =>
                     exportTransactionsCsv(
                       localTransactions,
@@ -1007,30 +1009,22 @@ export default function TransactionsPage() {
                       budgetCategories,
                     )
                   }
-                  className="flex w-fit items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-600 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-50 hover:text-slate-900"
                 >
                   <Download className="h-4 w-4" />
                   Exporter
-                </button>
+                </Button>
               )}
 
               {hasAccounts ? (
-                <button
-                  type="button"
-                  onClick={openForm}
-                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-                >
+                <Button variant="dark" size="lg" onClick={openForm}>
                   <Plus className="h-4 w-4" />
                   Nouvelle transaction
-                </button>
+                </Button>
               ) : (
-                <Link
-                  to="/comptes"
-                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-900"
-                >
+                <Button variant="dark" size="lg" to="/comptes">
                   <Plus className="h-4 w-4" />
                   Créer un compte
-                </Link>
+                </Button>
               )}
             </div>
           </div>
