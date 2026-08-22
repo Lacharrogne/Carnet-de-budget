@@ -142,9 +142,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
               isSidebarCollapsed ? 'justify-center' : 'flex-1',
             ].join(' ')}
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-sm font-black text-white ring-1 ring-white/20">
-              CB
-            </div>
+            <img
+              src="/logo.png"
+              alt="Carnet de budget"
+              className="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-white/25"
+            />
 
             {!isSidebarCollapsed && (
               <div className="min-w-0">
