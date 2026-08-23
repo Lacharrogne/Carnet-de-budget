@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, useLocation } from 'react-router'
 import {
   BarChart3,
@@ -14,6 +14,7 @@ import {
   PiggyBank,
   ReceiptText,
   Repeat2,
+  Search,
   Settings,
   Sparkles,
   Target,
@@ -30,6 +31,7 @@ import HolderSwitcher from './HolderSwitcher'
 import QuickAddMenu from './QuickAddMenu'
 import Footer from './Footer'
 import BrandLogo from './BrandLogo'
+import GlobalSearch from '../search/GlobalSearch'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -181,6 +183,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation()
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
   const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
+  const [isSearchOpen, setIsSearchOpen] = useState(false)
+
+  // Raccourci clavier ⌘K / Ctrl+K pour ouvrir la recherche.
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setIsSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   async function handleSignOut() {
     await signOut()
@@ -325,6 +340,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsSearchOpen(true)}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white text-slate-500 shadow-sm ring-1 ring-stone-200 transition hover:bg-stone-100 hover:text-slate-900"
+              aria-label="Rechercher"
+              title="Rechercher (⌘K)"
+            >
+              <Search className="h-5 w-5" />
+            </button>
+
             <HolderSwitcher />
 
             <div className="hidden sm:block">
@@ -584,6 +609,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
       )}
+
+      {isSearchOpen && <GlobalSearch onClose={() => setIsSearchOpen(false)} />}
     </div>
   )
 }
