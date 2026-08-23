@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-import { Heart, Leaf, ShieldCheck } from 'lucide-react'
 
 import {
   SUBSCRIPTION_HUB_URL,
@@ -43,10 +42,10 @@ const FOOTER_SECTIONS: { title: string; links: FooterLink[] }[] = [
   },
 ]
 
-const TRUST_SIGNALS: { icon: typeof Heart; label: string }[] = [
-  { icon: Heart, label: 'Fait avec soin' },
-  { icon: ShieldCheck, label: 'Sans publicité' },
-  { icon: Leaf, label: '14 jours d’essai gratuit' },
+const TRUST_SIGNALS: { icon: string; label: string }[] = [
+  { icon: '❤️', label: 'Fait avec soin' },
+  { icon: '🛡️', label: 'Sans publicité' },
+  { icon: '✨', label: '14 jours d’essai gratuit' },
 ]
 
 export default function Footer() {
@@ -74,19 +73,17 @@ export default function Footer() {
           </p>
 
           <ul className="mt-6 space-y-2">
-            {TRUST_SIGNALS.map((signal) => {
-              const Icon = signal.icon
-
-              return (
-                <li
-                  key={signal.label}
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-600"
-                >
-                  <Icon className="h-4 w-4 text-emerald-600" />
-                  {signal.label}
-                </li>
-              )
-            })}
+            {TRUST_SIGNALS.map((signal) => (
+              <li
+                key={signal.label}
+                className="flex items-center gap-2 text-sm font-semibold text-slate-600"
+              >
+                <span aria-hidden className="text-base">
+                  {signal.icon}
+                </span>
+                {signal.label}
+              </li>
+            ))}
           </ul>
         </div>
 
