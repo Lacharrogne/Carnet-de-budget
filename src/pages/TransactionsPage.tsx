@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import {
   ArrowDownLeft,
@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   Download,
+  FileUp,
   Filter,
   Pencil,
   Plus,
@@ -19,12 +20,17 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import ImportTransactionsModal from '../components/transactions/ImportTransactionsModal'
 import { useBudgetData } from '../context/useBudgetData'
 import { useHolderFilter } from '../context/useHolderFilter'
 import { filterTransactionsByHolder } from '../lib/holderFilter'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { budgetCategories } from '../data/budgetCategories'
 import { getCategoryById } from '../services/budgetStatsService'
+import {
+  buildHistoryIndex,
+  suggestCategory,
+} from '../services/categorizationService'
 import {
   buildTransactionRows,
   exportTransactionsToCsv,
@@ -385,6 +391,7 @@ function TransactionFormModal({
   onClose,
   onSubmit,
   onChange,
+  suggestCategoryFor,
 }: {
   formValues: TransactionFormValues
   formError: string
@@ -393,7 +400,16 @@ function TransactionFormModal({
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onChange: (values: TransactionFormValues) => void
+  suggestCategoryFor: (title: string) => BudgetCategoryId | null
 }) {
+  const suggestedCategory =
+    formValues.type !== 'transfer' && formValues.title.trim().length >= 3
+      ? suggestCategoryFor(formValues.title)
+      : null
+  const suggestion =
+    suggestedCategory && suggestedCategory !== formValues.category
+      ? budgetCategories.find((category) => category.id === suggestedCategory)
+      : null
   const canTransfer = accounts.length >= 2
   const dialogRef = useDialogA11y<HTMLDivElement>(onClose)
 
@@ -544,6 +560,17 @@ function TransactionFormModal({
                 }
                 className="mt-2 h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-medium outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
+
+              {suggestion && (
+                <button
+                  type="button"
+                  onClick={() => updateField('category', suggestion.id)}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100"
+                >
+                  Suggestion : {suggestion.emoji} {suggestion.name}
+                  <span className="text-emerald-600">· appliquer</span>
+                </button>
+              )}
             </label>
 
             <label>
@@ -741,7 +768,9 @@ export default function TransactionsPage() {
     selectedHolder,
   )
 
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(
+    () => new URLSearchParams(window.location.search).get('q') ?? '',
+  )
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [amountMin, setAmountMin] = useState('')
@@ -760,6 +789,18 @@ export default function TransactionsPage() {
     useState<Transaction | null>(null)
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null)
+  const [isImportOpen, setIsImportOpen] = useState(false)
+
+  // Index d'auto-catégorisation (historique de l'utilisateur), recalculé quand
+  // les transactions changent.
+  const historyIndex = useMemo(
+    () => buildHistoryIndex(allTransactions),
+    [allTransactions],
+  )
+  const suggestCategoryForTitle = useCallback(
+    (title: string) => suggestCategory(title, historyIndex),
+    [historyIndex],
+  )
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
@@ -1125,14 +1166,25 @@ export default function TransactionsPage() {
             </div>
 
             {hasAccounts ? (
-              <button
-                type="button"
-                onClick={openForm}
-                className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
-              >
-                <Plus className="h-4 w-4" />
-                Nouvelle transaction
-              </button>
+              <div className="flex w-fit flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsImportOpen(true)}
+                  className="flex w-fit items-center gap-2 rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-stone-50"
+                >
+                  <FileUp className="h-4 w-4" />
+                  Importer
+                </button>
+
+                <button
+                  type="button"
+                  onClick={openForm}
+                  className="flex w-fit items-center gap-2 rounded-full bg-emerald-950 px-5 py-3 text-sm font-bold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-emerald-900"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nouvelle transaction
+                </button>
+              </div>
             ) : (
               <Link
                 to="/comptes"
@@ -1440,6 +1492,7 @@ export default function TransactionsPage() {
           onClose={closeForm}
           onSubmit={handleSubmit}
           onChange={setFormValues}
+          suggestCategoryFor={suggestCategoryForTitle}
         />
       )}
 
@@ -1454,6 +1507,19 @@ export default function TransactionsPage() {
           variant="danger"
           onCancel={() => setTransactionToDelete(null)}
           onConfirm={confirmDeleteTransaction}
+        />
+      )}
+
+      {isImportOpen && (
+        <ImportTransactionsModal
+          accounts={accounts}
+          existingTransactions={allTransactions}
+          onImport={async (transactions) => {
+            for (const transaction of transactions) {
+              await addTransaction(transaction)
+            }
+          }}
+          onClose={() => setIsImportOpen(false)}
         />
       )}
     </div>
