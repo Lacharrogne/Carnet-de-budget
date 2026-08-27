@@ -130,9 +130,15 @@ const ITEMS: Record<string, NavItem> = {
 const PRIMARY: NavItem[] = [ITEMS['/'], ITEMS['/transactions']]
 
 // Menus déroulants (façon « Outils » de Recettes/Sport).
-const MENUS: { label: string; subtitle: string; items: NavItem[] }[] = [
+const MENUS: {
+  label: string
+  hubPath: string
+  subtitle: string
+  items: NavItem[]
+}[] = [
   {
     label: 'Gérer',
+    hubPath: '/gerer',
     subtitle: 'Comptes, charges, budgets et objectifs',
     items: [
       ITEMS['/comptes'],
@@ -144,6 +150,7 @@ const MENUS: { label: string; subtitle: string; items: NavItem[] }[] = [
   },
   {
     label: 'Patrimoine & analyse',
+    hubPath: '/analyse',
     subtitle: 'Placements, bilan et statistiques',
     items: [
       ITEMS['/investissements'],
@@ -262,9 +269,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             ))}
 
             {MENUS.map((menu) => {
-              const isActive = menu.items.some(
-                (item) => item.path === location.pathname,
-              )
+              const isActive =
+                menu.items.some((item) => item.path === location.pathname) ||
+                location.pathname === menu.hubPath
               const isOpen = openMenu === menu.label
 
               return (
@@ -274,8 +281,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   onMouseEnter={() => setOpenMenu(menu.label)}
                   onMouseLeave={() => setOpenMenu(null)}
                 >
-                  <button
-                    type="button"
+                  <Link
+                    to={menu.hubPath}
+                    onClick={() => setOpenMenu(null)}
                     className={[
                       'inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition',
                       isActive || isOpen
@@ -287,7 +295,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <ChevronDown
                       className={`h-4 w-4 transition ${isOpen ? 'rotate-180' : ''}`}
                     />
-                  </button>
+                  </Link>
 
                   {/* pont invisible pour garder le survol */}
                   <div className="absolute left-0 top-full h-3 w-full" />
@@ -303,6 +311,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <p className="px-2 pb-2 pt-1 text-[0.65rem] font-black uppercase tracking-[0.14em] text-slate-400">
                       {menu.subtitle}
                     </p>
+
+                    <Link
+                      to={menu.hubPath}
+                      onClick={() => setOpenMenu(null)}
+                      className="mb-1 flex items-center justify-between rounded-2xl bg-emerald-50 px-3 py-2.5 text-sm font-black text-emerald-800 transition hover:bg-emerald-100"
+                    >
+                      Vue d’ensemble
+                      <span aria-hidden="true">→</span>
+                    </Link>
 
                     <div className="grid gap-1">
                       {menu.items.map((item) => {
