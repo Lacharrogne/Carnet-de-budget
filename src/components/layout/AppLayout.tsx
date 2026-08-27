@@ -244,7 +244,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
               <div className="min-w-0">
                 <p className="truncate font-display text-lg font-black leading-tight text-slate-950">
-                  Carnet de budget
+                  <span className="sm:hidden">Budget</span>
+                  <span className="hidden sm:inline">Carnet de budget</span>
                 </p>
 
                 <p className="hidden truncate text-xs font-semibold text-emerald-700/80 sm:block">
