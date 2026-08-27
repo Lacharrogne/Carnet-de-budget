@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router'
 
 import AppLayout from './components/layout/AppLayout'
 import ErrorBoundary from './components/ErrorBoundary'
+import { GERER_HUB, ANALYSE_HUB } from './data/sectionHubs'
 import ScrollToTop from './components/layout/ScrollToTop'
 import ModalAutoClose from './components/layout/ModalAutoClose'
 import GuidedTour from './components/tour/GuidedTour'
@@ -23,6 +24,7 @@ const GoalsPage = lazy(() => import('./pages/GoalsPage'))
 const CalendarPage = lazy(() => import('./pages/CalendarPage'))
 const StatsPage = lazy(() => import('./pages/StatsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const SectionHubPage = lazy(() => import('./pages/SectionHubPage'))
 
 function PageLoader() {
   return (
@@ -62,6 +64,11 @@ export default function App() {
               <Route path="/statistiques" element={<StatsPage />} />
               <Route path="/stats" element={<StatsPage />} />
               <Route path="/reglages" element={<SettingsPage />} />
+            <Route path="/gerer" element={<SectionHubPage hub={GERER_HUB} />} />
+            <Route
+              path="/analyse"
+              element={<SectionHubPage hub={ANALYSE_HUB} />}
+            />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
