@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Carnet de budget",
   "short_name": "Budget",
   "description": "Votre carnet financier : comptes, budgets, dépenses, objectifs et patrimoine.",
@@ -12,16 +13,45 @@
   "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "/logo.png",
-      "sizes": "256x256",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Transactions",
+      "short_name": "Transactions",
+      "url": "/transactions"
+    },
+    {
+      "name": "Gérer",
+      "short_name": "Gérer",
+      "url": "/gerer"
+    },
+    {
+      "name": "Analyse & patrimoine",
+      "short_name": "Analyse",
+      "url": "/analyse"
     }
   ]
 }

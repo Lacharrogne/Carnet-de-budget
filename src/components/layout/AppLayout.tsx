@@ -32,6 +32,7 @@ import QuickAddMenu from './QuickAddMenu'
 import Footer from './Footer'
 import BrandLogo from './BrandLogo'
 import GlobalSearch from '../search/GlobalSearch'
+import InstallPrompt from '../InstallPrompt'
 
 type AppLayoutProps = {
   children: ReactNode
@@ -629,6 +630,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {isSearchOpen && <GlobalSearch onClose={() => setIsSearchOpen(false)} />}
+
+      <InstallPrompt />
     </div>
   )
 }
