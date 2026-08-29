@@ -220,7 +220,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen text-slate-900">
-      <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#fffdf9]/95 backdrop-blur-xl">
+      <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#fffdf9]/95 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 md:px-6 lg:px-8">
           {/* Marque */}
           <div className="flex min-w-0 items-center gap-2 sm:gap-3">
