@@ -68,7 +68,7 @@ export default function AuthPage() {
 
   return (
     <main className="min-h-screen bg-stone-50 px-4 py-8 text-slate-950">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_0.9fr]">
+      <div className="mx-auto grid grid-cols-1 min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-8 lg:grid-cols-[1fr_0.9fr]">
         <section className="animate-rise card-premium overflow-hidden p-6 md:p-8">
           <div className="relative">
             <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-emerald-100/40 blur-3xl" />
@@ -94,7 +94,7 @@ export default function AuthPage() {
                 disparaissent plus au rafraîchissement.
               </p>
 
-              <div className="mt-8 grid gap-4 md:grid-cols-3">
+              <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-[1.5rem] bg-emerald-50 p-4 text-emerald-900">
                   <ShieldCheck className="h-5 w-5" />
                   <p className="mt-3 text-sm font-black">Données sécurisées</p>

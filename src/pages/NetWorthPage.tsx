@@ -456,7 +456,7 @@ export default function NetWorthPage() {
 
       {!hasAnyData && <EmptyNetWorthGuide />}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Patrimoine net"
           value={formatCurrency(netWorth)}
@@ -514,7 +514,7 @@ export default function NetWorthPage() {
         </section>
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Vue globale"
@@ -658,7 +658,7 @@ export default function NetWorthPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Comptes"
@@ -754,7 +754,7 @@ export default function NetWorthPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-2">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Argent réservé"
@@ -762,7 +762,7 @@ export default function NetWorthPage() {
             icon={<Target className="h-5 w-5" />}
           />
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
             <div className="rounded-[1.5rem] bg-violet-50 p-5">
               <p className="text-sm font-semibold text-violet-700">
                 Objectifs
@@ -827,7 +827,7 @@ export default function NetWorthPage() {
             objectifs.
           </p>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
+          <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2">
             <Link
               to="/comptes"
               className="rounded-[1.5rem] bg-blue-50 p-4 text-blue-900 transition hover:-translate-y-0.5 hover:shadow-sm"

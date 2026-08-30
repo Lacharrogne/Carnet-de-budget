@@ -996,7 +996,7 @@ export default function StatsPage() {
 
       {!hasEnoughDataForStats && <EmptyStatsGuide hasAccounts={hasAccounts} />}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Solde du mois"
           value={formatCurrency(netCashFlow)}
@@ -1063,14 +1063,14 @@ export default function StatsPage() {
           icon={<Lightbulb className="h-5 w-5" />}
         />
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {insights.map((insight) => (
             <InsightCard key={insight.title} insight={insight} />
           ))}
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Flux du mois"
@@ -1096,7 +1096,7 @@ export default function StatsPage() {
                 colorClass="bg-rose-500"
               />
 
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                 <div className="rounded-[1.5rem] bg-stone-50 p-5">
                   <p className="text-sm font-semibold text-slate-500">
                     Évolution revenus
@@ -1256,7 +1256,7 @@ export default function StatsPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Dépenses"
@@ -1359,7 +1359,7 @@ export default function StatsPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Patrimoine"

@@ -499,7 +499,7 @@ function TransactionFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
-          <div className="grid gap-3 rounded-[1.75rem] bg-stone-50 p-2 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 rounded-[1.75rem] bg-stone-50 p-2 md:grid-cols-3">
             <button
               type="button"
               onClick={() => updateType('expense')}
@@ -546,7 +546,7 @@ function TransactionFormModal({
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">Titre</span>
 
@@ -1200,7 +1200,7 @@ export default function TransactionsPage() {
 
       {!hasAccounts && <NoAccountWarning />}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Nombre total"
           value={String(localTransactions.length)}
@@ -1260,7 +1260,7 @@ export default function TransactionsPage() {
           )}
         </div>
 
-        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
 
@@ -1327,7 +1327,7 @@ export default function TransactionsPage() {
           </label>
         </div>
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <label className="block">
             <span className="mb-1 block px-1 text-xs font-bold text-slate-500">
               Du

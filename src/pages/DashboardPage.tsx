@@ -361,7 +361,7 @@ function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
         }
       />
 
-      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-2">
         <div className={`rounded-[1.75rem] border p-5 ${styles.panel}`}>
           <div
             className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold ${styles.chip}`}
@@ -405,7 +405,7 @@ function ForecastCard({ forecast }: { forecast: EndOfMonthForecast }) {
           </div>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {breakdown.map((item) => (
             <div
               key={item.label}
@@ -694,7 +694,7 @@ function SetupProgressSection({
         />
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {steps.map((step) => (
           <SetupStepCard key={step.title} step={step} />
         ))}
@@ -748,7 +748,7 @@ function NewUserDashboard({ steps }: { steps: SetupStep[] }) {
 
       <SetupProgressSection steps={steps} setupProgress={0} />
 
-      <section className="grid gap-6 xl:grid-cols-3">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <QuickLinkCard
           title="1. Créer un compte"
           description="Compte courant, épargne, espèces ou investissement."
@@ -1065,7 +1065,7 @@ export default function DashboardPage() {
           <div className="absolute bottom-0 right-24 h-36 w-36 rounded-full bg-amber-300/45 blur-3xl" />
           <div className="absolute -bottom-10 left-8 h-40 w-40 rounded-full bg-sky-200/35 blur-3xl" />
 
-          <div className="relative grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-center">
+          <div className="relative grid grid-cols-1 gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-center">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                 {getMonthLabel(monthKey)}
@@ -1125,7 +1125,7 @@ export default function DashboardPage() {
         <SetupProgressSection steps={setupSteps} setupProgress={setupProgress} />
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Argent disponible"
           value={formatCurrency(liquidAccountsTotal)}
@@ -1169,7 +1169,7 @@ export default function DashboardPage() {
             icon={<Lightbulb className="h-5 w-5" />}
           />
 
-          <div className="mt-6 grid gap-3 md:grid-cols-2">
+          <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
             {financialTips.slice(0, 2).map((tip) => (
               <TipCard key={tip.id} tip={tip} />
             ))}
@@ -1177,7 +1177,7 @@ export default function DashboardPage() {
         </section>
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Activité récente"
@@ -1298,7 +1298,7 @@ export default function DashboardPage() {
         </div>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.95fr_1.05fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <SectionHeader
             eyebrow="Budgets"

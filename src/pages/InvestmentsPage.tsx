@@ -286,7 +286,7 @@ function InvestmentFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
-          <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
               onChange={(emoji) => updateField('emoji', emoji)}
@@ -307,7 +307,7 @@ function InvestmentFormModal({
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Type de placement
@@ -345,7 +345,7 @@ function InvestmentFormModal({
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Montant investi
@@ -518,7 +518,7 @@ function InvestmentCard({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             Investi
@@ -899,7 +899,7 @@ export default function InvestmentsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Valeur actuelle"
           value={formatCurrency(totalCurrentValue)}
@@ -941,7 +941,7 @@ export default function InvestmentsPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
