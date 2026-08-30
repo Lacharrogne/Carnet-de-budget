@@ -496,6 +496,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
           />
 
           <div className="animate-rise absolute left-0 top-0 flex h-full w-[18rem] max-w-[85%] flex-col overflow-y-auto border-r border-stone-200 bg-[#fffdf9] p-4 shadow-2xl">
+            {/* Fondu épinglé : le contenu défilé se fond dans le fond au lieu
+                d'être coupé net en haut du panneau. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none sticky top-0 z-10 -mx-4 -mt-4 h-6 shrink-0 bg-gradient-to-b from-[#fffdf9] to-transparent"
+            />
             <div className="flex items-center justify-between gap-3">
               <Link
                 to="/"
