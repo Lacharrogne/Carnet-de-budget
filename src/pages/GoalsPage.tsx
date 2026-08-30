@@ -501,7 +501,7 @@ function GoalFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
-          <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
               onChange={(emoji) => updateField('emoji', emoji)}
@@ -520,7 +520,7 @@ function GoalFormModal({
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Montant cible
@@ -675,7 +675,7 @@ function SinkingFundFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
-          <div className="grid gap-4 md:grid-cols-[0.35fr_1fr]">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
               onChange={(emoji) => updateField('emoji', emoji)}
@@ -694,7 +694,7 @@ function SinkingFundFormModal({
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Montant cible
@@ -827,7 +827,7 @@ function GoalCard({
         </span>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             Mis de côté
@@ -991,7 +991,7 @@ function SinkingFundCard({
         </span>
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             Actuel
@@ -1474,7 +1474,7 @@ export default function GoalsPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Total mis de côté"
           value={formatCurrency(globalSaved)}
@@ -1508,7 +1508,7 @@ export default function GoalsPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -1610,7 +1610,7 @@ export default function GoalsPage() {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-4">
+        <div className="mt-5 grid grid-cols-1 gap-4">
           {savingGoals.length > 0 ? (
             savingGoals.map((goal) => (
               <GoalCard
@@ -1660,7 +1660,7 @@ export default function GoalsPage() {
           </button>
         </div>
 
-        <div className="mt-5 grid gap-4">
+        <div className="mt-5 grid grid-cols-1 gap-4">
           {sinkingFunds.length > 0 ? (
             sinkingFunds.map((fund) => (
               <SinkingFundCard

@@ -323,7 +323,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       <span aria-hidden="true">→</span>
                     </Link>
 
-                    <div className="grid gap-1">
+                    <div className="grid grid-cols-1 gap-1">
                       {menu.items.map((item) => {
                         const Icon = item.icon
 

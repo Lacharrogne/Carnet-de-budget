@@ -388,7 +388,7 @@ function RecurringPaymentFormModal({
             />
           </label>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Montant mensuel
@@ -421,7 +421,7 @@ function RecurringPaymentFormModal({
             </label>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label>
               <span className="text-sm font-bold text-slate-700">
                 Catégorie
@@ -568,7 +568,7 @@ function RecurringPaymentCard({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-2xl bg-stone-50 p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-slate-400">
             Montant
@@ -681,7 +681,7 @@ function DetectedSubscriptions({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-3 md:grid-cols-2">
+      <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
         {candidates.map((candidate) => (
           <article
             key={candidate.key}
@@ -1017,7 +1017,7 @@ export default function RecurringPaymentsPage() {
         <BudgetErrorBanner message={budgetError} onClose={clearBudgetError} />
       )}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Charges /mois"
           value={formatCurrency(monthlyTotal)}
@@ -1062,7 +1062,7 @@ export default function RecurringPaymentsPage() {
         />
       )}
 
-      <section className="grid gap-6 xl:grid-cols-[1fr_1fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-4">
             <div>

@@ -664,7 +664,7 @@ export default function CalendarPage() {
 
       {!hasCalendarData && <EmptyCalendarGuide hasAccounts={hasAccounts} />}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <PageStatCard
           title="Jours actifs"
           value={String(activeDaysCount)}
@@ -698,7 +698,7 @@ export default function CalendarPage() {
         />
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.6fr_0.8fr]">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_0.8fr]">
         <div className="rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>

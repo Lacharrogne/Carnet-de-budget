@@ -83,7 +83,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+        <dl className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-2xl bg-stone-50 px-4 py-3">
             <dt className="text-[0.65rem] font-bold uppercase tracking-wide text-slate-400">
               Adresse e-mail
@@ -162,7 +162,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+        <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
           {CURRENCIES.map((option) => {
             const isActive = option.code === currency.code
             return (
