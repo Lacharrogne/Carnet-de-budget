@@ -833,6 +833,7 @@ export default function TransactionsPage() {
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null)
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [isExportBlocked, setIsExportBlocked] = useState(false)
   const [showDraftNotice, setShowDraftNotice] = useState(false)
   const hasRestoredDraft = useRef(false)
 
@@ -1059,9 +1060,7 @@ export default function TransactionsPage() {
     })
 
     if (!opened) {
-      window.alert(
-        'Votre navigateur a bloqué la fenêtre d’impression. Autorisez les pop-ups pour exporter en PDF.',
-      )
+      setIsExportBlocked(true)
     }
   }
 
@@ -1590,6 +1589,19 @@ export default function TransactionsPage() {
           variant="danger"
           onCancel={() => setTransactionToDelete(null)}
           onConfirm={confirmDeleteTransaction}
+        />
+      )}
+
+      {isExportBlocked && (
+        <ConfirmActionModal
+          eyebrow="Export PDF"
+          title="Fenêtre d’impression bloquée"
+          description="Votre navigateur a bloqué la fenêtre d’impression. Autorisez les pop-ups pour ce site, puis relancez l’export."
+          confirmLabel="J’ai compris"
+          cancelLabel="Fermer"
+          variant="warning"
+          onCancel={() => setIsExportBlocked(false)}
+          onConfirm={() => setIsExportBlocked(false)}
         />
       )}
 
