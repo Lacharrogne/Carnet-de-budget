@@ -1,4 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { useSearchParams } from 'react-router'
 import {
   CalendarDays,
@@ -19,6 +25,7 @@ import {
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import DraftNotice from '../components/ui/DraftNotice'
 import { useFormDraft } from '../lib/useFormDraft'
+import { clearFormDraft, loadFormDraft, saveFormDraft } from '../lib/formDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -74,12 +81,31 @@ const defaultGoalFormValues: GoalFormValues = {
   deadline: '',
 }
 
+const SINKING_FUND_DRAFT_KEY = 'budget-fund-draft'
+
+function fundDraftHasContent(values: SinkingFundFormValues): boolean {
+  return Boolean(
+    values.title.trim() ||
+      values.targetAmount.trim() ||
+      values.monthlyContribution.trim(),
+  )
+}
+
 const defaultSinkingFundFormValues: SinkingFundFormValues = {
   title: '',
   emoji: '🐖',
   targetAmount: '',
   currentAmount: '0',
   monthlyContribution: '',
+}
+
+const SAVE_MONEY_DRAFT_KEY = 'budget-savemoney-draft'
+
+type SaveMoneyDraft = {
+  targetType: 'goal' | 'fund'
+  targetId: string
+  accountId: string
+  amount: string
 }
 
 const defaultSaveMoneyFormValues: SaveMoneyFormValues = {
@@ -235,6 +261,8 @@ function SaveMoneyModal({
   accounts,
   formValues,
   formError,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -243,6 +271,8 @@ function SaveMoneyModal({
   accounts: Account[]
   formValues: SaveMoneyFormValues
   formError: string
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: SaveMoneyFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -312,6 +342,8 @@ function SaveMoneyModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && <DraftNotice onDiscard={onDiscardDraft} />}
+
           <div className="rounded-[1.75rem] border border-stone-200 bg-stone-50 p-4">
             <div className="flex items-center gap-4">
               <div className="rounded-2xl bg-white p-4 text-3xl shadow-sm">
@@ -621,6 +653,8 @@ function SinkingFundFormModal({
   formValues,
   formError,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -628,6 +662,8 @@ function SinkingFundFormModal({
   formValues: SinkingFundFormValues
   formError: string
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: SinkingFundFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -695,6 +731,10 @@ function SinkingFundFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
@@ -1145,12 +1185,93 @@ export default function GoalsPage() {
   const [fundFormError, setFundFormError] = useState('')
   const [fundToEdit, setFundToEdit] = useState<SinkingFund | null>(null)
   const [fundToDelete, setFundToDelete] = useState<SinkingFund | null>(null)
+  const [showFundDraftNotice, setShowFundDraftNotice] = useState(false)
+
+  const { clearDraft: clearFundDraft } = useFormDraft({
+    key: SINKING_FUND_DRAFT_KEY,
+    values: fundFormValues,
+    isOpen: isFundFormOpen,
+    isEditing: Boolean(fundToEdit),
+    hasContent: fundDraftHasContent,
+    onRestore: (draft) => {
+      setFundFormValues(draft)
+      setFundToEdit(null)
+      setShowFundDraftNotice(true)
+      setIsFundFormOpen(true)
+    },
+  })
+
+  const discardFundDraft = () => {
+    clearFundDraft()
+    setShowFundDraftNotice(false)
+    setFundFormValues(defaultSinkingFundFormValues)
+    setFundFormError('')
+  }
 
   const [saveMoneyTarget, setSaveMoneyTarget] =
     useState<SaveMoneyTarget | null>(null)
   const [saveMoneyFormValues, setSaveMoneyFormValues] =
     useState<SaveMoneyFormValues>(defaultSaveMoneyFormValues)
   const [saveMoneyFormError, setSaveMoneyFormError] = useState('')
+  const [showSaveMoneyDraftNotice, setShowSaveMoneyDraftNotice] =
+    useState(false)
+  const saveMoneyRestored = useRef(false)
+
+  // Sauvegarde du brouillon de versement (contextuel : lié à l'objectif/fonds).
+  useEffect(() => {
+    if (!saveMoneyTarget || !saveMoneyFormValues.amount.trim()) return
+    const draft: SaveMoneyDraft = {
+      targetType: saveMoneyTarget.type,
+      targetId:
+        saveMoneyTarget.type === 'goal'
+          ? saveMoneyTarget.goal.id
+          : saveMoneyTarget.fund.id,
+      accountId: saveMoneyFormValues.accountId,
+      amount: saveMoneyFormValues.amount,
+    }
+    saveFormDraft(SAVE_MONEY_DRAFT_KEY, draft)
+  }, [saveMoneyTarget, saveMoneyFormValues])
+
+  // Restauration au retour : on rouvre le versement sur la bonne cible.
+  useEffect(() => {
+    if (saveMoneyRestored.current) return
+
+    const draft = loadFormDraft<SaveMoneyDraft>(SAVE_MONEY_DRAFT_KEY)
+    if (!draft) {
+      saveMoneyRestored.current = true
+      return
+    }
+
+    let target: SaveMoneyTarget | null = null
+    if (draft.targetType === 'goal') {
+      const goal = savingGoals.find((item) => item.id === draft.targetId)
+      if (goal) target = { type: 'goal', goal }
+    } else {
+      const fund = sinkingFunds.find((item) => item.id === draft.targetId)
+      if (fund) target = { type: 'fund', fund }
+    }
+
+    if (target) {
+      saveMoneyRestored.current = true
+      setSaveMoneyTarget(target)
+      setSaveMoneyFormValues({
+        accountId: draft.accountId,
+        amount: draft.amount,
+      })
+      setShowSaveMoneyDraftNotice(true)
+    } else if (savingGoals.length > 0 || sinkingFunds.length > 0) {
+      // La cible n'existe plus → brouillon obsolète.
+      saveMoneyRestored.current = true
+      clearFormDraft(SAVE_MONEY_DRAFT_KEY)
+    }
+  }, [savingGoals, sinkingFunds])
+
+  const discardSaveMoneyDraft = () => {
+    clearFormDraft(SAVE_MONEY_DRAFT_KEY)
+    setShowSaveMoneyDraftNotice(false)
+    setSaveMoneyFormValues(defaultSaveMoneyFormValues)
+    setSaveMoneyFormError('')
+  }
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
@@ -1253,6 +1374,8 @@ export default function GoalsPage() {
   }
 
   function closeFundForm() {
+    clearFundDraft()
+    setShowFundDraftNotice(false)
     setIsFundFormOpen(false)
     setFundToEdit(null)
     setFundFormValues(defaultSinkingFundFormValues)
@@ -1289,6 +1412,8 @@ export default function GoalsPage() {
   }
 
   function closeSaveMoneyModal() {
+    clearFormDraft(SAVE_MONEY_DRAFT_KEY)
+    setShowSaveMoneyDraftNotice(false)
     setSaveMoneyTarget(null)
     setSaveMoneyFormValues(defaultSaveMoneyFormValues)
     setSaveMoneyFormError('')
@@ -1749,6 +1874,8 @@ export default function GoalsPage() {
           formValues={fundFormValues}
           formError={fundFormError}
           isEditing={Boolean(fundToEdit)}
+          showDraftNotice={showFundDraftNotice}
+          onDiscardDraft={discardFundDraft}
           onClose={closeFundForm}
           onChange={setFundFormValues}
           onSubmit={handleFundSubmit}
@@ -1761,6 +1888,8 @@ export default function GoalsPage() {
           accounts={accounts}
           formValues={saveMoneyFormValues}
           formError={saveMoneyFormError}
+          showDraftNotice={showSaveMoneyDraftNotice}
+          onDiscardDraft={discardSaveMoneyDraft}
           onClose={closeSaveMoneyModal}
           onChange={setSaveMoneyFormValues}
           onSubmit={handleSaveMoneySubmit}

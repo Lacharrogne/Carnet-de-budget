@@ -1,4 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { Link, useSearchParams } from 'react-router'
 import {
   AlertTriangle,
@@ -16,6 +22,7 @@ import {
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
 import DraftNotice from '../components/ui/DraftNotice'
 import { useFormDraft } from '../lib/useFormDraft'
+import { clearFormDraft, loadFormDraft, saveFormDraft } from '../lib/formDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -33,6 +40,14 @@ type DebtFormValues = {
 }
 
 type RepaymentFormValues = {
+  accountId: string
+  amount: string
+}
+
+const REPAYMENT_DRAFT_KEY = 'budget-repayment-draft'
+
+type RepaymentDraft = {
+  debtId: string
   accountId: string
   amount: string
 }
@@ -447,6 +462,8 @@ function RepaymentFormModal({
   accounts,
   formValues,
   formError,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -454,6 +471,8 @@ function RepaymentFormModal({
   debt: Debt
   accounts: Account[]
   formValues: RepaymentFormValues
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   formError: string
   onClose: () => void
   onChange: (values: RepaymentFormValues) => void
@@ -524,6 +543,8 @@ function RepaymentFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && <DraftNotice onDiscard={onDiscardDraft} />}
+
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-2xl bg-rose-50 p-4">
               <p className="text-xs font-bold uppercase tracking-wide text-rose-400">
@@ -901,6 +922,53 @@ export default function DebtsPage() {
       amount: '',
     })
   const [repaymentFormError, setRepaymentFormError] = useState('')
+  const [showRepaymentDraftNotice, setShowRepaymentDraftNotice] =
+    useState(false)
+  const repaymentRestored = useRef(false)
+
+  // Sauvegarde du brouillon de remboursement (contextuel : lié à la dette).
+  useEffect(() => {
+    if (!debtToRepay || !repaymentFormValues.amount.trim()) return
+    const draft: RepaymentDraft = {
+      debtId: debtToRepay.id,
+      accountId: repaymentFormValues.accountId,
+      amount: repaymentFormValues.amount,
+    }
+    saveFormDraft(REPAYMENT_DRAFT_KEY, draft)
+  }, [debtToRepay, repaymentFormValues])
+
+  // Restauration au retour : on rouvre le remboursement sur la bonne dette.
+  useEffect(() => {
+    if (repaymentRestored.current) return
+
+    const draft = loadFormDraft<RepaymentDraft>(REPAYMENT_DRAFT_KEY)
+    if (!draft) {
+      repaymentRestored.current = true
+      return
+    }
+
+    const debt = debts.find((item) => item.id === draft.debtId)
+    if (debt) {
+      repaymentRestored.current = true
+      setDebtToRepay(debt)
+      setRepaymentFormValues({
+        accountId: draft.accountId,
+        amount: draft.amount,
+      })
+      setShowRepaymentDraftNotice(true)
+    } else if (debts.length > 0) {
+      // La dette n'existe plus → brouillon obsolète.
+      repaymentRestored.current = true
+      clearFormDraft(REPAYMENT_DRAFT_KEY)
+    }
+  }, [debts])
+
+  const discardRepaymentDraft = () => {
+    clearFormDraft(REPAYMENT_DRAFT_KEY)
+    setShowRepaymentDraftNotice(false)
+    setRepaymentFormValues((current) => ({ ...current, amount: '' }))
+    setRepaymentFormError('')
+  }
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
@@ -985,6 +1053,8 @@ export default function DebtsPage() {
   }
 
   function closeRepaymentForm() {
+    clearFormDraft(REPAYMENT_DRAFT_KEY)
+    setShowRepaymentDraftNotice(false)
     setDebtToRepay(null)
     setRepaymentFormValues({
       accountId: '',
@@ -1335,6 +1405,8 @@ export default function DebtsPage() {
           accounts={accounts}
           formValues={repaymentFormValues}
           formError={repaymentFormError}
+          showDraftNotice={showRepaymentDraftNotice}
+          onDiscardDraft={discardRepaymentDraft}
           onClose={closeRepaymentForm}
           onChange={setRepaymentFormValues}
           onSubmit={handleRepaymentSubmit}
