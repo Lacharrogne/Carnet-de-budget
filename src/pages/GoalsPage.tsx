@@ -17,6 +17,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import DraftNotice from '../components/ui/DraftNotice'
+import { useFormDraft } from '../lib/useFormDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -53,6 +55,16 @@ type SaveMoneyTarget =
       type: 'fund'
       fund: SinkingFund
     }
+
+const GOAL_DRAFT_KEY = 'budget-goal-draft'
+
+function goalDraftHasContent(values: GoalFormValues): boolean {
+  return Boolean(
+    values.title.trim() ||
+      values.targetAmount.trim() ||
+      values.currentAmount.trim(),
+  )
+}
 
 const defaultGoalFormValues: GoalFormValues = {
   title: '',
@@ -426,6 +438,8 @@ function GoalFormModal({
   formValues,
   formError,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -433,6 +447,8 @@ function GoalFormModal({
   formValues: GoalFormValues
   formError: string
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: GoalFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -501,6 +517,10 @@ function GoalFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
@@ -1095,6 +1115,28 @@ export default function GoalsPage() {
     useState<GoalFormValues>(defaultGoalFormValues)
   const [goalFormError, setGoalFormError] = useState('')
   const [goalToEdit, setGoalToEdit] = useState<SavingGoal | null>(null)
+  const [showGoalDraftNotice, setShowGoalDraftNotice] = useState(false)
+
+  const { clearDraft: clearGoalDraft } = useFormDraft({
+    key: GOAL_DRAFT_KEY,
+    values: goalFormValues,
+    isOpen: isGoalFormOpen,
+    isEditing: Boolean(goalToEdit),
+    hasContent: goalDraftHasContent,
+    onRestore: (draft) => {
+      setGoalFormValues(draft)
+      setGoalToEdit(null)
+      setShowGoalDraftNotice(true)
+      setIsGoalFormOpen(true)
+    },
+  })
+
+  const discardGoalDraft = () => {
+    clearGoalDraft()
+    setShowGoalDraftNotice(false)
+    setGoalFormValues(defaultGoalFormValues)
+    setGoalFormError('')
+  }
   const [goalToDelete, setGoalToDelete] = useState<SavingGoal | null>(null)
 
   const [isFundFormOpen, setIsFundFormOpen] = useState(false)
@@ -1176,6 +1218,8 @@ export default function GoalsPage() {
   }
 
   function closeGoalForm() {
+    clearGoalDraft()
+    setShowGoalDraftNotice(false)
     setIsGoalFormOpen(false)
     setGoalToEdit(null)
     setGoalFormValues(defaultGoalFormValues)
@@ -1692,6 +1736,8 @@ export default function GoalsPage() {
           formValues={goalFormValues}
           formError={goalFormError}
           isEditing={Boolean(goalToEdit)}
+          showDraftNotice={showGoalDraftNotice}
+          onDiscardDraft={discardGoalDraft}
           onClose={closeGoalForm}
           onChange={setGoalFormValues}
           onSubmit={handleGoalSubmit}

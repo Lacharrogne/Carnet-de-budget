@@ -18,6 +18,8 @@ import {
 
 import BudgetErrorBanner from '../components/ui/BudgetErrorBanner'
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import DraftNotice from '../components/ui/DraftNotice'
+import { useFormDraft } from '../lib/useFormDraft'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
 import { budgetCategories } from '../data/budgetCategories'
@@ -42,6 +44,14 @@ type RecurringPaymentFormValues = {
   category: BudgetCategoryId
   accountId: string
   type: RecurringType
+}
+
+const RECURRING_DRAFT_KEY = 'budget-recurring-draft'
+
+function recurringDraftHasContent(
+  values: RecurringPaymentFormValues,
+): boolean {
+  return Boolean(values.title.trim() || values.amount.trim())
 }
 
 const recurringCategoryOptions = budgetCategories.filter((category) => {
@@ -239,6 +249,8 @@ function RecurringPaymentFormModal({
   formError,
   accounts,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -247,6 +259,8 @@ function RecurringPaymentFormModal({
   formError: string
   accounts: Account[]
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: RecurringPaymentFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -323,6 +337,10 @@ function RecurringPaymentFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="rounded-[1.5rem] border border-stone-200 bg-stone-50 p-4">
             <div className="flex items-center gap-4">
               <div className="rounded-2xl bg-white p-4">
@@ -768,12 +786,35 @@ export default function RecurringPaymentsPage() {
     useState<RecurringPayment | null>(null)
   const [paymentToDelete, setPaymentToDelete] =
     useState<RecurringPayment | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
   const hasAccounts = accounts.length > 0
   const shouldShowForm = hasAccounts && (isFormOpen || action === 'new')
   const displayedFormValues = normalizeFormValues(formValues, accounts)
+
+  const { clearDraft } = useFormDraft({
+    key: RECURRING_DRAFT_KEY,
+    values: formValues,
+    isOpen: isFormOpen,
+    isEditing: Boolean(paymentToEdit),
+    hasContent: recurringDraftHasContent,
+    ready: hasAccounts,
+    onRestore: (draft) => {
+      setFormValues(normalizeFormValues(draft, accounts))
+      setPaymentToEdit(null)
+      setShowDraftNotice(true)
+      setIsFormOpen(true)
+    },
+  })
+
+  const discardDraft = () => {
+    clearDraft()
+    setShowDraftNotice(false)
+    setFormValues(getDefaultFormValues(accounts))
+    setFormError('')
+  }
 
   const detectedCandidates = detectSubscriptions(
     transactions,
@@ -881,6 +922,8 @@ export default function RecurringPaymentsPage() {
   }
 
   function closeForm() {
+    clearDraft()
+    setShowDraftNotice(false)
     setIsFormOpen(false)
     setPaymentToEdit(null)
     setFormValues(getDefaultFormValues(accounts))
@@ -1221,6 +1264,8 @@ export default function RecurringPaymentsPage() {
           formError={formError}
           accounts={accounts}
           isEditing={Boolean(paymentToEdit)}
+          showDraftNotice={showDraftNotice}
+          onDiscardDraft={discardDraft}
           onClose={closeForm}
           onChange={setFormValues}
           onSubmit={handleSubmit}

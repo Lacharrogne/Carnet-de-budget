@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import DraftNotice from '../components/ui/DraftNotice'
+import { useFormDraft } from '../lib/useFormDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -33,6 +35,17 @@ type DebtFormValues = {
 type RepaymentFormValues = {
   accountId: string
   amount: string
+}
+
+const DEBT_DRAFT_KEY = 'budget-debt-draft'
+
+function debtDraftHasContent(values: DebtFormValues): boolean {
+  return Boolean(
+    values.title.trim() ||
+      values.totalAmount.trim() ||
+      values.remainingAmount.trim() ||
+      values.monthlyPayment.trim(),
+  )
 }
 
 const defaultDebtFormValues: DebtFormValues = {
@@ -229,6 +242,8 @@ function DebtFormModal({
   formValues,
   formError,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -236,6 +251,8 @@ function DebtFormModal({
   formValues: DebtFormValues
   formError: string
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: DebtFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -304,6 +321,10 @@ function DebtFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
@@ -851,6 +872,28 @@ export default function DebtsPage() {
   const [formError, setFormError] = useState('')
   const [debtToEdit, setDebtToEdit] = useState<Debt | null>(null)
   const [debtToDelete, setDebtToDelete] = useState<Debt | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
+
+  const { clearDraft } = useFormDraft({
+    key: DEBT_DRAFT_KEY,
+    values: formValues,
+    isOpen: isFormOpen,
+    isEditing: Boolean(debtToEdit),
+    hasContent: debtDraftHasContent,
+    onRestore: (draft) => {
+      setFormValues(draft)
+      setDebtToEdit(null)
+      setShowDraftNotice(true)
+      setIsFormOpen(true)
+    },
+  })
+
+  const discardDraft = () => {
+    clearDraft()
+    setShowDraftNotice(false)
+    setFormValues(defaultDebtFormValues)
+    setFormError('')
+  }
   const [debtToRepay, setDebtToRepay] = useState<Debt | null>(null)
   const [repaymentFormValues, setRepaymentFormValues] =
     useState<RepaymentFormValues>({
@@ -914,6 +957,8 @@ export default function DebtsPage() {
   }
 
   function closeForm() {
+    clearDraft()
+    setShowDraftNotice(false)
     setIsFormOpen(false)
     setDebtToEdit(null)
     setFormValues(defaultDebtFormValues)
@@ -1276,6 +1321,8 @@ export default function DebtsPage() {
           formValues={formValues}
           formError={formError}
           isEditing={Boolean(debtToEdit)}
+          showDraftNotice={showDraftNotice}
+          onDiscardDraft={discardDraft}
           onClose={closeForm}
           onChange={setFormValues}
           onSubmit={handleSubmit}
