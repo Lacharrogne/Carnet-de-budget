@@ -14,6 +14,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import DraftNotice from '../components/ui/DraftNotice'
+import { useFormDraft } from '../lib/useFormDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useDialogA11y } from '../hooks/useDialogA11y'
 import { useBudgetData } from '../context/useBudgetData'
@@ -31,6 +33,18 @@ type InvestmentFormValues = {
 }
 
 type StatVariant = 'emerald' | 'blue' | 'rose' | 'amber' | 'violet'
+
+const INVESTMENT_DRAFT_KEY = 'budget-investment-draft'
+
+function investmentDraftHasContent(values: InvestmentFormValues): boolean {
+  return Boolean(
+    values.title.trim() ||
+      values.platform.trim() ||
+      values.investedAmount.trim() ||
+      values.currentValue.trim() ||
+      values.note.trim(),
+  )
+}
 
 const defaultInvestmentFormValues: InvestmentFormValues = {
   title: '',
@@ -220,6 +234,8 @@ function InvestmentFormModal({
   formValues,
   formError,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -227,6 +243,8 @@ function InvestmentFormModal({
   formValues: InvestmentFormValues
   formError: string
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: InvestmentFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -286,6 +304,10 @@ function InvestmentFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
@@ -728,10 +750,32 @@ export default function InvestmentsPage() {
     useState<Investment | null>(null)
   const [investmentToDelete, setInvestmentToDelete] =
     useState<Investment | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
 
   const [searchParams, setSearchParams] = useSearchParams()
   const action = searchParams.get('action')
   const shouldShowForm = isFormOpen || action === 'new'
+
+  const { clearDraft } = useFormDraft({
+    key: INVESTMENT_DRAFT_KEY,
+    values: formValues,
+    isOpen: isFormOpen,
+    isEditing: Boolean(investmentToEdit),
+    hasContent: investmentDraftHasContent,
+    onRestore: (draft) => {
+      setFormValues(draft)
+      setInvestmentToEdit(null)
+      setShowDraftNotice(true)
+      setIsFormOpen(true)
+    },
+  })
+
+  const discardDraft = () => {
+    clearDraft()
+    setShowDraftNotice(false)
+    setFormValues(defaultInvestmentFormValues)
+    setFormError('')
+  }
 
   const totalInvested = investments.reduce((total, investment) => {
     return total + investment.investedAmount
@@ -798,6 +842,8 @@ export default function InvestmentsPage() {
   }
 
   function closeForm() {
+    clearDraft()
+    setShowDraftNotice(false)
     setIsFormOpen(false)
     setInvestmentToEdit(null)
     setFormValues(defaultInvestmentFormValues)
@@ -1056,6 +1102,8 @@ export default function InvestmentsPage() {
           formValues={formValues}
           formError={formError}
           isEditing={Boolean(investmentToEdit)}
+          showDraftNotice={showDraftNotice}
+          onDiscardDraft={discardDraft}
           onClose={closeForm}
           onChange={setFormValues}
           onSubmit={handleSubmit}

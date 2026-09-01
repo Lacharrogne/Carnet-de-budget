@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 
 import ConfirmActionModal from '../components/ui/ConfirmActionModal'
+import DraftNotice from '../components/ui/DraftNotice'
+import { useFormDraft } from '../lib/useFormDraft'
 import { EmojiPicker } from '../components/ui/EmojiPicker'
 import { useBudgetData } from '../context/useBudgetData'
 import { useHolderFilter } from '../context/useHolderFilter'
@@ -40,6 +42,14 @@ type AccountFormValues = {
   balance: string
   emoji: string
   holder: string
+}
+
+const ACCOUNT_DRAFT_KEY = 'budget-account-draft'
+
+function accountDraftHasContent(values: AccountFormValues): boolean {
+  return Boolean(
+    values.name.trim() || values.balance.trim() || values.holder.trim(),
+  )
 }
 
 const defaultAccountFormValues: AccountFormValues = {
@@ -257,6 +267,8 @@ function AccountFormModal({
   formError,
   isEditing,
   holderSuggestions,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onChange,
   onSubmit,
@@ -265,6 +277,8 @@ function AccountFormModal({
   formError: string
   isEditing: boolean
   holderSuggestions: string[]
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onChange: (values: AccountFormValues) => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
@@ -326,6 +340,10 @@ function AccountFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <DraftNotice onDiscard={onDiscardDraft} />
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[0.35fr_1fr]">
             <EmojiPicker
               value={formValues.emoji}
@@ -692,6 +710,28 @@ export default function AccountsPage() {
   const [accountFormError, setAccountFormError] = useState('')
   const [accountToEdit, setAccountToEdit] = useState<Account | null>(null)
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
+
+  const { clearDraft } = useFormDraft({
+    key: ACCOUNT_DRAFT_KEY,
+    values: accountFormValues,
+    isOpen: isAccountFormOpen,
+    isEditing: Boolean(accountToEdit),
+    hasContent: accountDraftHasContent,
+    onRestore: (draft) => {
+      setAccountFormValues(draft)
+      setAccountToEdit(null)
+      setShowDraftNotice(true)
+      setIsAccountFormOpen(true)
+    },
+  })
+
+  const discardDraft = () => {
+    clearDraft()
+    setShowDraftNotice(false)
+    setAccountFormValues(defaultAccountFormValues)
+    setAccountFormError('')
+  }
 
   const totalBalance = accounts.reduce((total, account) => {
     return total + account.balance
@@ -781,6 +821,8 @@ export default function AccountsPage() {
   }
 
   function closeAccountForm() {
+    clearDraft()
+    setShowDraftNotice(false)
     setIsAccountFormOpen(false)
     setAccountToEdit(null)
     setAccountFormValues(defaultAccountFormValues)
@@ -1106,6 +1148,8 @@ export default function AccountsPage() {
           formError={accountFormError}
           isEditing={Boolean(accountToEdit)}
           holderSuggestions={holderSuggestions}
+          showDraftNotice={showDraftNotice}
+          onDiscardDraft={discardDraft}
           onClose={closeAccountForm}
           onChange={setAccountFormValues}
           onSubmit={handleAccountSubmit}
