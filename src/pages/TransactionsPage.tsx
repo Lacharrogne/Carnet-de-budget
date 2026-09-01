@@ -1,4 +1,18 @@
-import { useCallback, useMemo, useState, type FormEvent, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
+
+import {
+  clearFormDraft,
+  loadFormDraft,
+  saveFormDraft,
+} from '../lib/formDraft'
 import { Link, useSearchParams } from 'react-router'
 import {
   ArrowDownLeft,
@@ -99,6 +113,15 @@ function getDefaultFormValues(accounts: Account[]): TransactionFormValues {
     note: '',
     isRecurring: false,
   }
+}
+
+const TRANSACTION_DRAFT_KEY = 'budget-transaction-draft'
+
+/** Une saisie mérite-t-elle d'être conservée / restaurée ? */
+function transactionDraftHasContent(values: TransactionFormValues): boolean {
+  return Boolean(
+    values.title.trim() || values.amount.trim() || values.note.trim(),
+  )
 }
 
 function normalizeFormValues(
@@ -388,6 +411,8 @@ function TransactionFormModal({
   formError,
   accounts,
   isEditing,
+  showDraftNotice,
+  onDiscardDraft,
   onClose,
   onSubmit,
   onChange,
@@ -397,6 +422,8 @@ function TransactionFormModal({
   formError: string
   accounts: Account[]
   isEditing: boolean
+  showDraftNotice: boolean
+  onDiscardDraft: () => void
   onClose: () => void
   onSubmit: (event: FormEvent<HTMLFormElement>) => void
   onChange: (values: TransactionFormValues) => void
@@ -499,6 +526,22 @@ function TransactionFormModal({
         </div>
 
         <form onSubmit={onSubmit} className="space-y-5 p-5">
+          {showDraftNotice && !isEditing && (
+            <div className="flex flex-col gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <p className="font-semibold text-emerald-900">
+                ✍️ Nous avons récupéré votre saisie en cours.
+              </p>
+
+              <button
+                type="button"
+                onClick={onDiscardDraft}
+                className="shrink-0 self-start rounded-full bg-white px-3 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-200 transition hover:bg-emerald-100 sm:self-auto"
+              >
+                Repartir de zéro
+              </button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-3 rounded-[1.75rem] bg-stone-50 p-2 md:grid-cols-3">
             <button
               type="button"
@@ -790,6 +833,41 @@ export default function TransactionsPage() {
   const [transactionToDelete, setTransactionToDelete] =
     useState<Transaction | null>(null)
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [showDraftNotice, setShowDraftNotice] = useState(false)
+  const hasRestoredDraft = useRef(false)
+
+  // Restauration du brouillon au chargement (cas typique : on a quitté l'app
+  // en pleine saisie puis on y revient → la page a été rechargée). On rouvre
+  // le formulaire d'ajout pré-rempli plutôt que de tout perdre.
+  useEffect(() => {
+    if (hasRestoredDraft.current) return
+    if (accounts.length === 0) return
+    hasRestoredDraft.current = true
+
+    const draft = loadFormDraft<TransactionFormValues>(TRANSACTION_DRAFT_KEY)
+    if (draft && transactionDraftHasContent(draft)) {
+      setFormValues(normalizeFormValues(draft, accounts))
+      setTransactionToEdit(null)
+      setShowDraftNotice(true)
+      setIsFormOpen(true)
+    }
+  }, [accounts])
+
+  // Sauvegarde continue du brouillon pendant la saisie d'un AJOUT (jamais en
+  // édition d'une transaction existante).
+  useEffect(() => {
+    if (!isFormOpen || transactionToEdit) return
+    if (transactionDraftHasContent(formValues)) {
+      saveFormDraft(TRANSACTION_DRAFT_KEY, formValues)
+    }
+  }, [isFormOpen, transactionToEdit, formValues])
+
+  const discardTransactionDraft = () => {
+    clearFormDraft(TRANSACTION_DRAFT_KEY)
+    setShowDraftNotice(false)
+    setFormValues(getDefaultFormValues(accounts))
+    setFormError('')
+  }
 
   // Index d'auto-catégorisation (historique de l'utilisateur), recalculé quand
   // les transactions changent.
@@ -1016,6 +1094,9 @@ export default function TransactionsPage() {
   }
 
   function closeForm() {
+    // Fermeture volontaire (croix / annuler) = abandon → on efface le brouillon.
+    clearFormDraft(TRANSACTION_DRAFT_KEY)
+    setShowDraftNotice(false)
     setIsFormOpen(false)
     setTransactionToEdit(null)
     setFormValues(getDefaultFormValues(accounts))
@@ -1489,6 +1570,8 @@ export default function TransactionsPage() {
           formError={formError}
           accounts={accounts}
           isEditing={Boolean(transactionToEdit)}
+          showDraftNotice={showDraftNotice}
+          onDiscardDraft={discardTransactionDraft}
           onClose={closeForm}
           onSubmit={handleSubmit}
           onChange={setFormValues}
