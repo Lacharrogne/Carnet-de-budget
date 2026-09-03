@@ -38,22 +38,3 @@ export const UPGRADE_URL: string | null = SUBSCRIPTION_HUB_URL
 
 /** Contact utilisé en repli tant qu'il n'y a pas de page de paiement. */
 export const CONTACT_EMAIL = 'maxi.charr@gmail.com'
-
-/**
- * Liens de paiement Lemon Squeezy (checkout hébergé), renseignés via les
- * variables d'environnement Vite. Laisser vide tant que le produit n'existe
- * pas : les boutons d'abonnement se cachent alors automatiquement.
- *
- * - VITE_LS_MONTHLY_URL : lien « Buy » de la variante mensuelle (3,99 €).
- * - VITE_LS_YEARLY_URL  : lien « Buy » de la variante annuelle (39,99 €).
- */
-export const LEMONSQUEEZY = {
-  monthlyUrl: (import.meta.env.VITE_LS_MONTHLY_URL as string | undefined) ?? '',
-  yearlyUrl: (import.meta.env.VITE_LS_YEARLY_URL as string | undefined) ?? '',
-  monthlyPrice: '5,99 €',
-  yearlyPrice: '59,99 €',
-}
-
-/** Le paiement est-il configuré (au moins un lien de checkout présent) ? */
-export const IS_BILLING_CONFIGURED =
-  LEMONSQUEEZY.monthlyUrl !== '' || LEMONSQUEEZY.yearlyUrl !== ''
