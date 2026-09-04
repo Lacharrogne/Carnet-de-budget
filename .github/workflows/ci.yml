@@ -32,6 +32,9 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
+      - name: Tests
+        run: npm run test
+
       # Valeurs de démonstration : le build a seulement besoin que les
       # variables existent, il ne contacte aucun service.
       - name: Build

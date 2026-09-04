@@ -12,6 +12,19 @@ Ordre antéchronologique (le plus récent en haut).
 
 ## 2026-09-04
 
+### Premiers tests automatisés
+
+- **Ce qui change** : mise en place de Vitest et **19 tests** sur les deux
+  logiques les plus sensibles — l'auto-catégorisation des transactions et le
+  format d'export CSV. La CI les exécute désormais à chaque PR.
+- **Pourquoi** : ce carnet calcule sur l'argent des utilisateurs et n'avait
+  aucun test ; une régression silencieuse y serait coûteuse et difficile à
+  repérer.
+- **À savoir** : les tests verrouillent notamment le format français de
+  l'export (séparateur `;`, virgule décimale, protection des libellés
+  contenant `;`, guillemets ou sauts de ligne) — un point décimal suffirait à
+  ce qu'Excel lise les montants comme du texte.
+
 ### Un abonné payant ne peut plus être bloqué par une panne de lecture
 
 - **Ce qui change** : `getSubscription()` distingue désormais **« lecture
