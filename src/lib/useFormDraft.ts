@@ -38,8 +38,12 @@ export function useFormDraft<T>({
 }: UseFormDraftOptions<T>) {
   const hasRestored = useRef(false)
   // On garde la dernière version d'onRestore sans en refaire une dépendance.
+  // La mise à jour se fait après le rendu : écrire dans une ref pendant le
+  // rendu est proscrit (le composant risquerait de ne pas se mettre à jour).
   const onRestoreRef = useRef(onRestore)
-  onRestoreRef.current = onRestore
+  useEffect(() => {
+    onRestoreRef.current = onRestore
+  }, [onRestore])
 
   // Restauration au montage (une seule fois, dès que `ready`).
   useEffect(() => {
