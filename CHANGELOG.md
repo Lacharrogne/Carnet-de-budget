@@ -12,6 +12,17 @@ Ordre antéchronologique (le plus récent en haut).
 
 ## 2026-09-04
 
+### Lint nettoyé et rendu bloquant
+
+- **Ce qui change** : les 5 erreurs de lint sont traitées — la ref de `useFormDraft` n'est plus écrite pendant le rendu, la bannière d'installation lit son état initial, et les trois restaurations de brouillon sont documentées comme exceptions. Le lint passe de « informatif » à **bloquant** en CI :
+  une PR qui en réintroduit une ne peut plus être fusionnée.
+- **Pourquoi** : ces erreurs `react-hooks` signalaient de vrais motifs fragiles
+  (états dérivés stockés inutilement, ref écrite pendant le rendu). Et un lint
+  qu'on ignore ne sert à rien.
+- **À savoir** : les rares exceptions restantes sont **annotées avec leur
+  justification** dans le code — restauration d'un brouillon qui dépend de
+  données chargées après coup, et champ éditable qu'on ne peut pas dériver.
+
 ### Premiers tests automatisés
 
 - **Ce qui change** : mise en place de Vitest et **19 tests** sur les deux

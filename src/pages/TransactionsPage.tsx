@@ -847,6 +847,7 @@ export default function TransactionsPage() {
 
     const draft = loadFormDraft<TransactionFormValues>(TRANSACTION_DRAFT_KEY)
     if (draft && transactionDraftHasContent(draft)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Restauration d'un brouillon : elle dépend de données chargées de façon asynchrone (comptes, dettes, objectifs), donc impossible en état initial. Protégée par une ref pour ne s'exécuter qu'une fois.
       setFormValues(normalizeFormValues(draft, accounts))
       setTransactionToEdit(null)
       setShowDraftNotice(true)

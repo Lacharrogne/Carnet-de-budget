@@ -950,6 +950,7 @@ export default function DebtsPage() {
     const debt = debts.find((item) => item.id === draft.debtId)
     if (debt) {
       repaymentRestored.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Restauration d'un brouillon : elle dépend de données chargées de façon asynchrone (comptes, dettes, objectifs), donc impossible en état initial. Protégée par une ref pour ne s'exécuter qu'une fois.
       setDebtToRepay(debt)
       setRepaymentFormValues({
         accountId: draft.accountId,
